@@ -1,0 +1,1004 @@
+#include "textedit.h"
+#include "textedit_p.h"
+#include "textcursor_p.h"
+#include "textdocument_p.h"
+
+TextLayout *qt_get_textLayout(TextEdit *edit)
+{
+    return edit->d;
+}
+
+#ifndef QT_NO_DEBUG
+bool doLog = true;
+QString logFileName;
+#endif
+
+TextEdit::TextEdit(QWidget *parent)
+    : QAbstractScrollArea(parent), d(new TextEditPrivate(this))
+{
+    viewport()->setAutoFillBackground(true);
+    setAutoFillBackground(true);
+
+    viewport()->setCursor(Qt::IBeamCursor);
+#ifndef QT_NO_DEBUG
+    if (logFileName.isEmpty())
+        logFileName = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmsszzz.log");
+#endif
+    d->textEdit = this;
+    connect(verticalScrollBar(), SIGNAL(valueChanged(int)), d, SLOT(onScrollBarValueChanged(int)));
+    connect(verticalScrollBar(), SIGNAL(actionTriggered(int)), d, SLOT(onScrollBarActionTriggered(int)));
+    connect(verticalScrollBar(), SIGNAL(sliderReleased()), d, SLOT(updateScrollBar()));
+    setDocument(new TextDocument(this));
+    setViewportMargins(0, 0, 0, 0);
+    struct {
+        QAction **action;
+        QString text;
+        const char *member;
+    } shortcuts[] = {
+        { &d->copyAction, tr("Copy"), SLOT(copy()) },
+        { &d->pasteAction, tr("Paste"), SLOT(paste()) },
+        { &d->cutAction, tr("Cut"), SLOT(cut()) },
+        { &d->undoAction, tr("Undo"), SLOT(undo()) },
+        { &d->redoAction, tr("Redo"), SLOT(redo()) },
+        { &d->selectAllAction, tr("Select All"), SLOT(selectAll()) },
+        { 0, QString(), 0 } };
+    for (int i=0; shortcuts[i].action; ++i) {
+        *shortcuts[i].action = new QAction(shortcuts[i].text, this);
+        connect(*shortcuts[i].action, SIGNAL(triggered(bool)), this, shortcuts[i].member);
+        addAction(*shortcuts[i].action);
+    }
+    connect(this, SIGNAL(undoAvailableChanged(bool)), d->undoAction, SLOT(setEnabled(bool)));
+    connect(this, SIGNAL(redoAvailableChanged(bool)), d->redoAction, SLOT(setEnabled(bool)));
+    d->undoAction->setEnabled(false);
+    d->redoAction->setEnabled(false);
+    setContextMenuPolicy(Qt::ActionsContextMenu);
+    setCursorVisible(true); // starts bsectioning
+    connect(this, SIGNAL(selectionChanged()), viewport(), SLOT(update()));
+    connect(this, SIGNAL(selectionChanged()), d, SLOT(updateCopyAndCutEnabled()));
+    // ### could optimize and figure out what area to update. Not sure if it's worth it
+}
+
+int TextEdit::cursorPosition() const
+{
+    return d->textCursor.position();
+}
+
+void TextEdit::ensureCursorVisible(const TextCursor &cursor, int linesMargin)
+{
+    Q_UNUSED(cursor);
+    Q_UNUSED(linesMargin);
+    qWarning("ensureCursorVisible not implemented");
+}
+
+QAction *TextEdit::action(ActionType type) const
+{
+    switch (type) {
+    case CopyAction: return d->copyAction;
+    case PasteAction: return d->pasteAction;
+    case CutAction: return d->cutAction;
+    case UndoAction: return d->undoAction;
+    case RedoAction: return d->redoAction;
+    case SelectAllAction: return d->selectAllAction;
+    }
+    Q_ASSERT(0);
+    return 0;
+}
+
+TextEdit::~TextEdit()
+{
+    if (d->document) {
+        disconnect(d->document, 0, this, 0);
+        // to make sure we don't do anything drastic on shutdown
+    }
+    delete d;
+}
+
+TextDocument *TextEdit::document() const
+{
+    return d->document;
+}
+
+void TextEdit::setDocument(TextDocument *doc)
+{
+    if (doc == d->document)
+        return;
+
+    if (d->document) {
+        disconnect(d->document, 0, this, 0);
+        if (d->document->parent() == this)
+            delete d->document;
+    }
+    Q_ASSERT(doc);
+    d->document = doc;
+    d->sectionHovered = d->sectionPressed = 0;
+    viewport()->setCursor(Qt::IBeamCursor);
+    viewport()->setMouseTracking(true);
+    d->sectionCount = 0;
+
+    d->textCursor = TextCursor(doc);
+    d->textCursor.textEdit = this;
+    connect(d->document->d, SIGNAL(undoRedoCommandInserted(DocumentCommand *)),
+            d, SLOT(onDocumentCommandInserted(DocumentCommand *)));
+    connect(d->document, SIGNAL(sectionAdded(Section *)),
+            d, SLOT(onSectionAdded()));
+    connect(d->document, SIGNAL(sectionRemoved(Section *)),
+            d, SLOT(onSectionRemoved(Section *)));
+    connect(d->document->d, SIGNAL(undoRedoCommandRemoved(DocumentCommand *)),
+            d, SLOT(onDocumentCommandRemoved(DocumentCommand *)));
+    connect(d->document->d, SIGNAL(undoRedoCommandTriggered(DocumentCommand *, bool)),
+            d, SLOT(onDocumentCommandTriggered(DocumentCommand *, bool)));
+    connect(d->document, SIGNAL(charactersAdded(int, int)),
+            d, SLOT(onCharactersAddedOrRemoved(int, int)));
+    connect(d->document, SIGNAL(charactersRemoved(int, int)),
+            d, SLOT(onCharactersAddedOrRemoved(int, int)));
+
+    connect(d->document, SIGNAL(undoAvailableChanged(bool)),
+            this, SIGNAL(undoAvailableChanged(bool)));
+    connect(d->document, SIGNAL(redoAvailableChanged(bool)),
+            this, SIGNAL(redoAvailableChanged(bool)));
+
+    connect(d->document, SIGNAL(documentSizeChanged(int)), d, SLOT(onDocumentSizeChanged(int)));
+    connect(d->document, SIGNAL(destroyed(QObject*)), d, SLOT(onDocumentDestroyed()));
+    d->onDocumentSizeChanged(d->document->documentSize());
+    d->dirty(viewport()->width());
+}
+
+int TextEdit::cursorWidth() const
+{
+    return d->cursorWidth;
+}
+
+void TextEdit::setCursorWidth(int cc)
+{
+    Q_ASSERT(d->cursorWidth > 0);
+    d->cursorWidth = cc;
+    viewport()->update();
+}
+
+bool TextEdit::load(QIODevice *dev, TextDocument::DeviceMode mode)
+{
+#ifndef QT_NO_DEBUG
+    if (doLog) {
+        QFile f(logFileName);
+        f.open(QIODevice::WriteOnly);
+        QDataStream ds(&f);
+        if (QFile *ff = qobject_cast<QFile*>(dev)) {
+            ds << ff->fileName();
+        } else {
+            ds << QString::fromLatin1(dev->metaObject()->className());
+        }
+    }
+#endif
+    return d->document->load(dev, mode);
+}
+
+bool TextEdit::load(const QString &file, TextDocument::DeviceMode mode)
+{
+#ifndef QT_NO_DEBUG
+    if (doLog) {
+        QFile f(logFileName);
+        f.open(QIODevice::WriteOnly);
+        QDataStream ds(&f);
+        ds << file;
+    }
+#endif
+    return d->document->load(file, mode);
+}
+
+void TextEdit::paintEvent(QPaintEvent *e)
+{
+
+    if (d->ensureCursorVisiblePending) {
+        d->ensureCursorVisiblePending = false;
+        ensureCursorVisible();
+    }
+    d->updateScrollBarPosition();
+    d->relayoutByGeometry(viewport()->height());
+    if (d->updateScrollBarPageStepPending) {
+        d->updateScrollBarPageStepPending = false;
+        d->updateScrollBarPageStep();
+    }
+
+    QPainter p(viewport());
+    p.fillRect(rect(), Qt::white); // ### this is a weird bug where I
+                                   // ### get debris with large
+                                   // ### documents on the first and
+                                   // ### last visible textlayout
+    p.setFont(font());
+    QVector<QTextLayout::FormatRange> selection;
+    int textLayoutOffset = d->viewportPosition;
+    const int min = qMin(d->textCursor.anchor(), d->textCursor.position());
+    const int max = qMax(d->textCursor.anchor(), d->textCursor.position());
+
+    const QTextLayout *cursorLayout = d->cursorVisible ? d->layoutForPosition(d->textCursor.position()) : 0;
+    const QRect er = e->rect();
+    foreach(const QTextLayout *l, d->textLayouts) {
+        const QRect r = l->boundingRect().toRect();
+        if (r.intersects(er)) {
+//             if (r.bottom() > er.bottom())
+//                 break;
+            if (d->textCursor.hasSelection()
+                && (!(min > textLayoutOffset + l->text().size() || max < textLayoutOffset))) {
+                selection.append(QTextLayout::FormatRange());
+                const int localMin = min - textLayoutOffset;
+                const int localMax = max - textLayoutOffset;
+                selection.last().start = qMax<int>(0, localMin);
+                selection.last().length = qMin<int>(l->text().size(), localMax - selection.last().start);
+                selection.last().format.setBackground(palette().highlight());
+                selection.last().format.setForeground(palette().highlightedText());
+            }
+            l->draw(&p, QPoint(0, 0), selection);
+            if (!selection.isEmpty())
+                selection.clear();
+            if (cursorLayout == l) {
+                cursorLayout->drawCursor(&p, QPoint(0, 0), d->textCursor.position() - textLayoutOffset,
+                                         d->cursorWidth);
+            }
+        } else if (r.top() > er.bottom()) {
+            break;
+        }
+        textLayoutOffset += l->text().size() + 1;
+    }
+}
+
+void TextEdit::scrollContentsBy(int dx, int dy)
+{
+    Q_UNUSED(dx);
+    Q_UNUSED(dy);
+    viewport()->update();
+//    viewport()->scroll(dx, dy); // seems to jitter more
+}
+
+int TextEdit::viewportPosition() const
+{
+    return d->viewportPosition;
+}
+
+bool TextEdit::isUndoAvailable() const
+{
+    return d->document->isUndoAvailable();
+}
+
+bool TextEdit::isRedoAvailable() const
+{
+    return d->document->isRedoAvailable();
+}
+
+void TextEdit::mousePressEvent(QMouseEvent *e)
+{
+    if (e->button() == Qt::LeftButton) {
+#ifndef QT_NO_DEBUG
+        if (doLog) {
+            QFile file(logFileName);
+            file.open(QIODevice::Append);
+            QDataStream ds(&file);
+            ds << int(e->type()) << e->pos() << e->button() << e->buttons() << e->modifiers();
+        }
+#endif
+        if (d->tripleClickTimer.isActive()) {
+            d->tripleClickTimer.stop();
+            d->textCursor.movePosition(TextCursor::StartOfBlock);
+            d->textCursor.movePosition(TextCursor::EndOfBlock, TextCursor::KeepAnchor);
+        } else {
+            clearSelection();
+            d->textCursor.d->overrideColumn = -1;
+            int pos = textPositionAt(e->pos());
+            if (pos == -1)
+                pos = d->document->documentSize() - 1;
+            d->sectionPressed = d->document->sectionAt(pos);
+            setCursorPosition(pos, e->modifiers() & Qt::ShiftModifier
+                              ? TextCursor::KeepAnchor
+                              : TextCursor::MoveAnchor);
+        }
+        e->accept();
+    } else {
+        QAbstractScrollArea::mousePressEvent(e);
+    }
+}
+
+void TextEdit::mouseDoubleClickEvent(QMouseEvent *e)
+{
+    if (e->button() == Qt::LeftButton) {
+#ifndef QT_NO_DEBUG
+        if (doLog) {
+            QFile file(logFileName);
+            file.open(QIODevice::Append);
+            QDataStream ds(&file);
+            ds << int(e->type()) << e->pos() << e->button() << e->buttons() << e->modifiers();
+        }
+#endif
+        d->textCursor.d->overrideColumn = -1;
+        const int pos = textPositionAt(e->pos());
+        if (pos == d->textCursor.position()) {
+            d->tripleClickTimer.start(qApp->doubleClickInterval(), d);
+            if (!d->textCursor.cursorCharacter().isSpace()) { // ### this is not quite right
+                d->textCursor.movePosition(TextCursor::StartOfWord);
+                d->textCursor.movePosition(TextCursor::EndOfWord, TextCursor::KeepAnchor);
+                return;
+            }
+        }
+        mousePressEvent(e);
+    }
+}
+
+void TextEdit::mouseMoveEvent(QMouseEvent *e)
+{
+    if (e->buttons() == Qt::NoButton) {
+        d->updateCursorPosition(e->pos());
+    } else if (e->buttons() == Qt::LeftButton && d->document->documentSize()) {
+#ifndef QT_NO_DEBUG
+        if (doLog) {
+            QFile file(logFileName);
+            file.open(QIODevice::Append);
+            QDataStream ds(&file);
+            ds << int(e->type()) << e->pos() << e->button() << e->buttons() << e->modifiers();
+        }
+#endif
+        const QRect r = viewport()->rect();
+        d->lastMouseMove = e->pos();
+        e->accept();
+        if (e->y() < r.top()) {
+            if (d->atBeginning()) {
+                d->updateHorizontalPosition();
+                d->autoScrollTimer.stop();
+                return;
+            }
+        } else if (e->y() > r.bottom()) {
+            if (d->atEnd()) {
+                d->updateHorizontalPosition();
+                d->autoScrollTimer.stop();
+                return;
+            }
+        } else {
+            int pos = textPositionAt(QPoint(qBound(0, d->lastMouseMove.x(), r.right()), d->lastMouseMove.y()));
+            if (pos == -1)
+                pos = d->document->documentSize();
+            d->autoScrollTimer.stop();
+            setCursorPosition(pos, TextCursor::KeepAnchor);
+            return;
+        }
+        const int distance = qMax(r.top() - d->lastMouseMove.y(), d->lastMouseMove.y() - r.bottom());
+        const int timeout = qMax(5, 300 - distance);
+        Q_ASSERT(distance != 0);
+        if (d->autoScrollTimer.isActive()) {
+            d->pendingTimeOut = timeout;
+        } else {
+            d->pendingTimeOut = -1;
+            d->autoScrollTimer.start(timeout, d);
+        }
+    } else {
+        QAbstractScrollArea::mouseMoveEvent(e);
+    }
+}
+
+void TextEdit::mouseReleaseEvent(QMouseEvent *e)
+{
+    if (e->button() == Qt::LeftButton) {
+#ifndef QT_NO_DEBUG
+        if (doLog) {
+            QFile file(logFileName);
+            file.open(QIODevice::Append);
+            QDataStream ds(&file);
+            ds << int(e->type()) << e->pos() << e->button() << e->buttons() << e->modifiers();
+        }
+#endif
+        d->autoScrollTimer.stop();
+        d->pendingTimeOut = -1;
+        e->accept();
+        if (d->sectionPressed && sectionAt(e->pos()) == d->sectionPressed) {
+            emit sectionClicked(d->sectionPressed, e->pos());
+        }
+        d->sectionPressed = 0;
+    } else {
+        QAbstractScrollArea::mouseReleaseEvent(e);
+    }
+}
+
+void TextEdit::resizeEvent(QResizeEvent *e)
+{
+#ifndef QT_NO_DEBUG
+    if (doLog) {
+        QFile file(logFileName);
+        file.open(QIODevice::Append);
+        QDataStream ds(&file);
+        ds << int(e->type()) << e->size();
+    }
+#endif
+    QAbstractScrollArea::resizeEvent(e);
+    d->updateScrollBarPageStepPending = true;
+    d->dirty(viewport()->width());
+}
+
+int TextEdit::textPositionAt(const QPoint &pos) const
+{
+    if (!viewport()->rect().contains(pos))
+        return -1;
+    return d->textPositionAt(pos);
+}
+
+bool TextEdit::readOnly() const
+{
+    return d->readOnly;
+}
+
+void TextEdit::setReadOnly(bool rr)
+{
+    d->readOnly = rr;
+    if (!rr) {
+        setCursorVisible(true);
+    }
+    d->pasteAction->setEnabled(!rr);
+    d->cutAction->setEnabled(!rr);
+}
+
+int TextEdit::maximumSizeCopy() const
+{
+    return d->maximumSizeCopy;
+}
+
+void TextEdit::setMaximumSizeCopy(int max)
+{
+    d->maximumSizeCopy = qMax(0, max);
+    d->updateCopyAndCutEnabled();
+}
+
+QRect TextEdit::cursorBlockRect() const
+{
+    if (const QTextLayout *l = d->layoutForPosition(d->textCursor.position())) {
+        return l->boundingRect().toRect();
+    }
+    return QRect();
+}
+
+void TextEdit::wheelEvent(QWheelEvent *e)
+{
+    if (e->orientation() == Qt::Vertical) {
+        d->scrollLines(3 * (e->delta() > 0 ? -1 : 1));
+    } else {
+        QAbstractScrollArea::wheelEvent(e);
+    }
+}
+
+void TextEdit::changeEvent(QEvent *e)
+{
+    if (e->type() == QEvent::FontChange) {
+        d->font = font();
+        foreach(QTextLayout *l, (d->textLayouts + d->unusedTextLayouts)) {
+            l->setFont(d->font);
+        }
+        d->dirty(viewport()->width());
+    }
+}
+
+void TextEdit::keyPressEvent(QKeyEvent *e)
+{
+#ifndef QT_NO_DEBUG
+    if (doLog) {
+        QFile file(logFileName);
+        file.open(QIODevice::Append);
+        QDataStream ds(&file);
+        ds << int(e->type()) << e->key() << int(e->modifiers()) << e->text() << e->isAutoRepeat() << e->count();
+    }
+#endif
+
+    struct {
+        QKeySequence::StandardKey key;
+        QAction *action;
+    } const keys[] = { { QKeySequence::Copy, d->copyAction },
+                       { QKeySequence::Paste, d->pasteAction },
+                       { QKeySequence::Cut, d->cutAction },
+                       { QKeySequence::Undo, d->undoAction },
+                       { QKeySequence::Redo, d->redoAction },
+                       { QKeySequence::SelectAll, d->selectAllAction },
+                       { QKeySequence::UnknownKey, 0 } };
+    for (int i=0; keys[i].action; ++i) {
+        if (keys[i].action && keys[i].action->isEnabled() && e->matches(keys[i].key)) {
+            keys[i].action->trigger();
+            e->accept();
+            return;
+        }
+    }
+
+    Q_ASSERT(d->textCursor.textEdit == this);
+    if (d->cursorBlinkTimer.isActive() && d->textCursor.cursorMoveKeyEvent(e)) {
+        e->accept();
+        return;
+    } else if (d->readOnly) {
+        e->ignore();
+        return;
+    }
+    TextCursor::MoveOperation operation = TextCursor::NoMove;
+    bool restoreCursorPosition = false;
+    if (e->key() == Qt::Key_Backspace && !(e->modifiers() & ~Qt::ShiftModifier)) {
+        operation = TextCursor::Left;
+    } else {
+        enum { Count = 4 };
+        struct {
+            QKeySequence::StandardKey standardKey;
+            TextCursor::MoveOperation operation;
+            bool restoreCursorPosition;
+        } commands[Count] = {
+            { QKeySequence::Delete, TextCursor::Right, true },
+            { QKeySequence::DeleteStartOfWord, TextCursor::StartOfWord, false },
+            { QKeySequence::DeleteEndOfWord, TextCursor::EndOfWord, true },
+            { QKeySequence::DeleteEndOfLine, TextCursor::EndOfLine, true },
+        };
+        for (int i=0; i<Count; ++i) {
+            if (e->matches(commands[i].standardKey)) {
+                operation = commands[i].operation;
+                restoreCursorPosition = commands[i].restoreCursorPosition;
+                break;
+            }
+        }
+    }
+    if (operation != TextCursor::NoMove) {
+        if (hasSelection()) {
+            const int old = qMin(d->textCursor.anchor(), d->textCursor.position());
+            removeSelectedText();
+            setCursorPosition(old, TextCursor::MoveAnchor);
+        } else {
+            const int old = d->textCursor.position();
+            if (moveCursorPosition(operation, TextCursor::KeepAnchor)) {
+                removeSelectedText();
+                if (restoreCursorPosition) {
+                    setCursorPosition(old, TextCursor::MoveAnchor);
+                }
+            }
+        }
+    } else if (e->key() == Qt::Key_Enter || e->key() == Qt::Key_Return) {
+        ensureCursorVisible();
+        d->textCursor.insertText("\n");
+    } else if (!e->text().isEmpty() && !(e->modifiers() & ~Qt::ShiftModifier)) {
+        ensureCursorVisible();
+        d->textCursor.insertText(e->text().toLocal8Bit());
+    } else {
+        e->ignore();
+//        QAbstractScrollArea::keyPressEvent(e); // this causes some
+//        weird unrecognized key to go through to the scrollBar and raise hell
+        return;
+    }
+}
+
+void TextEdit::keyReleaseEvent(QKeyEvent *e)
+{
+#ifndef QT_NO_DEBUG
+    if (doLog) { // ### does it make any sense to replay these? Probably not
+        QFile file(logFileName);
+        file.open(QIODevice::Append);
+        QDataStream ds(&file);
+        ds << int(e->type()) << e->key() << int(e->modifiers()) << e->text() << e->isAutoRepeat() << e->count();
+    }
+#endif
+    QAbstractScrollArea::keyReleaseEvent(e);
+}
+
+
+void TextEdit::setCursorPosition(int pos, TextCursor::MoveMode mode)
+{
+    d->textCursor.setPosition(pos, mode);
+}
+
+bool TextEdit::moveCursorPosition(TextCursor::MoveOperation op, TextCursor::MoveMode mode, int n)
+{
+    return d->textCursor.movePosition(op, mode, n);
+}
+
+void TextEdit::copy(QClipboard::Mode mode)
+{
+    QApplication::clipboard()->setText(selectedText(), mode);
+}
+
+void TextEdit::paste(QClipboard::Mode mode)
+{
+    if (d->readOnly)
+        return;
+    paste(QApplication::clipboard()->text(mode).toLatin1());
+}
+
+void TextEdit::paste(const QString &ba)
+{
+    if (d->readOnly)
+        return;
+    textCursor().insertText(ba);
+}
+
+
+bool TextEdit::cursorVisible() const
+{
+    return d->cursorBlinkTimer.isActive();
+}
+
+void TextEdit::setCursorVisible(bool cc)
+{
+    if (cc == d->cursorBlinkTimer.isActive())
+        return;
+
+    d->cursorVisible = true;
+    if (cc) {
+        d->cursorBlinkTimer.start(QApplication::cursorFlashTime(), d);
+    } else {
+        d->cursorBlinkTimer.stop();
+    }
+    viewport()->update(cursorBlockRect());
+}
+
+void TextEdit::clearSelection()
+{
+    if (!d->textCursor.hasSelection())
+        return;
+
+    d->textCursor.clearSelection();
+}
+
+QString TextEdit::selectedText() const
+{
+    return d->textCursor.selectedText();
+}
+
+bool TextEdit::hasSelection() const
+{
+    return d->textCursor.hasSelection();
+}
+
+void TextEdit::insert(int pos, const QString &text)
+{
+    if (d->readOnly)
+        return;
+    Q_ASSERT(d->document);
+    d->document->insert(pos, text);
+}
+
+void TextEdit::remove(int from, int size)
+{
+    if (d->readOnly)
+        return;
+    Q_ASSERT(d->document);
+    d->document->remove(from, size);
+}
+
+void TextEdit::append(const QString &text)
+{
+    if (d->readOnly)
+        return;
+    Q_ASSERT(d->document);
+    d->document->append(text);
+}
+
+void TextEdit::removeSelectedText()
+{
+    if (d->readOnly)
+        return;
+    d->textCursor.removeSelectedText();
+}
+
+void TextEdit::cut()
+{
+    if (d->readOnly || !hasSelection())
+        return;
+    copy(QClipboard::Clipboard);
+    removeSelectedText();
+}
+
+void TextEdit::undo()
+{
+    if (!d->readOnly)
+        d->document->undo();
+}
+
+void TextEdit::redo()
+{
+    if (!d->readOnly)
+        d->document->redo();
+}
+
+void TextEdit::selectAll()
+{
+    TextCursor cursor(d->document);
+    Q_ASSERT(cursor.position() == 0);
+    cursor.movePosition(TextCursor::End, TextCursor::KeepAnchor);
+    setTextCursor(cursor);
+    emit selectionChanged();
+}
+
+void TextEditPrivate::onDocumentSizeChanged(int size)
+{
+    textEdit->verticalScrollBar()->setRange(0, size - 1);
+    updateScrollBarPageStepPending = true;
+}
+
+void TextEditPrivate::updateCopyAndCutEnabled()
+{
+    copyAction->setEnabled(qAbs(textCursor.position() - textCursor.anchor()) <= maximumSizeCopy);
+    cutAction->setEnabled(copyAction->isEnabled());
+}
+
+void TextEdit::setSyntaxHighlighter(SyntaxHighlighter *highlighter)
+{
+    if (d->syntaxHighlighter) {
+        if (d->syntaxHighlighter->parent() == this) {
+            delete d->syntaxHighlighter;
+        } else {
+            d->syntaxHighlighter->d->textEdit = 0;
+            d->syntaxHighlighter->d->textLayout = 0;
+        }
+    }
+
+    d->syntaxHighlighter = highlighter;
+    if (d->syntaxHighlighter) {
+        d->syntaxHighlighter->d->textEdit = this;
+        d->syntaxHighlighter->d->textLayout = d;
+        d->dirty(viewport()->width());
+    }
+}
+
+SyntaxHighlighter * TextEdit::syntaxHighlighter() const
+{
+    return d->syntaxHighlighter;
+}
+
+void TextEditPrivate::onSectionRemoved(Section *section)
+{
+    Q_ASSERT(section);
+    if (section == sectionPressed) {
+        sectionPressed = 0;
+    }
+    if (section == sectionHovered) {
+        sectionHovered = 0;
+        textEdit->viewport()->setCursor(Qt::IBeamCursor);
+    }
+}
+
+void TextEditPrivate::onSectionAdded()
+{
+    updateCursorPosition(lastHoverPos);
+    sectionsDirty = true;
+    dirty(textEdit->viewport()->width());
+}
+
+void TextEditPrivate::onScrollBarValueChanged(int value)
+{
+    if (blockScrollBarUpdate || value == requestedScrollBarPosition || value == viewportPosition)
+        return;
+    requestedScrollBarPosition = value;
+    dirty(textEdit->viewport()->width());
+}
+
+void TextEditPrivate::onScrollBarActionTriggered(int action)
+{
+    switch (action) {
+    case QAbstractSlider::SliderSingleStepAdd: scrollLines(1); requestedScrollBarPosition = -1; break;
+    case QAbstractSlider::SliderSingleStepSub: scrollLines(-1); requestedScrollBarPosition = -1; break;
+    default: break;
+    }
+}
+
+void TextEditPrivate::updateScrollBar()
+{
+    Q_ASSERT(!textEdit->verticalScrollBar()->isSliderDown());
+    if (pendingScrollBarUpdate) {
+        const bool old = blockScrollBarUpdate;
+        blockScrollBarUpdate = true;
+        textEdit->verticalScrollBar()->setValue(viewportPosition);
+        blockScrollBarUpdate = old;
+        pendingScrollBarUpdate  = false;
+    }
+}
+
+void TextEditPrivate::onCharactersAddedOrRemoved(int from, int count)
+{
+    Q_ASSERT(count >= 0);
+    Q_UNUSED(count);
+    if (from > layoutEnd) {
+        return;
+    }
+    buffer.clear();
+    dirty(textEdit->viewport()->width());
+}
+
+void TextEdit::ensureCursorVisible()
+{
+    if (d->textCursor.position() < d->viewportPosition) {
+        d->updatePosition(qMax(0, d->textCursor.position() - 1), TextLayout::Backward);
+    } else {
+        const QRect r = viewport()->rect();
+        const QRect cursorRect = cursorBlockRect();
+        if (!r.contains(cursorRect)) {
+            if (r.intersects(cursorRect)) {
+                d->scrollLines(1);
+            } else {
+                d->updatePosition(d->textCursor.position(), TextLayout::Backward);
+            }
+        }
+    }
+}
+
+TextCursor &TextEdit::textCursor()
+{
+    return d->textCursor;
+}
+
+const TextCursor &TextEdit::textCursor() const
+{
+    return d->textCursor;
+}
+
+void TextEdit::setTextCursor(const TextCursor &textCursor)
+{
+    const bool doEmit = (d->textCursor != textCursor);
+    d->textCursor = textCursor;
+    d->textCursor.textEdit = this;
+    if (doEmit) {
+        viewport()->update();
+        emit cursorPositionChanged(textCursor.position());
+    }
+}
+
+Section *TextEdit::sectionAt(const QPoint &pos) const
+{
+    Q_ASSERT(d->document);
+    const int textPos = textPositionAt(pos);
+    if (textPos == -1)
+        return 0;
+    return d->document->sectionAt(textPos);
+}
+
+void TextEditPrivate::updateHorizontalPosition()
+{
+    const QRect r = textEdit->viewport()->rect();
+    const QPoint p(qBound(0, lastMouseMove.x(), r.right()),
+                   qBound(0, lastMouseMove.y(), r.bottom()));
+    int pos = textPositionAt(p);
+    if (pos == -1)
+        pos = document->documentSize() - 1;
+    textEdit->setCursorPosition(pos, TextCursor::KeepAnchor);
+}
+
+void TextEditPrivate::updateScrollBarPosition()
+{
+    if (requestedScrollBarPosition == -1) {
+        return;
+    } else if (requestedScrollBarPosition == viewportPosition) {
+        requestedScrollBarPosition = -1;
+        return;
+    }
+
+    const int req = requestedScrollBarPosition;
+    requestedScrollBarPosition = -1;
+
+    Direction direction = Forward;
+    if (lastRequestedScrollBarPosition != -1 && lastRequestedScrollBarPosition != req) {
+        if (lastRequestedScrollBarPosition > req) {
+            direction = Backward;
+        }
+    } else if (req < viewportPosition) {
+        direction = Backward;
+    }
+
+    lastRequestedScrollBarPosition = req;
+
+    updatePosition(req, direction);
+}
+
+void TextEditPrivate::updateScrollBarPageStep()
+{
+    if (lines.isEmpty()) {
+        textEdit->verticalScrollBar()->setPageStep(1);
+        return;
+    }
+    const int visibleCharacters = lines.at(qMin(visibleLines, lines.size() - 1)).first - lines.at(0).first;
+    textEdit->verticalScrollBar()->setPageStep(visibleCharacters);
+}
+
+void TextEditPrivate::onDocumentDestroyed()
+{
+    document = 0;
+    textEdit->setDocument(new TextDocument(this)); // there should always be a document
+}
+
+void TextEditPrivate::onDocumentCommandInserted(DocumentCommand *cmd)
+{
+    CursorData &data = undoRedoCommands[cmd].first;
+    data.position = textCursor.position();
+    data.anchor = textCursor.anchor();
+    // this happens before the actual insert/remove so the pos/anchor is not changed yet
+}
+
+void TextEditPrivate::onDocumentCommandFinished(DocumentCommand *cmd)
+{
+    Q_ASSERT(undoRedoCommands.contains(cmd));
+    CursorData &data = undoRedoCommands[cmd].second;
+    data.position = textCursor.position();
+    data.anchor = textCursor.anchor();
+    // this happens after the actual insert/remove
+}
+
+void TextEditPrivate::onDocumentCommandRemoved(DocumentCommand *cmd)
+{
+    undoRedoCommands.take(cmd);
+}
+
+void TextEditPrivate::onDocumentCommandTriggered(DocumentCommand *cmd, bool undo)
+{
+    if (undoRedoCommands.contains(cmd)) {
+        const CursorData &ec = undo
+                               ? undoRedoCommands.value(cmd).first
+                               : undoRedoCommands.value(cmd).second;
+        if (ec.position != ec.anchor) {
+            textCursor.setPosition(ec.anchor, TextCursor::MoveAnchor);
+            textCursor.setPosition(ec.position, TextCursor::KeepAnchor);
+        } else {
+            textCursor.setPosition(ec.position, TextCursor::MoveAnchor);
+        }
+    }
+}
+
+void TextEditPrivate::scrollLines(int lines)
+{
+    int pos = viewportPosition;
+    const Direction d = (lines < 0 ? Backward : Forward);
+    const int add = lines < 0 ? -1 : 1;
+    while (pos + add >= 0 && pos + add < document->documentSize()) {
+        pos += add;
+        QChar c = bufferReadCharacter(pos);
+        if (bufferReadCharacter(pos) == '\n') {
+            if ((lines -= add) == 0) {
+                break;
+            }
+        }
+    }
+    updatePosition(pos, d);
+}
+
+void TextEditPrivate::timerEvent(QTimerEvent *e)
+{
+    if (e->timerId() == tripleClickTimer.timerId()) {
+        tripleClickTimer.stop();
+    } else if (e->timerId() == autoScrollTimer.timerId()) {
+        if (pendingTimeOut != -1) {
+            autoScrollTimer.start(pendingTimeOut, this);
+            pendingTimeOut = -1;
+        }
+        const QRect r = textEdit->viewport()->rect();
+        Q_ASSERT(!r.contains(lastMouseMove));
+        enum { LineCount = 3 };
+        if (lastMouseMove.y() < r.top()) {
+            scrollLines(-LineCount);
+            relayoutByGeometry(r.height());
+            if (atBeginning())
+                autoScrollTimer.stop();
+        } else {
+            Q_ASSERT(lastMouseMove.y() > r.bottom());
+            scrollLines(LineCount);
+            relayoutByGeometry(r.height());
+            if (atEnd())
+                autoScrollTimer.stop();
+        }
+        // called relayoutByGeometry to force the relaying to happen
+        // immediately to make sure textPositionAt returns a valid
+        // position
+        const QPoint p(qBound(0, lastMouseMove.x(), r.right()),
+                       qBound(0, lastMouseMove.y(), r.bottom()));
+        int pos = textPositionAt(p);
+        if (pos == -1)
+            pos = document->documentSize() - 1;
+        textEdit->setCursorPosition(pos, TextCursor::KeepAnchor);
+    } else if (e->timerId() == cursorBlinkTimer.timerId()) {
+        cursorVisible = !cursorVisible;
+        textEdit->viewport()->update(textEdit->cursorBlockRect());
+    } else {
+        Q_ASSERT(0);
+    }
+}
+
+void TextEditPrivate::emitSelectionChanged()
+{
+    emit textEdit->selectionChanged();
+}
+
+void TextEditPrivate::updateCursorPosition(const QPoint &pos)
+{
+    lastHoverPos = pos;
+    sectionHovered = textEdit->sectionAt(pos);
+    textEdit->viewport()->setCursor(sectionHovered ? Qt::PointingHandCursor : Qt::IBeamCursor);
+}
+
