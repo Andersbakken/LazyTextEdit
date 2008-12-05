@@ -5,6 +5,7 @@
 #include <QPoint>
 #include <QAction>
 #include "textlayout_p.h"
+#include "textdocument_p.h"
 #include "textcursor.h"
 #include "textedit.h"
 
@@ -25,6 +26,8 @@ public:
         sectionPressed(0), sectionHovered(0), pendingScrollBarUpdate(false)
     {
         textEdit = qptr;
+        connect(SectionManager::instance(), SIGNAL(sectionFormatChanged(Section *)),
+                this, SLOT(onSectionFormatChanged(Section *)));
     }
 
     void updateHorizontalPosition();
@@ -32,7 +35,6 @@ public:
     void updateScrollBarPageStep();
     void scrollLines(int lines);
     void timerEvent(QTimerEvent *e);
-    void emitSelectionChanged();
     void updateCursorPosition(const QPoint &pos);
     bool atEnd() const { return viewportPosition == 0; }
     bool atBeginning() const { return textEdit->verticalScrollBar()->value() == textEdit->verticalScrollBar()->maximum(); }
@@ -52,6 +54,7 @@ public:
 public slots:
     void onSectionAdded();
     void onSectionRemoved(Section *section);
+    void onSectionFormatChanged(Section *section);
     void updateScrollBar();
     void updateCopyAndCutEnabled();
     void onDocumentDestroyed();

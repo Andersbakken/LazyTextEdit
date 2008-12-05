@@ -3,15 +3,15 @@
 #include "textcursor_p.h"
 #include "textdocument_p.h"
 
-TextLayout *qt_get_textLayout(TextEdit *edit)
-{
-    return edit->d;
-}
-
 #ifndef QT_NO_DEBUG
 bool doLog = true;
 QString logFileName;
 #endif
+
+
+/*!
+    Constructs an empty TextEdit with parent \a parent.
+*/
 
 TextEdit::TextEdit(QWidget *parent)
     : QAbstractScrollArea(parent), d(new TextEditPrivate(this))
@@ -24,7 +24,6 @@ TextEdit::TextEdit(QWidget *parent)
     if (logFileName.isEmpty())
         logFileName = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmsszzz.log");
 #endif
-    d->textEdit = this;
     connect(verticalScrollBar(), SIGNAL(valueChanged(int)), d, SLOT(onScrollBarValueChanged(int)));
     connect(verticalScrollBar(), SIGNAL(actionTriggered(int)), d, SLOT(onScrollBarActionTriggered(int)));
     connect(verticalScrollBar(), SIGNAL(sliderReleased()), d, SLOT(updateScrollBar()));
@@ -58,10 +57,20 @@ TextEdit::TextEdit(QWidget *parent)
     // ### could optimize and figure out what area to update. Not sure if it's worth it
 }
 
+
+/*!
+    returns the current cursor position
+*/
+
 int TextEdit::cursorPosition() const
 {
     return d->textCursor.position();
 }
+
+/*!
+    ensures that \a cursor is visible with \a linesMargin lines of
+    margin on each side (if possible)
+*/
 
 void TextEdit::ensureCursorVisible(const TextCursor &cursor, int linesMargin)
 {
@@ -69,6 +78,10 @@ void TextEdit::ensureCursorVisible(const TextCursor &cursor, int linesMargin)
     Q_UNUSED(linesMargin);
     qWarning("ensureCursorVisible not implemented");
 }
+
+/*!
+    returns the QAction * for \a type.
+*/
 
 QAction *TextEdit::action(ActionType type) const
 {
@@ -84,6 +97,10 @@ QAction *TextEdit::action(ActionType type) const
     return 0;
 }
 
+/*!
+    Called when the textEdit is deleted
+*/
+
 TextEdit::~TextEdit()
 {
     if (d->document) {
@@ -93,10 +110,25 @@ TextEdit::~TextEdit()
     delete d;
 }
 
+/*!
+    returns the text edit's document. document() always returns a
+    valid TextDocument *
+    \sa setDocument
+*/
+
+
 TextDocument *TextEdit::document() const
 {
     return d->document;
 }
+
+/*!
+    sets the text edit's document to \a doc. The previous document
+    will be deleted if it's parented to the text edit.
+
+    If \a doc is 0 a default TextDocument will be set.
+    \sa document
+*/
 
 void TextEdit::setDocument(TextDocument *doc)
 {
@@ -108,7 +140,9 @@ void TextEdit::setDocument(TextDocument *doc)
         if (d->document->parent() == this)
             delete d->document;
     }
-    Q_ASSERT(doc);
+    if (!doc)
+        doc = new TextDocument(this);
+
     d->document = doc;
     d->sectionHovered = d->sectionPressed = 0;
     viewport()->setCursor(Qt::IBeamCursor);
@@ -143,17 +177,37 @@ void TextEdit::setDocument(TextDocument *doc)
     d->dirty(viewport()->width());
 }
 
+/*!
+    returns the textCursor's width (in pixels)
+    \sa setCursorWidth
+*/
+
 int TextEdit::cursorWidth() const
 {
     return d->cursorWidth;
 }
 
-void TextEdit::setCursorWidth(int cc)
+/*!
+    sets the cursorWidth of the text edit to \a cw pixels.
+    \a cw must be a valid integer larger than 0.
+
+    \sa setCursorVisible
+*/
+
+void TextEdit::setCursorWidth(int cw)
 {
     Q_ASSERT(d->cursorWidth > 0);
-    d->cursorWidth = cc;
+    d->cursorWidth = cw;
     viewport()->update();
 }
+
+/*!
+    Loads the contenst of \a dev into the text edit's document.
+    Equivalent to calling document()->load(\a dev, \a mode);
+
+    \sa setCursorVisible
+*/
+
 
 bool TextEdit::load(QIODevice *dev, TextDocument::DeviceMode mode)
 {
@@ -281,7 +335,6 @@ void TextEdit::mousePressEvent(QMouseEvent *e)
             d->textCursor.movePosition(TextCursor::EndOfBlock, TextCursor::KeepAnchor);
         } else {
             clearSelection();
-            d->textCursor.d->overrideColumn = -1;
             int pos = textPositionAt(e->pos());
             if (pos == -1)
                 pos = d->document->documentSize() - 1;
@@ -307,7 +360,6 @@ void TextEdit::mouseDoubleClickEvent(QMouseEvent *e)
             ds << int(e->type()) << e->pos() << e->button() << e->buttons() << e->modifiers();
         }
 #endif
-        d->textCursor.d->overrideColumn = -1;
         const int pos = textPositionAt(e->pos());
         if (pos == d->textCursor.position()) {
             d->tripleClickTimer.start(qApp->doubleClickInterval(), d);
@@ -714,6 +766,9 @@ void TextEditPrivate::updateCopyAndCutEnabled()
 
 void TextEdit::setSyntaxHighlighter(SyntaxHighlighter *highlighter)
 {
+    if (d->syntaxHighlighter == highlighter)
+        return;
+
     if (d->syntaxHighlighter) {
         if (d->syntaxHighlighter->parent() == this) {
             delete d->syntaxHighlighter;
@@ -727,8 +782,8 @@ void TextEdit::setSyntaxHighlighter(SyntaxHighlighter *highlighter)
     if (d->syntaxHighlighter) {
         d->syntaxHighlighter->d->textEdit = this;
         d->syntaxHighlighter->d->textLayout = d;
-        d->dirty(viewport()->width());
     }
+    d->dirty(viewport()->width());
 }
 
 SyntaxHighlighter * TextEdit::syntaxHighlighter() const
@@ -990,11 +1045,6 @@ void TextEditPrivate::timerEvent(QTimerEvent *e)
     }
 }
 
-void TextEditPrivate::emitSelectionChanged()
-{
-    emit textEdit->selectionChanged();
-}
-
 void TextEditPrivate::updateCursorPosition(const QPoint &pos)
 {
     lastHoverPos = pos;
@@ -1002,3 +1052,13 @@ void TextEditPrivate::updateCursorPosition(const QPoint &pos)
     textEdit->viewport()->setCursor(sectionHovered ? Qt::PointingHandCursor : Qt::IBeamCursor);
 }
 
+
+void TextEditPrivate::onSectionFormatChanged(Section *section)
+{
+    if (section->document() != document
+        || section->position() > layoutEnd
+        || section->position() + section->size() < viewportPosition) {
+        return;
+    }
+    dirty(textEdit->viewport()->width());
+}

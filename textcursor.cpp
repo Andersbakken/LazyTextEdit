@@ -9,29 +9,30 @@
 class SelectionChangedEmitter
 {
 public:
-    SelectionChangedEmitter(TextEditPrivate *t)
-        : selectionStart(-1), selectionEnd(-1), textEditPrivate(t)
+    SelectionChangedEmitter(TextEdit *t)
+        : selectionStart(-1), selectionEnd(-1), textEdit(t)
     {
-        if (textEditPrivate) {
-            selectionStart = textEditPrivate->textCursor.selectionStart();
-            selectionEnd = textEditPrivate->textCursor.selectionEnd();
+        if (textEdit) {
+            selectionStart = textEdit->textCursor().selectionStart();
+            selectionEnd = textEdit->textCursor().selectionEnd();
         }
     }
 
     ~SelectionChangedEmitter()
     {
-        if (textEditPrivate) {
-            if (((selectionStart != selectionEnd) != textEditPrivate->textCursor.hasSelection())
+        if (textEdit) {
+            const TextCursor &cursor = textEdit->textCursor();
+            if (((selectionStart != selectionEnd) != cursor.hasSelection())
                 || (selectionStart != selectionEnd
-                    && (selectionStart != textEditPrivate->textCursor.selectionStart()
-                        || selectionEnd != textEditPrivate->textCursor.selectionEnd()))) {
-                textEditPrivate->emitSelectionChanged();
+                    && (selectionStart != cursor.selectionStart()
+                        || selectionEnd != cursor.selectionEnd()))) {
+                QMetaObject::invokeMethod(textEdit, "selectionChanged");
             }
         }
     }
 private:
     int selectionStart, selectionEnd;
-    TextEditPrivate *textEditPrivate;
+    TextEdit *textEdit;
 };
 
 TextCursor::TextCursor()
@@ -101,6 +102,7 @@ void TextCursor::setSelection(int pos, int length) // can be negative
 void TextCursor::setPosition(int pos, MoveMode mode)
 {
     Q_ASSERT(!isNull());
+    d->overrideColumn = -1;
     if (pos < 0 || pos > d->document->documentSize()) {
         clearSelection();
         return;
@@ -108,7 +110,7 @@ void TextCursor::setPosition(int pos, MoveMode mode)
         return;
     }
 
-    SelectionChangedEmitter emitter(textEdit ? textEdit->d : 0);
+    SelectionChangedEmitter emitter(textEdit);
     detach();
     cursorChanged(false);
 
@@ -190,7 +192,6 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
 
     case End:
     case Start:
-        d->overrideColumn = -1;
         setPosition(op == TextCursor::Start ? 0 : d->document->documentSize(), mode);
         break;
 
@@ -220,7 +221,9 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
             d->overrideColumn = gotoCol;
             gotoCol = line.second.textLength();
         }
+        const int overrideColumn = d->overrideColumn;
         setPosition(line.first + gotoCol, mode);
+        d->overrideColumn = overrideColumn;
         break; }
 
     case EndOfLine:
@@ -361,7 +364,7 @@ void TextCursor::removeSelectedText()
     if (d->anchor == d->position)
         return;
 
-    SelectionChangedEmitter emitter(textEdit ? textEdit->d : 0);
+    SelectionChangedEmitter emitter(textEdit);
     detach();
     cursorChanged(false);
     const int min = qMin(d->anchor, d->position);
@@ -376,7 +379,7 @@ void TextCursor::clearSelection()
     Q_ASSERT(!isNull());
     if (hasSelection()) {
         detach();
-        SelectionChangedEmitter emitter(textEdit ? textEdit->d : 0);
+        SelectionChangedEmitter emitter(textEdit);
         d->anchor = d->position;
     }
 }

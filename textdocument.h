@@ -61,6 +61,7 @@ public:
 
     bool load(QIODevice *device, DeviceMode mode = Sparse);
     bool load(const QString &fileName, DeviceMode mode = Sparse);
+    void clear();
     DeviceMode deviceMode() const;
 
     void setText(const QString &text);

@@ -2,6 +2,7 @@
 #define TEXTDOCUMENT_P_H
 
 #include <QString>
+#include <QApplication>
 #include <QThread>
 #include <QIODevice>
 #include <QTime>
@@ -17,6 +18,18 @@ struct Chunk {
     Chunk *previous, *next;
     int size() const { return data.isEmpty() ? length : data.size(); }
     mutable int from, length; // Not used when all is loaded
+};
+
+class SectionManager : public QObject
+{
+    Q_OBJECT
+public:
+    static SectionManager *instance() { static SectionManager *inst = new SectionManager; return inst; }
+signals:
+    void sectionFormatChanged(Section *section);
+private:
+    SectionManager() : QObject(qApp) {}
+    friend class Section;
 };
 
 
@@ -81,6 +94,7 @@ public:
     void joinLastTwoCommands();
 
     void removeChunk(Chunk *c);
+    void chunkData(const Chunk *chunk, int pos, QChar *data);
     QString chunkData(const Chunk *chunk, int pos) const;
     // evil API. pos < 0 means don't cache
 
@@ -97,7 +111,8 @@ public:
     {
         return ch.isLetterOrNumber() || ch.isMark() || ch == QLatin1Char('_');
     }
-
+public slots:
+    void onDeviceDestroyed(QObject *o);
 signals:
     void undoRedoCommandInserted(DocumentCommand *cmd);
     void undoRedoCommandRemoved(DocumentCommand *cmd);

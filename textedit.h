@@ -113,7 +113,7 @@ protected:
     virtual void resizeEvent(QResizeEvent *e);
 private:
     TextEditPrivate *d;
-    friend TextLayout *qt_get_textLayout(TextEdit *edit);
+    friend class TextLayoutCacheManager;
     friend class TextEditPrivate;
     friend class TextCursor;
 };

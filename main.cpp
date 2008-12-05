@@ -27,14 +27,13 @@
 // ### document rather than line number since I don't know which line
 // ### we're on
 // ### TextCursor(const TextEdit *). Is this a good idea?
-// ### setter for QTextCharFormat in Sections? Does it work?
 // ### caching stuff is getting a little convoluted
 // ### what should TextDocument::read(documentSize + 1, 10) do? ASSERT?
 // ### should I allow to write in a formatted manner? currentTextFormat and all? Why not really.
 // ### consider using QTextBoundaryFinder for something
-// ### delayed textlayouting seems to cause issues with the autoscroll
 // ### look at all the isSpace() and see if they should be !isWord()
 // ### drag and drop
+// ### documentation
 
 
 class Highlighter : public SyntaxHighlighter
@@ -176,6 +175,7 @@ public:
         new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_E), textEdit, SLOT(ensureCursorVisible()));
         new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_L), this, SLOT(createSection()));
         new QShortcut(QKeySequence(QKeySequence::Close), this, SLOT(close()));
+        new QShortcut(QKeySequence(Qt::Key_F2), this, SLOT(changeSectionFormat()));
 
         QMenu *menu = menuBar()->addMenu("&File");
         menu->addAction("About textedit", this, SLOT(about()));
@@ -269,8 +269,28 @@ public slots:
             format.setFontUnderline(true);
             const int pos = cursor.selectionStart();
             const int size = cursor.selectionEnd() - pos;
-            textEdit->document()->insertSection(pos, size, format, cursor.selectedText());
+            Section *s = textEdit->document()->insertSection(pos, size, format, cursor.selectedText());
+            Q_ASSERT(s);
+            Q_ASSERT(!textEdit->document()->sections().isEmpty());
         }
+    }
+
+    void changeSectionFormat()
+    {
+        static bool first = true;
+        QTextCharFormat format;
+        format.setFontUnderline(true);
+        if (first) {
+            format.setForeground(Qt::white);
+            format.setBackground(Qt::blue);
+        } else {
+            format.setForeground(Qt::blue);
+        }
+        first = !first;
+        foreach(Section *s, textEdit->document()->sections()) {
+            s->setFormat(format);
+        }
+
     }
     void onSectionClicked(Section *section, const QPoint &pos)
     {

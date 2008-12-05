@@ -13,7 +13,6 @@
 #include <QTextCharFormat>
 #include <QVariant>
 
-
 Section::~Section()
 {
     if (d.document)
@@ -30,9 +29,7 @@ void Section::setFormat(const QTextCharFormat &format)
 {
     Q_ASSERT(d.document);
     d.format = format;
-    d.document->takeSection(this);
-    d.document->insertSection(d.position, d.size);
-    // ### kind of a hack
+    emit SectionManager::instance()->sectionFormatChanged(this);
 }
 
 //#define DEBUG_CACHE_HITS
@@ -79,9 +76,13 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
     d->documentSize = device->size();
     d->first = d->last = 0;
 
-    if (d->device && d->ownDevice)
-        delete d->device;
+    if (d->device) {
+        disconnect(d->device, SIGNAL(destroyed(QObject*)), d, SLOT(onDeviceDestroyed(QObject*)));
+        if (d->ownDevice)
+            delete d->device;
+    }
 
+    connect(device, SIGNAL(destroyed(QObject*)), d, SLOT(onDeviceDestroyed(QObject*)));
     d->ownDevice = false;
     d->device = device;
     d->deviceMode = mode;
@@ -152,6 +153,11 @@ bool TextDocument::load(const QString &fileName, DeviceMode mode)
             return false;
         }
     }
+}
+
+void TextDocument::clear()
+{
+    setText(QString());
 }
 
 QString TextDocument::read(int pos, int size) const
@@ -586,6 +592,10 @@ void TextDocument::takeSection(Section *section)
 
 QList<Section*> TextDocument::sections(int pos, int size, SectionOptions flags) const
 {
+    if (size == -1)
+        size = d->documentSize - pos;
+    if (pos == 0 && size == d->documentSize)
+        return d->sections;
     // binary search. Sections are sorted in order of position
     QList<Section*> ret;
     if (d->sections.isEmpty()) {
@@ -825,8 +835,11 @@ QString TextDocumentPrivate::chunkData(const Chunk *chunk, int chunkPos) const
         qDebug() << "chunkData hits" << ++hits << "misses" << misses;
 #endif
         return cachedChunkData;
-    } else if (chunk->from == -1 || !device) {
+    } else if (chunk->from == -1) {
         return chunk->data;
+    } else if (!device) {
+        // Can only happen if the device gets deleted behind our back when in Sparse mode
+        return QString().fill(QLatin1Char(' '), chunk->size());
     } else {
 #ifdef DEBUG_CACHE_HITS
         qDebug() << "chunkData hits" << hits << "misses" << ++misses;
@@ -924,8 +937,13 @@ QString TextDocumentPrivate::wordAt(int position, int *start) const
         }
     }
     TextDocumentIterator to(this, position);
-    while (to.hasNext() && isWord(to.next()))
-        ;
+    while (to.hasNext()) {
+        if (!isWord(to.next())) {
+            to.previous();
+            break;
+        }
+    }
+
     if (start)
         *start = from.position();
     return q->read(from.position(), to.position() - from.position());
@@ -951,5 +969,10 @@ void TextDocumentPrivate::joinLastTwoCommands()
     Q_ASSERT(undoRedoStack.size() >= 2);
     undoRedoStack.last()->joined = DocumentCommand::Backward;
     undoRedoStack.at(undoRedoStack.size() - 2)->joined = DocumentCommand::Forward;
+}
 
+void TextDocumentPrivate::onDeviceDestroyed(QObject *o)
+{
+    Q_ASSERT(o == device);
+    device = 0;
 }

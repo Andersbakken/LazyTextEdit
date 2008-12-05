@@ -45,9 +45,8 @@ public:
     static TextLayout *requestLayout(const TextCursor &cursor, int margin)
     {
         Q_ASSERT(cursor.document());
-        extern TextLayout *qt_get_textLayout(TextEdit *edit);
-        if (cursor.textEdit && match(cursor, qt_get_textLayout(cursor.textEdit), margin)) {
-            return qt_get_textLayout(cursor.textEdit);
+        if (cursor.textEdit && match(cursor, cursor.textEdit->d, margin)) {
+            return cursor.textEdit->d;
         }
 
         TextDocument *doc = cursor.document();
