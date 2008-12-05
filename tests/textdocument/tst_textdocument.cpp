@@ -218,6 +218,22 @@ void tst_TextDocument::save()
     buffer.close();
     buffer.open(QIODevice::ReadOnly);
     const QString buf = QTextStream(&buffer).readAll();
+//    if (doc.read(0, doc.documentSize()) != buf) {
+    if (docSaved != buf) {
+        QVERIFY(docSaved != buf);
+        QVERIFY(docSaved == doc.read(0, doc.documentSize()));
+        {
+            QFile file("buf");
+            file.open(QIODevice::WriteOnly);
+            QTextStream(&file) << buf;
+        }
+        {
+            QFile file("doc");
+            file.open(QIODevice::WriteOnly);
+            QTextStream(&file) << docSaved;
+        }
+    }
+//    QVERIFY(doc.read(0, doc.documentSize()) == buf);
     QVERIFY(docSaved == buf);
 }
 
