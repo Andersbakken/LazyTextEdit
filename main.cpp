@@ -34,6 +34,7 @@
 // ### look at all the isSpace() and see if they should be !isWord()
 // ### drag and drop
 // ### documentation
+// ### consider having extra textLayouts on each side of viewport for optimized scrolling. Could detect that condition
 
 
 class Highlighter : public SyntaxHighlighter

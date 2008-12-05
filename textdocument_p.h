@@ -63,24 +63,32 @@ struct TextDocumentPrivate : public QObject
     Q_OBJECT
 public:
     TextDocumentPrivate(TextDocument *doc)
-        : q(doc), first(0), last(0), cachedChunk(0), cachedChunkPos(-1), documentSize(0),
-        saveState(NotSaving), cachePos(-1), device(0), ownDevice(false),
+        : q(doc), first(0), last(0),
+#ifndef NO_TEXTDOCUMENT_CACHE
+        cachedChunk(0), cachedChunkPos(-1), cachePos(-1),
+#endif
+        documentSize(0),
+        saveState(NotSaving), device(0), ownDevice(false),
         deviceMode(TextDocument::Sparse), chunkSize(16384),
         undoRedoStackCurrent(0), undoRedoEnabled(true), ignoreUndoRedo(false)
     {
         first = last = new Chunk;
-        first->from = 0;
     }
 
     TextDocument *q;
     QSet<TextCursorSharedPrivate*> textCursors;
-    mutable Chunk *first, *last, *cachedChunk;
+    mutable Chunk *first, *last;
+
+#ifndef NO_TEXTDOCUMENT_CACHE
+    mutable Chunk *cachedChunk;
     mutable int cachedChunkPos;
     mutable QString cachedChunkData; // last uninstantiated chunk's read from file
-    int documentSize;
-    enum SaveState { NotSaving, Saving, AbortSave } saveState;
     mutable int cachePos;
     mutable QString cache; // results of last read(). Could span chunks
+#endif
+
+    int documentSize;
+    enum SaveState { NotSaving, Saving, AbortSave } saveState;
     QList<Section*> sections;
     QIODevice *device;
     bool ownDevice;
@@ -217,7 +225,7 @@ public:
         convert = on;
     }
 
-private:
+//private:
     const TextDocumentPrivate *doc;
     int pos;
     int offset;

@@ -9,7 +9,9 @@
 
 #include <QtTest/QtTest>
 
+#define private public
 #include <textdocument.h>
+#include <textdocument_p.h>
 QT_FORWARD_DECLARE_CLASS(TextDocument)
 
 //TESTED_CLASS=
@@ -40,6 +42,7 @@ private slots:
     void findQChar_data();
     void findQChar();
     void sections();
+    void iterator();
 };
 
 tst_TextDocument::tst_TextDocument()
@@ -291,7 +294,6 @@ void tst_TextDocument::undoRedo()
     doc.undo();
     QCOMPARE(initial, doc.read(0, doc.documentSize()));
     QVERIFY(doc.isRedoAvailable());
-
 }
 
 struct Command {
@@ -400,6 +402,17 @@ void tst_TextDocument::findQChar()
 }
 
 
+void tst_TextDocument::iterator()
+{
+    TextDocument doc;
+    doc.setChunkSize(100);
+    QVERIFY(doc.load("../../textedit.cpp", TextDocument::Sparse));
+    TextDocumentIterator it(doc.d, 0);
+    while (it.hasNext()) {
+        const QChar ch = doc.readCharacter(it.position() + 1);
+        QCOMPARE(it.next(), ch);
+    }
+}
 
 QTEST_MAIN(tst_TextDocument)
 #include "tst_textdocument.moc"

@@ -86,11 +86,13 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
     d->ownDevice = false;
     d->device = device;
     d->deviceMode = mode;
+#ifndef NO_TEXTDOCUMENT_CACHE
     d->cachedChunk = 0;
     d->cachedChunkPos = -1;
     d->cachedChunkData.clear();
     d->cachePos = -1;
     d->cache.clear();
+#endif
 
     switch (d->deviceMode) {
     case LoadAll: {
@@ -167,6 +169,7 @@ QString TextDocument::read(int pos, int size) const
         return QString();
     }
 
+#ifndef NO_TEXTDOCUMENT_CACHE
 #ifdef DEBUG_CACHE_HITS
     static int hits = 0;
     static int misses = 0;
@@ -179,6 +182,7 @@ QString TextDocument::read(int pos, int size) const
     }
 #ifdef DEBUG_CACHE_HITS
     qDebug() << "read hits" << hits << "misses" << ++misses;
+#endif
 #endif
 
     QString ret(size, '\0');
@@ -202,8 +206,10 @@ QString TextDocument::read(int pos, int size) const
         ret.truncate(written);
     }
     Q_ASSERT(!c || written == size);
+#ifndef NO_TEXTDOCUMENT_CACHE
     d->cachePos = pos;
     d->cache = ret;
+#endif
     return ret;
 }
 
@@ -311,9 +317,17 @@ TextCursor TextDocument::find(const QString &in, int pos, FindMode flags) const
     if (in.isEmpty())
         return TextCursor();
 
+
+    const bool reverse = flags & FindBackward;
+    if (pos == d->documentSize) {
+        if (!reverse)
+            return TextCursor();
+        --pos;
+    }
+
     const bool caseSensitive = flags & FindCaseSensitively;
     const bool wholeWords = flags & FindWholeWords;
-    const bool reverse = flags & FindBackward;
+
     // ### what if one searches for a string with non-word characters in it and FindWholeWords?
     const TextDocumentIterator::Direction direction = (reverse ? TextDocumentIterator::Left : TextDocumentIterator::Right);
     QString word = caseSensitive ? in : in.toLower();
@@ -323,13 +337,11 @@ TextCursor TextDocument::find(const QString &in, int pos, FindMode flags) const
             word[i] = tmp.at(word.size() - i - 1);
         }
     }
-    if (reverse && pos == d->documentSize)
-        --pos;
     TextDocumentIterator it(d, pos);
     if (!caseSensitive)
         it.setConvertToLowerCase(true);
 
-    bool ok;
+    bool ok = true;
     QChar ch = it.current();
     int wordIndex = 0;
     do {
@@ -382,7 +394,7 @@ TextCursor TextDocument::find(const QChar &chIn, int pos, FindMode flags) const
                                                  : TextDocumentIterator::Right);
 
     QChar c = it.current();
-    bool ok;
+    bool ok = true;
     do {
         if ((caseSensitive ? c : c.toLower()) == ch) {
             TextCursor cursor(this);
@@ -427,6 +439,7 @@ bool TextDocument::insert(int pos, const QString &ba)
     d->instantiateChunk(c);
     c->data.insert(offset, ba);
     d->documentSize += ba.size();
+#ifndef NO_TEXTDOCUMENT_CACHE
     if (pos <= d->cachePos) {
         d->cachePos += ba.size();
     } else if (pos < d->cachePos + d->cache.size()) {
@@ -436,6 +449,7 @@ bool TextDocument::insert(int pos, const QString &ba)
     if (d->cachedChunk && pos <= d->cachedChunkPos) {
         d->cachedChunkPos += ba.size();
     }
+#endif
     foreach(TextCursorSharedPrivate *cursor, d->textCursors) {
         if (cursor->position >= pos)
             cursor->position += ba.size();
@@ -527,6 +541,7 @@ void TextDocument::remove(int pos, int size)
     d->documentSize -= s;
     Q_ASSERT(size == 0);
 
+#ifndef NO_TEXTDOCUMENT_CACHE
     if (pos + size < d->cachePos) {
         d->cachePos -= size;
     } else if (pos <= d->cachePos + d->cache.size()) {
@@ -536,6 +551,7 @@ void TextDocument::remove(int pos, int size)
     if (pos + size < d->cachedChunkPos) {
         d->cachedChunkPos -= size;
     }
+#endif
     foreach(Section *section, sections(pos, -1)) {
         section->d.position -= size;
     }
@@ -675,6 +691,7 @@ QChar TextDocument::readCharacter(int pos) const
     if (pos == d->documentSize)
         return QChar();
 
+#ifndef NO_TEXTDOCUMENT_CACHE
 #ifdef DEBUG_CACHE_HITS
     static int hits = 0;
     static int misses = 0;
@@ -687,6 +704,7 @@ QChar TextDocument::readCharacter(int pos) const
     }
 #ifdef DEBUG_CACHE_HITS
     qDebug() << "readCharacter hits" << hits << "misses" << ++misses;
+#endif
 #endif
 
     int offset;
@@ -784,12 +802,14 @@ Chunk *TextDocumentPrivate::chunkAt(int p, int *offset) const
             *offset = last->size();
         return last;
     }
+#ifndef NO_TEXTDOCUMENT_CACHE
     Q_ASSERT(!cachedChunk || cachedChunkPos != -1);
     if (cachedChunk && p >= cachedChunkPos && p < cachedChunkPos + cachedChunkData.size()) {
         if (offset)
             *offset = p - cachedChunkPos;
         return cachedChunk;
     }
+#endif
     int pos = p;
     Chunk *c = first;
 
@@ -826,6 +846,7 @@ void TextDocumentPrivate::clearRedo()
 /* Evil double meaning of pos here. If it's -1 we don't cache it. */
 QString TextDocumentPrivate::chunkData(const Chunk *chunk, int chunkPos) const
 {
+#ifndef NO_TEXTDOCUMENT_CACHE
 #ifdef DEBUG_CACHE_HITS
     static int hits = 0;
     static int misses = 0;
@@ -835,24 +856,27 @@ QString TextDocumentPrivate::chunkData(const Chunk *chunk, int chunkPos) const
         qDebug() << "chunkData hits" << ++hits << "misses" << misses;
 #endif
         return cachedChunkData;
-    } else if (chunk->from == -1) {
+    } else
+#endif
+    if (chunk->from == -1) {
         return chunk->data;
     } else if (!device) {
         // Can only happen if the device gets deleted behind our back when in Sparse mode
         return QString().fill(QLatin1Char(' '), chunk->size());
     } else {
-#ifdef DEBUG_CACHE_HITS
-        qDebug() << "chunkData hits" << hits << "misses" << ++misses;
-#endif
         QTextStream ts(device);
         ts.seek(chunk->from);
         const QString data = ts.read(chunk->length);
+#ifndef NO_TEXTDOCUMENT_CACHE
+#ifdef DEBUG_CACHE_HITS
+        qDebug() << "chunkData hits" << hits << "misses" << ++misses;
+#endif
         if (chunkPos != -1) {
             cachedChunk = const_cast<Chunk*>(chunk);
             cachedChunkData = data;
             cachedChunkPos = chunkPos;
         }
-
+#endif
         return data;
     }
 }
@@ -862,6 +886,7 @@ void TextDocumentPrivate::instantiateChunk(Chunk *chunk)
     if (chunk->from == -1 || !device)
         return;
     chunk->data = chunkData(chunk, -1);
+#ifndef NO_TEXTDOCUMENT_CACHE
     // Don't want to cache this chunk since it's going away. If it
     // already was cached then sure, but otherwise don't
     if (chunk == cachedChunk) {
@@ -869,6 +894,7 @@ void TextDocumentPrivate::instantiateChunk(Chunk *chunk)
         cachedChunkPos = -1;
         cachedChunkData.clear();
     }
+#endif
     chunk->from = chunk->length = -1;
 }
 
@@ -885,11 +911,13 @@ void TextDocumentPrivate::removeChunk(Chunk *c)
     } else {
         c->next->previous = c->previous;
     }
+#ifndef NO_TEXTDOCUMENT_CACHE
     if (c == cachedChunk) {
         cachedChunk = 0;
         cachedChunkPos = -1;
         cachedChunkData.clear();
     }
+#endif
     delete c;
 }
 
@@ -973,6 +1001,6 @@ void TextDocumentPrivate::joinLastTwoCommands()
 
 void TextDocumentPrivate::onDeviceDestroyed(QObject *o)
 {
-    Q_ASSERT(o == device);
+    Q_ASSERT(o == device || !device);
     device = 0;
 }
