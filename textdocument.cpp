@@ -86,10 +86,12 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
     d->ownDevice = false;
     d->device = device;
     d->deviceMode = mode;
-#ifndef NO_TEXTDOCUMENT_CACHE
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
     d->cachedChunk = 0;
     d->cachedChunkPos = -1;
     d->cachedChunkData.clear();
+#endif
+#ifndef NO_TEXTDOCUMENT_READ_CACHE
     d->cachePos = -1;
     d->cache.clear();
 #endif
@@ -169,7 +171,7 @@ QString TextDocument::read(int pos, int size) const
         return QString();
     }
 
-#ifndef NO_TEXTDOCUMENT_CACHE
+#ifndef NO_TEXTDOCUMENT_READ_CACHE
 #ifdef DEBUG_CACHE_HITS
     static int hits = 0;
     static int misses = 0;
@@ -206,7 +208,7 @@ QString TextDocument::read(int pos, int size) const
         ret.truncate(written);
     }
     Q_ASSERT(!c || written == size);
-#ifndef NO_TEXTDOCUMENT_CACHE
+#ifndef NO_TEXTDOCUMENT_READ_CACHE
     d->cachePos = pos;
     d->cache = ret;
 #endif
@@ -439,13 +441,15 @@ bool TextDocument::insert(int pos, const QString &ba)
     d->instantiateChunk(c);
     c->data.insert(offset, ba);
     d->documentSize += ba.size();
-#ifndef NO_TEXTDOCUMENT_CACHE
+#ifndef NO_TEXTDOCUMENT_READ_CACHE
     if (pos <= d->cachePos) {
         d->cachePos += ba.size();
     } else if (pos < d->cachePos + d->cache.size()) {
         d->cachePos = -1;
         d->cache.clear();
     }
+#endif
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
     if (d->cachedChunk && pos <= d->cachedChunkPos) {
         d->cachedChunkPos += ba.size();
     }
@@ -541,13 +545,15 @@ void TextDocument::remove(int pos, int size)
     d->documentSize -= s;
     Q_ASSERT(size == 0);
 
-#ifndef NO_TEXTDOCUMENT_CACHE
+#ifndef NO_TEXTDOCUMENT_READ_CACHE
     if (pos + size < d->cachePos) {
         d->cachePos -= size;
     } else if (pos <= d->cachePos + d->cache.size()) {
         d->cachePos = -1;
         d->cache.clear();
     }
+#endif
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
     if (pos + size < d->cachedChunkPos) {
         d->cachedChunkPos -= size;
     }
@@ -691,7 +697,7 @@ QChar TextDocument::readCharacter(int pos) const
     if (pos == d->documentSize)
         return QChar();
 
-#ifndef NO_TEXTDOCUMENT_CACHE
+#ifndef NO_TEXTDOCUMENT_READ_CACHE
 #ifdef DEBUG_CACHE_HITS
     static int hits = 0;
     static int misses = 0;
@@ -802,7 +808,7 @@ Chunk *TextDocumentPrivate::chunkAt(int p, int *offset) const
             *offset = last->size();
         return last;
     }
-#ifndef NO_TEXTDOCUMENT_CACHE
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
     Q_ASSERT(!cachedChunk || cachedChunkPos != -1);
     if (cachedChunk && p >= cachedChunkPos && p < cachedChunkPos + cachedChunkData.size()) {
         if (offset)
@@ -846,7 +852,7 @@ void TextDocumentPrivate::clearRedo()
 /* Evil double meaning of pos here. If it's -1 we don't cache it. */
 QString TextDocumentPrivate::chunkData(const Chunk *chunk, int chunkPos) const
 {
-#ifndef NO_TEXTDOCUMENT_CACHE
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
 #ifdef DEBUG_CACHE_HITS
     static int hits = 0;
     static int misses = 0;
@@ -867,7 +873,7 @@ QString TextDocumentPrivate::chunkData(const Chunk *chunk, int chunkPos) const
         QTextStream ts(device);
         ts.seek(chunk->from);
         const QString data = ts.read(chunk->length);
-#ifndef NO_TEXTDOCUMENT_CACHE
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
 #ifdef DEBUG_CACHE_HITS
         qDebug() << "chunkData hits" << hits << "misses" << ++misses;
 #endif
@@ -886,7 +892,7 @@ void TextDocumentPrivate::instantiateChunk(Chunk *chunk)
     if (chunk->from == -1 || !device)
         return;
     chunk->data = chunkData(chunk, -1);
-#ifndef NO_TEXTDOCUMENT_CACHE
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
     // Don't want to cache this chunk since it's going away. If it
     // already was cached then sure, but otherwise don't
     if (chunk == cachedChunk) {
@@ -911,7 +917,7 @@ void TextDocumentPrivate::removeChunk(Chunk *c)
     } else {
         c->next->previous = c->previous;
     }
-#ifndef NO_TEXTDOCUMENT_CACHE
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
     if (c == cachedChunk) {
         cachedChunk = 0;
         cachedChunkPos = -1;
@@ -965,12 +971,7 @@ QString TextDocumentPrivate::wordAt(int position, int *start) const
         }
     }
     TextDocumentIterator to(this, position);
-    while (to.hasNext()) {
-        if (!isWord(to.next())) {
-            to.previous();
-            break;
-        }
-    }
+    while (to.hasNext() && isWord(to.next())) ;
 
     if (start)
         *start = from.position();

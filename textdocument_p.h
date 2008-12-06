@@ -10,6 +10,10 @@
 #include <QMutexLocker>
 #include <QMutex>
 #include "textdocument.h"
+#ifdef NO_TEXTDOCUMENT_CACHE
+#define NO_TEXTDOCUMENT_CHUNK_CACHE
+#define NO_TEXTDOCUMENT_READ_CACHE
+#endif
 
 struct Chunk {
     Chunk() : previous(0), next(0), from(-1), length(0) {}
@@ -64,8 +68,11 @@ struct TextDocumentPrivate : public QObject
 public:
     TextDocumentPrivate(TextDocument *doc)
         : q(doc), first(0), last(0),
-#ifndef NO_TEXTDOCUMENT_CACHE
-        cachedChunk(0), cachedChunkPos(-1), cachePos(-1),
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
+        cachedChunk(0), cachedChunkPos(-1),
+#endif
+#ifndef NO_TEXTDOCUMENT_READ_CACHE
+        cachePos(-1),
 #endif
         documentSize(0),
         saveState(NotSaving), device(0), ownDevice(false),
@@ -79,10 +86,12 @@ public:
     QSet<TextCursorSharedPrivate*> textCursors;
     mutable Chunk *first, *last;
 
-#ifndef NO_TEXTDOCUMENT_CACHE
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
     mutable Chunk *cachedChunk;
     mutable int cachedChunkPos;
     mutable QString cachedChunkData; // last uninstantiated chunk's read from file
+#endif
+#ifndef NO_TEXTDOCUMENT_READ_CACHE
     mutable int cachePos;
     mutable QString cache; // results of last read(). Could span chunks
 #endif
@@ -138,7 +147,8 @@ public:
         Q_ASSERT(doc);
         chunk = doc->chunkAt(p, &offset);
         Q_ASSERT(chunk);
-        chunkData = doc->chunkData(chunk, p + offset);
+        const int chunkPos = p - offset;
+        chunkData = doc->chunkData(chunk, chunkPos);
     }
 
     inline bool hasNext() const
