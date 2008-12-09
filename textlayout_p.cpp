@@ -180,6 +180,7 @@ void TextLayout::relayoutByGeometry(int height)
     const int max = viewportPosition + buffer.size() - bufferOffset(); // in document coordinates
     Q_ASSERT(viewportPosition == 0 || bufferReadCharacter(viewportPosition - 1) == '\n');
 
+    static const int extraLines = qMax(2, qgetenv("LAZYTEXTEDIT_EXTRA_LINES").toInt());
     int index = viewportPosition;
     while (index < max) {
         index = doLayout(index, l.isEmpty() ? 0 : &l);
@@ -190,7 +191,7 @@ void TextLayout::relayoutByGeometry(int height)
             if (visibleLines == -1) {
                 visibleLines = lines.size();
                 lastVisibleCharacter = index;
-            } else if (lines.size() >= visibleLines * 2) {
+            } else if (lines.size() >= visibleLines + extraLines) {
                 break;
             }
         }
