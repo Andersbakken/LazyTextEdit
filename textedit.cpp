@@ -16,9 +16,6 @@ QString logFileName;
 TextEdit::TextEdit(QWidget *parent)
     : QAbstractScrollArea(parent), d(new TextEditPrivate(this))
 {
-    viewport()->setAutoFillBackground(true);
-    setAutoFillBackground(true);
-
     viewport()->setCursor(Qt::IBeamCursor);
 #ifndef QT_NO_DEBUG
     if (logFileName.isEmpty())
@@ -51,10 +48,12 @@ TextEdit::TextEdit(QWidget *parent)
     d->undoAction->setEnabled(false);
     d->redoAction->setEnabled(false);
     setContextMenuPolicy(Qt::ActionsContextMenu);
-    setCursorVisible(true); // starts bsectioning
+    setCursorVisible(true); // starts blinking
     connect(this, SIGNAL(selectionChanged()), viewport(), SLOT(update()));
     connect(this, SIGNAL(selectionChanged()), d, SLOT(updateCopyAndCutEnabled()));
     // ### could optimize and figure out what area to update. Not sure if it's worth it
+
+    viewport()->setAttribute(Qt::WA_NoSystemBackground); // ### only here because I explicitly fill background in paintEvent because of weird bug
 }
 
 
