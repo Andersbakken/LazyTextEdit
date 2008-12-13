@@ -142,7 +142,6 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
 
 bool TextDocument::load(const QString &fileName, DeviceMode mode)
 {
-    qDebug() << fileName;
     if (mode == LoadAll) {
         QFile from(fileName);
         return from.open(QIODevice::ReadOnly) && load(&from, mode);
@@ -416,9 +415,9 @@ bool TextDocument::insert(int pos, const QString &ba)
     if (ba.isEmpty())
         return false;
 
-    if (Section *s = sectionAt(pos)) {
-        if (s->position() < pos)
-            return false;
+    Section *s = sectionAt(pos);
+    if (s && s->position() == pos) {
+        s = 0;
     }
 
     const bool undoAvailable = isUndoAvailable();
@@ -443,6 +442,9 @@ bool TextDocument::insert(int pos, const QString &ba)
     c = d->chunkAt(pos, &offset);
     d->instantiateChunk(c);
     c->data.insert(offset, ba);
+    if (s) {
+        s->d.size += ba.size();
+    }
     d->documentSize += ba.size();
 #ifndef NO_TEXTDOCUMENT_READ_CACHE
     if (pos <= d->cachePos) {
@@ -485,25 +487,7 @@ void TextDocument::remove(int pos, int size)
     if (size == 0)
         return;
 
-    const QList<Section*> lnks = sections(pos, size, IncludePartial);
-
-    bool changed = false;
-    foreach(Section *l, lnks) {
-        if (l->position() < pos) {
-            size += (pos - l->position());
-            pos = l->position();
-            changed = true;
-        }
-        if (l->position() + l->size() > pos + size) {
-            size += (l->position() + l->size()) - (pos + size);
-            changed = true;
-        }
-    }
-    if (changed) {
-        remove(pos, size);
-        return;
-    }
-    qDeleteAll(lnks); // presumably I need to be able to undo this
+    Section *section = sectionAt(pos);
 
     DocumentCommand *cmd = 0;
     const bool undoAvailable = isUndoAvailable();
@@ -530,6 +514,8 @@ void TextDocument::remove(int pos, int size)
         if (cursor->anchor >= pos)
             cursor->anchor -= qMin(size, cursor->anchor - pos);
     }
+    if (section && (section->d.size -= size) <= 0)
+        delete section; // ### undo ??
 
     const int s = size;
     while (size > 0) {

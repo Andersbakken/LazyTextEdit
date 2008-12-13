@@ -13,7 +13,6 @@
 // ### could refactor chunks so that I only have one and split when I need. Not sure if it's worth it. Would
 // ### need chunkData(int from = 0, int size = -1)
 // ### ensureCursorVisible(TextCursor) is not implemented
-// ### Undo section removal/adding
 // ### add a command line switch to randomly do stuff. Insert, move around etc n times to see if I can reproduce a crash. Allow input of seed
 // ### I still have some weird debris when scrolling in large documents
 // ### use tests from Qt. E.g. for QTextCursor
@@ -35,6 +34,7 @@
 // ### drag and drop
 // ### documentation
 // ### consider having extra textLayouts on each side of viewport for optimized scrolling. Could detect that condition
+// ### Undo section removal/adding. This is a mess
 
 
 class Highlighter : public SyntaxHighlighter
