@@ -142,6 +142,7 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
 
 bool TextDocument::load(const QString &fileName, DeviceMode mode)
 {
+    qDebug() << fileName;
     if (mode == LoadAll) {
         QFile from(fileName);
         return from.open(QIODevice::ReadOnly) && load(&from, mode);
@@ -415,8 +416,10 @@ bool TextDocument::insert(int pos, const QString &ba)
     if (ba.isEmpty())
         return false;
 
-    if (sectionAt(pos))
-        return false;
+    if (Section *s = sectionAt(pos)) {
+        if (s->position() < pos)
+            return false;
+    }
 
     const bool undoAvailable = isUndoAvailable();
     DocumentCommand *cmd = 0;
@@ -460,6 +463,10 @@ bool TextDocument::insert(int pos, const QString &ba)
         if (cursor->anchor >= pos)
             cursor->anchor += ba.size();
     }
+    foreach(Section *section, sections(pos, -1)) {
+        section->d.position += ba.size();
+    }
+
     emit charactersAdded(pos, ba.size());
     emit documentSizeChanged(d->documentSize);
     if (isUndoAvailable() != undoAvailable) {

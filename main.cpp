@@ -128,10 +128,12 @@ public:
                     events.append(new QKeyEvent(static_cast<QEvent::Type>(type), key,
                                                 static_cast<Qt::KeyboardModifiers>(modifiers),
                                                 text, isAutoRepeat, count));
+                    qDebug() << "creating keyevent" << text;
                 } else if (type == QEvent::Resize) {
                     QSize size;
                     ds >> size;
                     events.append(new QResizeEvent(size, QSize()));
+                    qDebug() << "creating resizeevent" << size;
                 } else {
                     Q_ASSERT(type == QEvent::MouseMove || type == QEvent::MouseButtonPress || type == QEvent::MouseButtonRelease);
                     QPoint pos;
@@ -146,6 +148,8 @@ public:
                                                   static_cast<Qt::MouseButton>(button),
                                                   static_cast<Qt::MouseButtons>(buttons),
                                                   static_cast<Qt::KeyboardModifiers>(modifiers)));
+                    qDebug() << "creating mouseEvent" << pos;
+
                 }
             }
             if (!events.isEmpty())
@@ -167,7 +171,9 @@ public:
         }
 
 //        textEdit->setSyntaxHighlighter(new Highlighter(textEdit));
-        textEdit->load(fileName, TextDocument::Sparse);
+        if (!textEdit->load(fileName, TextDocument::Sparse)) {
+            qDebug() << "Can't load" << fileName;
+        }
         lbl = new QLabel(w);
         connect(textEdit, SIGNAL(cursorPositionChanged(int)),
                 this, SLOT(onCursorPositionChanged(int)));
