@@ -20,10 +20,10 @@ class TextEditPrivate : public QObject, public TextLayout
 public:
     TextEditPrivate(TextEdit *qptr)
         : requestedScrollBarPosition(-1), lastRequestedScrollBarPosition(-1), cursorWidth(1),
-        sectionCount(0), maximumSizeCopy(50000), pendingTimeOut(-1), readOnly(false), cursorVisible(false),
-        blockScrollBarUpdate(false), updateScrollBarPageStepPending(true), ensureCursorVisiblePending(false),
-        copyAction(0), cutAction(0), pasteAction(0), undoAction(0), redoAction(0), selectAllAction(0),
-        sectionPressed(0), sectionHovered(0), pendingScrollBarUpdate(false)
+        sectionCount(0), maximumSizeCopy(50000), pendingTimeOut(-1), autoScrollLines(-1),
+        readOnly(false), cursorVisible(false), blockScrollBarUpdate(false), updateScrollBarPageStepPending(true),
+        ensureCursorVisiblePending(false), copyAction(0), cutAction(0), pasteAction(0), undoAction(0),
+        redoAction(0), selectAllAction(0), sectionPressed(0), sectionHovered(0), pendingScrollBarUpdate(false)
     {
         textEdit = qptr;
         connect(SectionManager::instance(), SIGNAL(sectionFormatChanged(Section *)),
@@ -36,11 +36,11 @@ public:
     void scrollLines(int lines);
     void timerEvent(QTimerEvent *e);
     void updateCursorPosition(const QPoint &pos);
-    bool atEnd() const { return viewportPosition == 0; }
-    bool atBeginning() const { return textEdit->verticalScrollBar()->value() == textEdit->verticalScrollBar()->maximum(); }
+    bool atBeginning() const { return viewportPosition == 0; }
+    bool atEnd() const { return textEdit->verticalScrollBar()->value() == textEdit->verticalScrollBar()->maximum(); }
 
     int requestedScrollBarPosition, lastRequestedScrollBarPosition, cursorWidth, sectionCount,
-        maximumSizeCopy, pendingTimeOut;
+        maximumSizeCopy, pendingTimeOut, autoScrollLines;
     bool readOnly, cursorVisible, blockScrollBarUpdate, updateScrollBarPageStepPending,
         ensureCursorVisiblePending;
     QBasicTimer autoScrollTimer, cursorBlinkTimer;

@@ -409,8 +409,14 @@ void TextEdit::mouseMoveEvent(QMouseEvent *e)
             return;
         }
         const int distance = qMax(r.top() - d->lastMouseMove.y(), d->lastMouseMove.y() - r.bottom());
-        const int timeout = qMax(5, 300 - distance);
         Q_ASSERT(distance != 0);
+        enum { MinimumTimeOut = 3 };
+        int timeout = qMax<int>(MinimumTimeOut, 100 - distance);
+        enum { Margin = 3 };
+        if (qApp->desktop()->screenGeometry(this).bottom() - mapToGlobal(d->lastMouseMove).y() <= Margin) {
+            timeout = MinimumTimeOut;
+        }
+        d->autoScrollLines = 1 + ((100 - timeout) / 30);
         if (d->autoScrollTimer.isActive()) {
             d->pendingTimeOut = timeout;
         } else {
@@ -858,7 +864,7 @@ void TextEdit::ensureCursorVisible()
         const QRect cursorRect = cursorBlockRect();
         if (!r.contains(cursorRect)) {
             if (r.intersects(cursorRect)) {
-                d->scrollLines(1);
+                d->scrollLines(d->autoScrollLines);
             } else {
                 d->updatePosition(d->textCursor.position(), TextLayout::Backward);
             }
@@ -1014,7 +1020,7 @@ void TextEditPrivate::timerEvent(QTimerEvent *e)
         }
         const QRect r = textEdit->viewport()->rect();
         Q_ASSERT(!r.contains(lastMouseMove));
-        enum { LineCount = 3 };
+        enum { LineCount = 1 };
         if (lastMouseMove.y() < r.top()) {
             scrollLines(-LineCount);
             relayoutByGeometry(r.height());
