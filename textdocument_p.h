@@ -75,9 +75,9 @@ public:
         cachePos(-1),
 #endif
         documentSize(0),
-        saveState(NotSaving), device(0), ownDevice(false),
+        saveState(NotSaving), device(0), ownDevice(false), modified(false),
         deviceMode(TextDocument::Sparse), chunkSize(16384),
-        undoRedoStackCurrent(0), undoRedoEnabled(true), ignoreUndoRedo(false)
+        undoRedoStackCurrent(0), modifiedIndex(-1), undoRedoEnabled(true), ignoreUndoRedo(false)
     {
         first = last = new Chunk;
     }
@@ -100,12 +100,12 @@ public:
     enum SaveState { NotSaving, Saving, AbortSave } saveState;
     QList<Section*> sections;
     QIODevice *device;
-    bool ownDevice;
+    bool ownDevice, modified;
     TextDocument::DeviceMode deviceMode;
     int chunkSize;
 
     QList<DocumentCommand*> undoRedoStack;
-    int undoRedoStackCurrent;
+    int undoRedoStackCurrent, modifiedIndex;
     bool undoRedoEnabled, ignoreUndoRedo;
 
     void joinLastTwoCommands();

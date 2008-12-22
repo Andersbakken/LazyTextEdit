@@ -137,6 +137,7 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
     }
     emit charactersAdded(0, d->documentSize);
     emit documentSizeChanged(d->documentSize);
+    setModified(true);
     return true;
 }
 
@@ -482,6 +483,7 @@ bool TextDocument::insert(int pos, const QString &ba)
 
     const bool undoAvailable = isUndoAvailable();
     DocumentCommand *cmd = 0;
+    const int oldUndoRedoStackCurrent = d->undoRedoStackCurrent;
     if (!d->ignoreUndoRedo && d->undoRedoEnabled) {
         d->clearRedo();
         if (!d->undoRedoStack.isEmpty()
@@ -536,6 +538,14 @@ bool TextDocument::insert(int pos, const QString &ba)
     }
     if (cmd)
         emit d->undoRedoCommandFinished(cmd);
+
+//     if (!d->ignoreUndoRedo && !d->modified) {
+//         const oldUndoRedoStackCurrent = d->undoRedoStackCurrent;
+
+//     if (doSetModified) {
+//         setModified(true);
+//     }
+
     return true;
 }
 
@@ -551,8 +561,13 @@ void TextDocument::remove(int pos, int size)
 
     DocumentCommand *cmd = 0;
     const bool undoAvailable = isUndoAvailable();
+    bool doSetModified = false;
     if (!d->ignoreUndoRedo && d->undoRedoEnabled) {
         d->clearRedo();
+        if (!d->modified) {
+            doSetModified = true;
+            d->modifiedIndex = d->undoRedoStackCurrent;
+        }
         if (!d->undoRedoStack.isEmpty()
             && d->undoRedoStack.last()->type == DocumentCommand::Removed
             && d->undoRedoStack.last()->position == pos + size) {
@@ -622,6 +637,9 @@ void TextDocument::remove(int pos, int size)
     }
     if (cmd)
         emit d->undoRedoCommandFinished(cmd);
+    if (doSetModified) {
+        setModified(false);
+    }
 }
 
 typedef QList<Section*>::iterator SectionIterator;
@@ -848,6 +866,27 @@ bool TextDocument::isRedoAvailable() const
     return d->undoRedoStackCurrent < d->undoRedoStack.size();
 }
 
+bool TextDocument::isModified() const
+{
+    return d->modified;
+}
+
+void TextDocument::setModified(bool modified)
+{
+    if (d->modified == modified)
+        return;
+
+    d->modified = modified;
+    if (!modified) {
+        d->modifiedIndex = d->undoRedoStackCurrent;
+    } else {
+        d->modifiedIndex = -1;
+    }
+
+    emit modificationChanged(modified);
+}
+
+
 // --- TextDocumentPrivate ---
 
 Chunk *TextDocumentPrivate::chunkAt(int p, int *offset) const
@@ -1006,6 +1045,8 @@ void TextDocumentPrivate::undoRedo(bool undo)
         emit q->undoAvailableChanged(!undoWasAvailable);
     if (redoWasAvailable != q->isRedoAvailable())
         emit q->redoAvailableChanged(!redoWasAvailable);
+    if (modified && modifiedIndex == undoRedoStackCurrent)
+        q->setModified(false);
 }
 
 QString TextDocumentPrivate::wordAt(int position, int *start) const

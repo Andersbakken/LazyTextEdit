@@ -202,6 +202,9 @@ public:
         l->addLayout(h);
 
         connect(textEdit, SIGNAL(sectionClicked(Section *, QPoint)), this, SLOT(onSectionClicked(Section *, QPoint)));
+
+        textEdit->viewport()->setAutoFillBackground(true);
+        connect(textEdit->document(), SIGNAL(modificationChanged(bool)), this, SLOT(onModificationChanged(bool)));
     }
     void closeEvent(QCloseEvent *e)
     {
@@ -220,6 +223,13 @@ public:
         QMainWindow::showEvent(e);
     }
 public slots:
+    void onModificationChanged(bool on)
+    {
+        QPalette pal = textEdit->viewport()->palette();
+        pal.setColor(textEdit->viewport()->backgroundRole(), on ? Qt::yellow : Qt::white);
+        textEdit->viewport()->setPalette(pal);
+    }
+
     void save()
     {
         textEdit->document()->save();

@@ -110,8 +110,8 @@ public:
     bool isUndoAvailable() const;
     bool isRedoAvailable() const;
 
-    bool isModified() const { return false; }
-    void setModified(bool modified) {}
+    bool isModified() const;
+    void setModified(bool modified);
 public slots:
     void undo();
     void redo();
