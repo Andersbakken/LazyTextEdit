@@ -481,9 +481,7 @@ bool TextEdit::readOnly() const
 void TextEdit::setReadOnly(bool rr)
 {
     d->readOnly = rr;
-    if (!rr) {
-        setCursorVisible(true);
-    }
+    setCursorVisible(!rr);
     d->pasteAction->setEnabled(!rr);
     d->cutAction->setEnabled(!rr);
 }
