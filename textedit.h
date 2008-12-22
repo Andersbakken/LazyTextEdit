@@ -55,9 +55,10 @@ public:
     void setCursorVisible(bool cc);
 
     QString selectedText() const;
-
-    void save(QIODevice *device);
     bool hasSelection() const;
+
+    bool save(QIODevice *device);
+    bool save(const QString &file);
 
     void insert(int pos, const QString &text);
     void remove(int from, int size);

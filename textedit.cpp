@@ -755,6 +755,17 @@ void TextEdit::selectAll()
     emit selectionChanged();
 }
 
+bool TextEdit::save(QIODevice *device)
+{
+    return d->document->save(device);
+}
+
+bool TextEdit::save(const QString &file)
+{
+    return d->document->save(file);
+}
+
+
 void TextEditPrivate::onDocumentSizeChanged(int size)
 {
     textEdit->verticalScrollBar()->setRange(0, size - 1);
@@ -1065,3 +1076,4 @@ void TextEditPrivate::onSectionFormatChanged(Section *section)
     }
     dirty(textEdit->viewport()->width());
 }
+
