@@ -765,6 +765,10 @@ bool TextEdit::save(const QString &file)
     return d->document->save(file);
 }
 
+bool TextEdit::save()
+{
+    return d->document->save();
+}
 
 void TextEditPrivate::onDocumentSizeChanged(int size)
 {

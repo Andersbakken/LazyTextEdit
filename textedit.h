@@ -58,6 +58,7 @@ public:
     bool hasSelection() const;
 
     bool save(QIODevice *device);
+    bool save();
     bool save(const QString &file);
 
     void insert(int pos, const QString &text);
