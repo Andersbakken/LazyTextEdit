@@ -202,7 +202,7 @@ void TextLayout::relayoutByGeometry(int height)
     }
 
 
-    layoutEnd = index;
+    layoutEnd = qMin(index, max);
     qDeleteAll(unusedTextLayouts);
     unusedTextLayouts.clear();
     Q_ASSERT(viewportPosition < layoutEnd ||
@@ -265,7 +265,7 @@ QTextLine TextLayout::lineForPosition(int pos, int *offsetInLine, int *lineIndex
     if (lineIndex)
         *lineIndex = -1;
 
-    if (pos < viewportPosition || pos > layoutEnd || textLayouts.isEmpty()) {
+    if (pos < viewportPosition || pos >= layoutEnd || textLayouts.isEmpty() || lines.isEmpty()) {
         return QTextLine();
     }
     for (int i=0; i<lines.size(); ++i) {

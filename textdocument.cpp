@@ -78,7 +78,7 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
 
     if (d->device) {
         disconnect(d->device, SIGNAL(destroyed(QObject*)), d, SLOT(onDeviceDestroyed(QObject*)));
-        if (d->ownDevice)
+        if (d->ownDevice && d->device != device) // this is done when saving to the same file
             delete d->device;
     }
 
@@ -221,8 +221,16 @@ bool TextDocument::save(const QString &file)
     return from.open(QIODevice::WriteOnly) && save(&from);
 }
 
+bool TextDocument::save()
+{
+    return d->device && save(d->device);
+}
+
+
 static bool isSameFile(const QIODevice *left, const QIODevice *right)
 {
+    if (left == right)
+        return true;
     if (const QFile *lf = qobject_cast<const QFile *>(left)) {
         if (const QFile *rf = qobject_cast<const QFile *>(right)) {
             return QFileInfo(*lf) == QFileInfo(*rf);
@@ -234,9 +242,60 @@ static bool isSameFile(const QIODevice *left, const QIODevice *right)
 bool TextDocument::save(QIODevice *device)
 {
     Q_ASSERT(device);
-    if (d->device == device || (d->device && isSameFile(d->device, device))) {
-        qWarning() << "This might not work when saving to the same file. Need to do that in a clever way somehow";
+    Q_ASSERT(d->device);
+    if (::isSameFile(d->device, device)) {
+        QTemporaryFile tmp(0);
+        if (!tmp.open())
+            return false;
+        if (save(&tmp)) {
+            Q_ASSERT(qobject_cast<QFile*>(device));
+            Q_ASSERT(qobject_cast<QFile*>(d->device));
+            d->device->close();
+            d->device->open(QIODevice::WriteOnly);
+            tmp.seek(0);
+            const int chunkSize = 128; //1024 * 16;
+            char chunk[chunkSize];
+            forever {
+                const qint64 read = tmp.read(chunk, chunkSize);
+                switch (read) {
+                case -1: return false;
+                case 0: return true;
+                default:
+                    if (d->device->write(chunk, read) != read) {
+                        return false;
+                    }
+                    break;
+                }
+            }
+            d->device->close();
+            d->device->open(QIODevice::ReadOnly);
+            if (d->deviceMode == Sparse) {
+                qDeleteAll(d->undoRedoStack);
+                d->undoRedoStack.clear();
+                d->undoRedoStackCurrent = 0;
+                d->cachedChunkPos = -1;
+                d->cachedChunk = 0;
+                d->cachedChunkData.clear();
+
+                Chunk *c = d->first;
+                int pos = 0;
+                while (c) {
+                    Q_ASSERT((c->from == -1) == (c->length == -1));
+                    if (c->from == -1) { // unload chunks from memory
+                        c->from = pos;
+                        c->length = c->data.size();
+                        c->data.clear();
+                    }
+                    pos += c->length;
+                    c = c->next;
+                }
+            }
+
+            return true;
+//            return load(d->device, d->deviceMode);
+        }
         return false;
+
     }
     Q_ASSERT(device);
     if (!device->isWritable() || !d->first) {
@@ -248,8 +307,8 @@ bool TextDocument::save(QIODevice *device)
     int written = 0;
     QTextStream ts(device);
     while (c) {
-        ts << c->data;
-        written += c->data.size();
+        ts << d->chunkData(c, written);
+        written += c->size();
         if (c != d->last) {
             const double part = qreal(written) / double(d->documentSize);
             emit saveProgress(int(part * 100.0));
@@ -262,6 +321,7 @@ bool TextDocument::save(QIODevice *device)
     }
     d->saveState = TextDocumentPrivate::NotSaving;
     emit saveProgress(100);
+
     return true;
 }
 int TextDocument::documentSize() const

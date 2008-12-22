@@ -111,7 +111,6 @@ public:
     void joinLastTwoCommands();
 
     void removeChunk(Chunk *c);
-    void chunkData(const Chunk *chunk, int pos, QChar *data);
     QString chunkData(const Chunk *chunk, int pos) const;
     // evil API. pos < 0 means don't cache
 

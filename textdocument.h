@@ -49,6 +49,7 @@ class TextDocument : public QObject
     Q_PROPERTY(int documentSize READ documentSize)
     Q_PROPERTY(int chunkSize READ chunkSize WRITE setChunkSize)
     Q_PROPERTY(bool undoRedoEnabled READ isUndoRedoEnabled WRITE setUndoRedoEnabled)
+    Q_PROPERTY(bool modified READ isModified WRITE setModified DESIGNABLE false)
     Q_ENUMS(DeviceMode)
 public:
     TextDocument(QObject *parent = 0);
@@ -69,6 +70,7 @@ public:
     QChar readCharacter(int index) const;
     bool save(const QString &file);
     bool save(QIODevice *device);
+    bool save();
     int documentSize() const;
 
     enum FindModeFlag {
@@ -86,9 +88,9 @@ public:
 
     QIODevice *device() const;
 
-    TextCursor find(const QRegExp &rx, int pos, FindMode flags = 0) const;
-    TextCursor find(const QString &ba, int pos, FindMode flags = 0) const;
-    TextCursor find(const QChar &ch, int pos, FindMode flags = 0) const;
+    TextCursor find(const QRegExp &rx, int pos = 0, FindMode flags = 0) const;
+    TextCursor find(const QString &ba, int pos = 0, FindMode flags = 0) const;
+    TextCursor find(const QChar &ch, int pos = 0, FindMode flags = 0) const;
     bool insert(int pos, const QString &ba);
     inline bool append(const QString &ba) { return insert(documentSize(), ba); }
     void remove(int pos, int size);
@@ -107,6 +109,9 @@ public:
 
     bool isUndoAvailable() const;
     bool isRedoAvailable() const;
+
+    bool isModified() const { return false; }
+    void setModified(bool modified) {}
 public slots:
     void undo();
     void redo();
@@ -121,6 +126,7 @@ signals:
     void documentSizeChanged(int size);
     void undoAvailableChanged(bool on);
     void redoAvailableChanged(bool on);
+    void modificationChanged(bool modified);
 private:
     TextDocumentPrivate *d;
     friend class TextEdit;

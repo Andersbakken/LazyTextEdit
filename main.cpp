@@ -68,7 +68,7 @@ public:
     MainWindow(QWidget *parent = 0)
         : QMainWindow(parent)
     {
-        QString fileName = "main.cpp";
+        QString fileName = "foo.cpp";
         bool replay = false;
         const QStringList list = QApplication::arguments().mid(1);
         for (int i=0; i<list.size(); ++i) {
@@ -184,6 +184,9 @@ public:
         new QShortcut(QKeySequence(QKeySequence::Close), this, SLOT(close()));
         new QShortcut(QKeySequence(Qt::Key_F2), this, SLOT(changeSectionFormat()));
 
+        new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_S), this, SLOT(save()));
+        new QShortcut(QKeySequence(Qt::ALT + Qt::Key_S), this, SLOT(saveAs()));
+
         QMenu *menu = menuBar()->addMenu("&File");
         menu->addAction("About textedit", this, SLOT(about()));
 
@@ -217,6 +220,17 @@ public:
         QMainWindow::showEvent(e);
     }
 public slots:
+    void save()
+    {
+        textEdit->document()->save();
+    }
+
+    void saveAs()
+    {
+        const QString str = QFileDialog::getSaveFileName(this, "Save as", ".");
+        if (!str.isEmpty())
+            textEdit->document()->save(str);
+    }
     void onFoo(int pos, int size)
     {
         textEdit->textCursor().setSelection(pos, size);
