@@ -179,12 +179,12 @@ QString TextDocument::read(int pos, int size) const
 #endif
     if (d->cachePos != -1 && pos >= d->cachePos && d->cache.size() - (pos - d->cachePos) >= size) {
 #ifdef DEBUG_CACHE_HITS
-        qDebug() << "read hits" << ++hits << "misses" << misses;
+        qWarning() << "read hits" << ++hits << "misses" << misses;
 #endif
         return d->cache.mid(pos - d->cachePos, size);
     }
 #ifdef DEBUG_CACHE_HITS
-    qDebug() << "read hits" << hits << "misses" << ++misses;
+    qWarning() << "read hits" << hits << "misses" << ++misses;
 #endif
 #endif
 
@@ -775,12 +775,12 @@ QChar TextDocument::readCharacter(int pos) const
 #endif
     if (pos >= d->cachePos && pos < d->cachePos + d->cache.size()) {
 #ifdef DEBUG_CACHE_HITS
-        qDebug() << "readCharacter hits" << ++hits << "misses" << misses;
+        qWarning() << "readCharacter hits" << ++hits << "misses" << misses;
 #endif
         return d->cache.at(pos - d->cachePos);
     }
 #ifdef DEBUG_CACHE_HITS
-    qDebug() << "readCharacter hits" << hits << "misses" << ++misses;
+    qWarning() << "readCharacter hits" << hits << "misses" << ++misses;
 #endif
 #endif
 
@@ -951,7 +951,7 @@ QString TextDocumentPrivate::chunkData(const Chunk *chunk, int chunkPos) const
 #endif
     if (chunk == cachedChunk) {
 #ifdef DEBUG_CACHE_HITS
-        qDebug() << "chunkData hits" << ++hits << "misses" << misses;
+        qWarning() << "chunkData hits" << ++hits << "misses" << misses;
 #endif
         return cachedChunkData;
     } else
@@ -967,7 +967,7 @@ QString TextDocumentPrivate::chunkData(const Chunk *chunk, int chunkPos) const
         const QString data = ts.read(chunk->length);
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
 #ifdef DEBUG_CACHE_HITS
-        qDebug() << "chunkData hits" << hits << "misses" << ++misses;
+        qWarning() << "chunkData hits" << hits << "misses" << ++misses;
 #endif
         if (chunkPos != -1) {
             cachedChunk = const_cast<Chunk*>(chunk);

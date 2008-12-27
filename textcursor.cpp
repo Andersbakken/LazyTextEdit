@@ -103,7 +103,7 @@ void TextCursor::setPosition(int pos, MoveMode mode)
 {
     Q_ASSERT(!isNull());
     d->overrideColumn = -1;
-    if (pos < 0 || pos >= d->document->documentSize()) {
+    if (pos < 0 || pos > d->document->documentSize()) {
         clearSelection();
         return;
     } else if (pos == d->position && (mode == KeepAnchor || d->anchor == d->position)) {

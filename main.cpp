@@ -68,7 +68,7 @@ public:
     MainWindow(QWidget *parent = 0)
         : QMainWindow(parent)
     {
-        QString fileName = "foo.cpp";
+        QString fileName = "main.cpp";
         bool replay = false;
         const QStringList list = QApplication::arguments().mid(1);
         for (int i=0; i<list.size(); ++i) {

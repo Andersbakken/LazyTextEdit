@@ -27,26 +27,27 @@ TextEdit::TextEdit(QWidget *parent)
     setDocument(new TextDocument(this));
     setViewportMargins(0, 0, 0, 0);
     struct {
-        QAction **action;
         QString text;
         const char *member;
+        QKeySequence::StandardKey key;
     } shortcuts[] = {
-        { &d->copyAction, tr("Copy"), SLOT(copy()) },
-        { &d->pasteAction, tr("Paste"), SLOT(paste()) },
-        { &d->cutAction, tr("Cut"), SLOT(cut()) },
-        { &d->undoAction, tr("Undo"), SLOT(undo()) },
-        { &d->redoAction, tr("Redo"), SLOT(redo()) },
-        { &d->selectAllAction, tr("Select All"), SLOT(selectAll()) },
-        { 0, QString(), 0 } };
-    for (int i=0; shortcuts[i].action; ++i) {
-        *shortcuts[i].action = new QAction(shortcuts[i].text, this);
-        connect(*shortcuts[i].action, SIGNAL(triggered(bool)), this, shortcuts[i].member);
-        addAction(*shortcuts[i].action);
+        { tr("Copy"), SLOT(copy()), QKeySequence::Copy },
+        { tr("Paste"), SLOT(paste()), QKeySequence::Paste },
+        { tr("Cut"), SLOT(cut()), QKeySequence::Cut },
+        { tr("Undo"), SLOT(undo()), QKeySequence::Undo },
+        { tr("Redo"), SLOT(redo()), QKeySequence::Redo },
+        { tr("Select All"), SLOT(selectAll()), QKeySequence::SelectAll },
+        { QString(), 0, QKeySequence::UnknownKey } };
+    for (int i=0; shortcuts[i].member; ++i) {
+        d->actions[i] = new QAction(shortcuts[i].text, this);
+        d->actions[i]->setShortcut(QKeySequence(shortcuts[i].key));
+        connect(d->actions[i], SIGNAL(triggered(bool)), this, shortcuts[i].member);
+        addAction(d->actions[i]);
     }
-    connect(this, SIGNAL(undoAvailableChanged(bool)), d->undoAction, SLOT(setEnabled(bool)));
-    connect(this, SIGNAL(redoAvailableChanged(bool)), d->redoAction, SLOT(setEnabled(bool)));
-    d->undoAction->setEnabled(false);
-    d->redoAction->setEnabled(false);
+    connect(this, SIGNAL(undoAvailableChanged(bool)), d->actions[UndoAction], SLOT(setEnabled(bool)));
+    connect(this, SIGNAL(redoAvailableChanged(bool)), d->actions[RedoAction], SLOT(setEnabled(bool)));
+    d->actions[UndoAction]->setEnabled(false);
+    d->actions[RedoAction]->setEnabled(false);
     setContextMenuPolicy(Qt::ActionsContextMenu);
     setCursorVisible(true); // starts blinking
     connect(this, SIGNAL(selectionChanged()), viewport(), SLOT(update()));
@@ -84,16 +85,7 @@ void TextEdit::ensureCursorVisible(const TextCursor &cursor, int linesMargin)
 
 QAction *TextEdit::action(ActionType type) const
 {
-    switch (type) {
-    case CopyAction: return d->copyAction;
-    case PasteAction: return d->pasteAction;
-    case CutAction: return d->cutAction;
-    case UndoAction: return d->undoAction;
-    case RedoAction: return d->redoAction;
-    case SelectAllAction: return d->selectAllAction;
-    }
-    Q_ASSERT(0);
-    return 0;
+    return d->actions[type];
 }
 
 /*!
@@ -253,10 +245,9 @@ void TextEdit::paintEvent(QPaintEvent *e)
     }
 
     QPainter p(viewport());
-    p.fillRect(rect(), Qt::white); // ### this is a weird bug where I
-                                   // ### get debris with large
-                                   // ### documents on the first and
-                                   // ### last visible textlayout
+    p.fillRect(rect(), viewport()->palette().brush(viewport()->backgroundRole()));
+    // ### this is a weird bug where I get debris with large documents
+    // ### on the first and last visible textlayout
     p.setFont(font());
     QVector<QTextLayout::FormatRange> selection;
     int textLayoutOffset = d->viewportPosition;
@@ -482,8 +473,8 @@ void TextEdit::setReadOnly(bool rr)
 {
     d->readOnly = rr;
     setCursorVisible(!rr);
-    d->pasteAction->setEnabled(!rr);
-    d->cutAction->setEnabled(!rr);
+    d->actions[PasteAction]->setEnabled(!rr);
+    d->actions[CutAction]->setEnabled(!rr);
 }
 
 int TextEdit::maximumSizeCopy() const
@@ -527,6 +518,10 @@ void TextEdit::changeEvent(QEvent *e)
 
 void TextEdit::keyPressEvent(QKeyEvent *e)
 {
+    if (d->readOnly) {
+        e->ignore();
+        return;
+    }
 #ifndef QT_NO_DEBUG
     if (doLog) {
         QFile file(logFileName);
@@ -535,27 +530,19 @@ void TextEdit::keyPressEvent(QKeyEvent *e)
         ds << int(e->type()) << e->key() << int(e->modifiers()) << e->text() << e->isAutoRepeat() << e->count();
     }
 #endif
-
-    struct {
-        QKeySequence::StandardKey key;
-        QAction *action;
-    } const keys[] = { { QKeySequence::Copy, d->copyAction },
-                       { QKeySequence::Paste, d->pasteAction },
-                       { QKeySequence::Cut, d->cutAction },
-                       { QKeySequence::Undo, d->undoAction },
-                       { QKeySequence::Redo, d->redoAction },
-                       { QKeySequence::SelectAll, d->selectAllAction },
-                       { QKeySequence::UnknownKey, 0 } };
-    for (int i=0; keys[i].action; ++i) {
-        if (keys[i].action && keys[i].action->isEnabled() && e->matches(keys[i].key)) {
-            keys[i].action->trigger();
+#if 0
+    for (int i=0; i<=SelectAllAction; ++i) {
+        QAction *action = d->actions[i];
+        if (d->actions[i]->isEnabled() && e->matches(action->shortcut())) {
+            d->actions[i]->trigger();
             e->accept();
             return;
         }
     }
+#endif
 
     Q_ASSERT(d->textCursor.textEdit == this);
-    if (d->cursorBlinkTimer.isActive() && d->textCursor.cursorMoveKeyEvent(e)) {
+    if (d->textCursor.cursorMoveKeyEvent(e)) {
         e->accept();
         return;
     } else if (d->readOnly) {
@@ -778,8 +765,9 @@ void TextEditPrivate::onDocumentSizeChanged(int size)
 
 void TextEditPrivate::updateCopyAndCutEnabled()
 {
-    copyAction->setEnabled(qAbs(textCursor.position() - textCursor.anchor()) <= maximumSizeCopy);
-    cutAction->setEnabled(copyAction->isEnabled());
+    const bool enable = qAbs(textCursor.position() - textCursor.anchor()) <= maximumSizeCopy;
+    actions[TextEdit::CopyAction]->setEnabled(enable);
+    actions[TextEdit::CutAction]->setEnabled(enable);
 }
 
 void TextEdit::setSyntaxHighlighter(SyntaxHighlighter *highlighter)

@@ -43,7 +43,8 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
     const QString string = buffer.mid(lineStart - bufferPosition, index - lineStart);
     Q_ASSERT(string.size() == index - lineStart);
     Q_ASSERT(!string.contains('\n'));
-    ++index; // for the newline
+    if (index < max)
+        ++index; // for the newline
     textLayout->setText(string);
 
     QList<QTextLayout::FormatRange> sectionFormats;
@@ -184,7 +185,7 @@ void TextLayout::relayoutByGeometry(int height)
     int index = viewportPosition;
     while (index < max) {
         index = doLayout(index, l.isEmpty() ? 0 : &l);
-        Q_ASSERT(document->readCharacter(index - 1) == '\n');
+        Q_ASSERT(index == max || document->readCharacter(index - 1) == '\n');
         Q_ASSERT(!textLayouts.isEmpty());
         const int y = int(textLayouts.last()->boundingRect().bottom());
         if (y >= height) {
