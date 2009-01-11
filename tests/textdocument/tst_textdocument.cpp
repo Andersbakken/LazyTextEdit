@@ -43,6 +43,7 @@ private slots:
     void findQChar();
     void sections();
     void iterator();
+    void modified();
 };
 
 tst_TextDocument::tst_TextDocument()
@@ -412,6 +413,29 @@ void tst_TextDocument::iterator()
         const QChar ch = doc.readCharacter(it.position() + 1);
         QCOMPARE(it.next(), ch);
     }
+}
+
+void tst_TextDocument::modified()
+{
+    TextDocument doc;
+    QCOMPARE(doc.isModified(), false);
+    doc.setText("foo bar");
+    QCOMPARE(doc.isModified(), false);
+    doc.insert(0, "1");
+    QCOMPARE(doc.isModified(), true);
+    doc.setModified(false);
+    QCOMPARE(doc.isModified(), false);
+    doc.remove(0, 1);
+    QCOMPARE(doc.isModified(), true);
+    doc.undo();
+    QCOMPARE(doc.isModified(), false);
+    doc.redo();
+    QCOMPARE(doc.isModified(), true);
+    doc.setModified(false);
+    QCOMPARE(doc.isModified(), false);
+    doc.undo();
+    QCOMPARE(doc.isModified(), true);
+
 }
 
 QTEST_MAIN(tst_TextDocument)

@@ -137,7 +137,7 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
     }
     emit charactersAdded(0, d->documentSize);
     emit documentSizeChanged(d->documentSize);
-    setModified(true);
+    setModified(false);
     return true;
 }
 
@@ -243,7 +243,6 @@ static bool isSameFile(const QIODevice *left, const QIODevice *right)
 bool TextDocument::save(QIODevice *device)
 {
     Q_ASSERT(device);
-    Q_ASSERT(d->device);
     if (::isSameFile(d->device, device)) {
         QTemporaryFile tmp(0);
         if (!tmp.open())
@@ -483,7 +482,6 @@ bool TextDocument::insert(int pos, const QString &ba)
 
     const bool undoAvailable = isUndoAvailable();
     DocumentCommand *cmd = 0;
-    const int oldUndoRedoStackCurrent = d->undoRedoStackCurrent;
     if (!d->ignoreUndoRedo && d->undoRedoEnabled) {
         d->clearRedo();
         if (!d->undoRedoStack.isEmpty()
@@ -492,12 +490,15 @@ bool TextDocument::insert(int pos, const QString &ba)
             d->undoRedoStack.last()->text += ba;
         } else {
             cmd = new DocumentCommand(DocumentCommand::Inserted, pos, ba);
+            if (!d->modified)
+                d->modifiedIndex = d->undoRedoStackCurrent;
             emit d->undoRedoCommandInserted(cmd);
             d->undoRedoStack.append(cmd);
             ++d->undoRedoStackCurrent;
             Q_ASSERT(d->undoRedoStackCurrent == d->undoRedoStack.size());
         }
     }
+    d->modified = true;
 
     Chunk *c;
     int offset;
@@ -539,13 +540,6 @@ bool TextDocument::insert(int pos, const QString &ba)
     if (cmd)
         emit d->undoRedoCommandFinished(cmd);
 
-//     if (!d->ignoreUndoRedo && !d->modified) {
-//         const oldUndoRedoStackCurrent = d->undoRedoStackCurrent;
-
-//     if (doSetModified) {
-//         setModified(true);
-//     }
-
     return true;
 }
 
@@ -561,13 +555,8 @@ void TextDocument::remove(int pos, int size)
 
     DocumentCommand *cmd = 0;
     const bool undoAvailable = isUndoAvailable();
-    bool doSetModified = false;
     if (!d->ignoreUndoRedo && d->undoRedoEnabled) {
         d->clearRedo();
-        if (!d->modified) {
-            doSetModified = true;
-            d->modifiedIndex = d->undoRedoStackCurrent;
-        }
         if (!d->undoRedoStack.isEmpty()
             && d->undoRedoStack.last()->type == DocumentCommand::Removed
             && d->undoRedoStack.last()->position == pos + size) {
@@ -575,13 +564,15 @@ void TextDocument::remove(int pos, int size)
             d->undoRedoStack.last()->position -= size;
         } else {
             cmd = new DocumentCommand(DocumentCommand::Removed, pos, read(pos, size));
+            if (!d->modified)
+                d->modifiedIndex = d->undoRedoStackCurrent;
             emit d->undoRedoCommandInserted(cmd);
             d->undoRedoStack.append(cmd);
             ++d->undoRedoStackCurrent;
             Q_ASSERT(d->undoRedoStackCurrent == d->undoRedoStack.size());
         }
     }
-
+    d->modified = true;
 
     foreach(TextCursorSharedPrivate *cursor, d->textCursors) {
         if (cursor->position >= pos)
@@ -637,9 +628,6 @@ void TextDocument::remove(int pos, int size)
     }
     if (cmd)
         emit d->undoRedoCommandFinished(cmd);
-    if (doSetModified) {
-        setModified(false);
-    }
 }
 
 typedef QList<Section*>::iterator SectionIterator;
