@@ -1025,8 +1025,8 @@ void TextDocumentPrivate::undoRedo(bool undo)
     emit undoRedoCommandTriggered(cmd, undo);
     ignoreUndoRedo = was;
 
-    if ((cmd->joined == DocumentCommand::Backward && undo)
-        || (cmd->joined == DocumentCommand::Forward && !undo)) {
+    if ((cmd->joinStatus == DocumentCommand::Backward && undo)
+        || (cmd->joinStatus == DocumentCommand::Forward && !undo)) {
         undoRedo(undo);
     }
     if (undoWasAvailable != q->isUndoAvailable())
@@ -1078,8 +1078,8 @@ void TextDocumentPrivate::joinLastTwoCommands()
 {
     Q_ASSERT(!q->isRedoAvailable());
     Q_ASSERT(undoRedoStack.size() >= 2);
-    undoRedoStack.last()->joined = DocumentCommand::Backward;
-    undoRedoStack.at(undoRedoStack.size() - 2)->joined = DocumentCommand::Forward;
+    undoRedoStack.last()->joinStatus = DocumentCommand::Backward;
+    undoRedoStack.at(undoRedoStack.size() - 2)->joinStatus = DocumentCommand::Forward;
 }
 
 void TextDocumentPrivate::onDeviceDestroyed(QObject *o)

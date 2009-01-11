@@ -46,18 +46,18 @@ struct DocumentCommand {
     };
 
     DocumentCommand(Type t, int pos = -1, const QString &string = QString())
-        : type(t), position(pos), text(string), joined(Not)
+        : type(t), position(pos), text(string), joinStatus(NoJoin)
     {}
 
     const Type type;
     int position;
     QString text;
 
-    enum Joined {
-        Not,
+    enum JoinStatus {
+        NoJoin,
         Forward,
         Backward
-    } joined;
+    } joinStatus;
 };
 
 struct Section;
