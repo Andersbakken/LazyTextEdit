@@ -8,7 +8,7 @@
 #include "textedit.h"
 
 // ### TODO ###
-// ### Line break. Could vastly simplify textlayout if not breaking lines
+// ### Line break. Could vastly simplify textlayout if not breaking lines.
 // ### saving to same file. Need something there.
 // ### could refactor chunks so that I only have one and split when I need. Not sure if it's worth it. Would
 // ### need chunkData(int from = 0, int size = -1). The current approach makes caching easier since I can now cache an entire chunk.
@@ -16,7 +16,6 @@
 // ### add a command line switch to randomly do stuff. Insert, move around etc n times to see if I can reproduce a crash. Allow input of seed
 // ### I still have some weird debris when scrolling in large documents
 // ### use tests from Qt. E.g. for QTextCursor
-// ### should write more tests that ensure that TextDocument::sections() is correct with multiple sections in the list
 // ### need to protect against undo with huge amounts of text in it. E.g. select all and delete. MsgBox asking?
 // ### maybe refactor updatePosition so it can handle the margins usecase that textcursor needs.
 // ### could keep undo/redo history in the textcursor and have an api on the cursor.
