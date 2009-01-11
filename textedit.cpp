@@ -55,6 +55,8 @@ TextEdit::TextEdit(QWidget *parent)
     // ### could optimize and figure out what area to update. Not sure if it's worth it
 
     viewport()->setAttribute(Qt::WA_NoSystemBackground); // ### only here because I explicitly fill background in paintEvent because of weird bug
+    viewport()->setAttribute(Qt::WA_OpaquePaintEvent); // ### only here because I explicitly fill background in paintEvent because of weird bug
+
 }
 
 
