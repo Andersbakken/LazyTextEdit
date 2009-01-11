@@ -355,7 +355,7 @@ void TextEdit::mouseDoubleClickEvent(QMouseEvent *e)
         const int pos = textPositionAt(e->pos());
         if (pos == d->textCursor.position()) {
             d->tripleClickTimer.start(qApp->doubleClickInterval(), d);
-            if (!d->textCursor.cursorCharacter().isSpace()) { // ### this is not quite right
+            if (TextDocumentPrivate::isWord(d->textCursor.cursorCharacter())) { // ### this is not quite right
                 d->textCursor.movePosition(TextCursor::StartOfWord);
                 d->textCursor.movePosition(TextCursor::EndOfWord, TextCursor::KeepAnchor);
                 return;
