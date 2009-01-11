@@ -11,7 +11,7 @@
 // ### Line break. Could vastly simplify textlayout if not breaking lines
 // ### saving to same file. Need something there.
 // ### could refactor chunks so that I only have one and split when I need. Not sure if it's worth it. Would
-// ### need chunkData(int from = 0, int size = -1)
+// ### need chunkData(int from = 0, int size = -1). The current approach makes caching easier since I can now cache an entire chunk.
 // ### ensureCursorVisible(TextCursor) is not implemented
 // ### add a command line switch to randomly do stuff. Insert, move around etc n times to see if I can reproduce a crash. Allow input of seed
 // ### I still have some weird debris when scrolling in large documents
@@ -30,7 +30,6 @@
 // ### what should TextDocument::read(documentSize + 1, 10) do? ASSERT?
 // ### should I allow to write in a formatted manner? currentTextFormat and all? Why not really.
 // ### consider using QTextBoundaryFinder for something
-// ### look at all the isSpace() and see if they should be !isWord()
 // ### drag and drop
 // ### documentation
 // ### consider having extra textLayouts on each side of viewport for optimized scrolling. Could detect that condition
