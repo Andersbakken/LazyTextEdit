@@ -99,10 +99,11 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
     switch (d->deviceMode) {
     case LoadAll: {
         device->seek(0);
+        QTextStream ts(device);
         Chunk *current = 0;
         do {
             Chunk *c = new Chunk;
-            c->data = device->read(d->chunkSize);
+            c->data = ts.read(d->chunkSize);
             if (current) {
                 current->next = c;
                 c->previous = current;
@@ -110,7 +111,7 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
                 d->first = c;
             }
             current = c;
-        } while (!device->atEnd());
+        } while (!ts.atEnd());
 
         d->last = current;
         break; }
@@ -1084,6 +1085,7 @@ void TextDocumentPrivate::joinLastTwoCommands()
 
 void TextDocumentPrivate::onDeviceDestroyed(QObject *o)
 {
+    Q_UNUSED(o);
     Q_ASSERT(o == device || !device);
     device = 0;
 }
