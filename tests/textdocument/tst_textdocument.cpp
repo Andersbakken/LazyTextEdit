@@ -58,10 +58,12 @@ tst_TextDocument::~tst_TextDocument()
 static const int chunkSizes[] = { -1, /* default */ 1000, 100, 10, 0 };
 void tst_TextDocument::readCheck_data()
 {
+    QTest::addColumn<QString>("fileName");
     QTest::addColumn<int>("deviceMode");
     QTest::addColumn<int>("chunkSize");
     QTest::addColumn<bool>("useIODevice");
 
+    static const char *fileNames[] = { /*"tst_textdocument.cpp", */"unicode.txt", 0 };
     struct {
         const char *name;
         int deviceMode;
@@ -69,11 +71,19 @@ void tst_TextDocument::readCheck_data()
                   { "Sparse", TextDocument::Sparse },
                   { 0, -1 } };
 
-    for (int i=0; chunkSizes[i] != 0; ++i) {
-        for (int j=0; modes[j].name; ++j) {
-            for (int k=0; k<2; ++k) {
-                QTest::newRow(QString("%0 %1 %2").arg(modes[j].name).arg(chunkSizes[i]).arg(bool(k)).toLatin1().constData())
-                    << modes[j].deviceMode << chunkSizes[i] << bool(k);
+    for (int f=0; fileNames[f]; ++f) {
+        for (int i=0; chunkSizes[i] != 0; ++i) {
+            for (int j=0; modes[j].name; ++j) {
+                for (int k=0; k<2; ++k) {
+                    QTest::newRow(QString("%0 %1 %2 %3").
+                                  arg(QString::fromLatin1(fileNames[f])).
+                                  arg(modes[j].name).arg(chunkSizes[i]).
+                                  arg(bool(k)).toLatin1().constData())
+                        << QString::fromLatin1(fileNames[f])
+                        << modes[j].deviceMode
+                        << chunkSizes[i]
+                        << bool(k);
+                }
             }
         }
     }
@@ -81,12 +91,13 @@ void tst_TextDocument::readCheck_data()
 
 void tst_TextDocument::readCheck()
 {
+    QFETCH(QString, fileName);
     QFETCH(int, deviceMode);
     QFETCH(int, chunkSize);
     QFETCH(bool, useIODevice);
     TextDocument doc;
-    QFile file("tst_textdocument.cpp");
-    QFile file2(useIODevice ? file.fileName() : QString());
+    QFile file(fileName);
+    QFile file2(useIODevice ? fileName : QString());
     QVERIFY(file.open(QIODevice::ReadOnly));
     if (useIODevice)
         QVERIFY(file2.open(QIODevice::ReadOnly));
@@ -98,15 +109,35 @@ void tst_TextDocument::readCheck()
         QVERIFY(doc.load(file.fileName(), TextDocument::DeviceMode(deviceMode)));
     }
     static const int sizes[] = { 1, 100, -1 };
-    QTextStream ts(&file);
-    for (int i=0; sizes[i] != -1; ++i) {
-        for (int j=0; !ts.atEnd(); j+=sizes[i]) {
-            const QString dr = doc.read(j, sizes[i]);
 
-            QCOMPARE(ts.read(sizes[i]), dr);
+    const QString fileData = QTextStream(&file).readAll();
+    QCOMPARE(fileData.size(), doc.documentSize());
+    for (int i=0; sizes[i] != -1; ++i) {
+        for (int j=0; j<fileData.size(); j+=sizes[i]) {
+            const int max = qMin(sizes[i], doc.documentSize() - j);
+            const QString dr = doc.read(j, max);
+            QCOMPARE(dr.size(), max);
+
+            const QString fromTs = fileData.mid(j, max);
+            QCOMPARE(dr.size(), fromTs.size());
+//             if (fromTs != dr) {
+//                 qDebug() << fromTs.size() << dr.size()
+//                          << fromTs.startsWith(dr)
+//                          << dr.startsWith(fromTs)
+//                          << sizes[i] << j << doc.documentSize();
+//                 for (int k=0; k<dr.size(); ++k) {
+//                     if (dr.at(k) != fromTs.at(k)) {
+//                         qDebug() << k << "is different" <<
+//                             dr.at(k).row() << dr.at(k).cell() << fromTs.at(k).row() << fromTs.at(k).cell();
+//                     }
+//                 }
+
+
+//                 exit(0);
+//             }
+            QCOMPARE(fromTs, dr);
             QCOMPARE(dr.at(0), doc.readCharacter(j));
         }
-        file.seek(0);
     }
 }
 
