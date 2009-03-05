@@ -192,7 +192,7 @@ void tst_TextDocument::setText()
 {
     QString ba;
     const QString line("abcdefghijklmnopqrstuvwxyz\n");
-    for (int i=0; i<100; ++i) {
+    for (int i=0; i<2; ++i) {
         ba.append(line);
     }
 
@@ -202,7 +202,7 @@ void tst_TextDocument::setText()
         doc.setChunkSize(chunkSize);
     doc.setText(ba);
 
-    QCOMPARE(ba, doc.read(0, doc.documentSize()));
+    QCOMPARE(doc.read(0, doc.documentSize()), ba);
 }
 
 void tst_TextDocument::save()
