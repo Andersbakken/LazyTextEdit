@@ -2,7 +2,6 @@
 #include "textcursor.h"
 #include "textcursor_p.h"
 #include "textdocument_p.h"
-#include <QDebug>
 #include <QBuffer>
 #include <QObject>
 #include <QString>

@@ -98,7 +98,9 @@ public:
                 qWarning("Can't open '%s' for reading", qPrintable(fileName));
                 exit(1);
             }
+#ifndef QT_NO_DEBUG_STREAM
             qDebug() << "replaying" << fileName;
+#endif
 #ifndef QT_NO_DEBUG
             if (add) {
                 extern QString logFileName;
@@ -126,12 +128,16 @@ public:
                     events.append(new QKeyEvent(static_cast<QEvent::Type>(type), key,
                                                 static_cast<Qt::KeyboardModifiers>(modifiers),
                                                 text, isAutoRepeat, count));
+#ifndef QT_NO_DEBUG_STREAM
                     qDebug() << "creating keyevent" << text;
+#endif
                 } else if (type == QEvent::Resize) {
                     QSize size;
                     ds >> size;
                     events.append(new QResizeEvent(size, QSize()));
+#ifndef QT_NO_DEBUG_STREAM
                     qDebug() << "creating resizeevent" << size;
+#endif
                 } else {
                     Q_ASSERT(type == QEvent::MouseMove || type == QEvent::MouseButtonPress || type == QEvent::MouseButtonRelease);
                     QPoint pos;
@@ -146,7 +152,9 @@ public:
                                                   static_cast<Qt::MouseButton>(button),
                                                   static_cast<Qt::MouseButtons>(buttons),
                                                   static_cast<Qt::KeyboardModifiers>(modifiers)));
+#ifndef QT_NO_DEBUG_STREAM
                     qDebug() << "creating mouseEvent" << pos;
+#endif
 
                 }
             }
@@ -170,7 +178,9 @@ public:
 
 //        textEdit->setSyntaxHighlighter(new Highlighter(textEdit));
         if (!textEdit->load(fileName, TextDocument::Sparse)) {
+#ifndef QT_NO_DEBUG_STREAM
             qDebug() << "Can't load" << fileName;
+#endif
         }
         lbl = new QLabel(w);
         connect(textEdit, SIGNAL(cursorPositionChanged(int)),
@@ -323,7 +333,9 @@ public slots:
     }
     void onSectionClicked(Section *section, const QPoint &pos)
     {
+#ifndef QT_NO_DEBUG_STREAM
         qDebug() << section->text() << section->data() << pos;
+#endif
     }
     void onScrollBarValueChanged()
     {

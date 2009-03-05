@@ -6,9 +6,9 @@
 #include <QThread>
 #include <QIODevice>
 #include <QTime>
-#include <QDebug>
 #include <QMutexLocker>
 #include <QMutex>
+#include <QSet>
 #include "textdocument.h"
 #ifdef NO_TEXTDOCUMENT_CACHE
 #define NO_TEXTDOCUMENT_CHUNK_CACHE

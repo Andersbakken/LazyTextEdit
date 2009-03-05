@@ -331,7 +331,7 @@ void TextLayout::updatePosition(int pos, Direction direction)
     }
 }
 
-
+#ifndef QT_NO_DEBUG_STREAM
 QDebug &operator<<(QDebug &str, const QTextLine &line)
 {
     if (!line.isValid()) {
@@ -344,3 +344,5 @@ QDebug &operator<<(QDebug &str, const QTextLine &line)
                 << "position" << line.position();
     return str;
 }
+
+#endif

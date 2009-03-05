@@ -9,11 +9,15 @@
 #include <QSize>
 #include <QTextLine>
 #include <QKeyEvent>
+#ifndef QT_NO_DEBUG_STREAM
 #include <QDebug>
+#endif
 #include "textdocument.h"
 #include "syntaxhighlighter.h"
 
+#ifndef QT_NO_DEBUG_STREAM
 QDebug &operator<<(QDebug &str, const QTextLine &line);
+#endif
 
 class TextEdit;
 class TextLayout

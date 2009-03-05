@@ -205,10 +205,12 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
             return false;
         // ### must have a real textLine for current pos, what about if at documentSize?
         if (op == Down && index + 1 >= textLayout->lines.size()) {
+#ifndef QT_NO_DEBUG_STREAM
             if (d->position + curLine.textLength() + 1 < d->document->documentSize()) {
                 qDebug() << d->position << curLine.textLength() << d->document->documentSize()
                          << "lets see here" << (textLayout == textEdit->d);
             }
+#endif
             Q_ASSERT(d->position + curLine.textLength() + 1 >= d->document->documentSize());
             return true;
         } else if (op == Up && index == 0) {
