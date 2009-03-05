@@ -74,6 +74,8 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
     }
 
     d->documentSize = device->size();
+    if (d->documentSize <= d->chunkSize && mode == Sparse)
+        mode = LoadAll;
     d->first = d->last = 0;
 
     if (d->device) {
@@ -101,9 +103,11 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
         device->seek(0);
         QTextStream ts(device);
         Chunk *current = 0;
+        d->documentSize = 0; // in case of unicode
         do {
             Chunk *c = new Chunk;
             c->data = ts.read(d->chunkSize);
+            d->documentSize += c->data.size();
             if (current) {
                 current->next = c;
                 c->previous = current;
