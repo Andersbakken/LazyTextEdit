@@ -44,6 +44,7 @@ private slots:
     void sections();
     void iterator();
     void modified();
+    void unicode();
 };
 
 tst_TextDocument::tst_TextDocument()
@@ -97,11 +98,12 @@ void tst_TextDocument::readCheck()
         QVERIFY(doc.load(file.fileName(), TextDocument::DeviceMode(deviceMode)));
     }
     static const int sizes[] = { 1, 100, -1 };
+    QTextStream ts(&file);
     for (int i=0; sizes[i] != -1; ++i) {
-        for (int j=0; !file.atEnd(); j+=sizes[i]) {
+        for (int j=0; !ts.atEnd(); j+=sizes[i]) {
             const QString dr = doc.read(j, sizes[i]);
 
-            QCOMPARE(QString::fromLatin1(file.read(sizes[i])), dr);
+            QCOMPARE(ts.read(sizes[i]), dr);
             QCOMPARE(dr.at(0), doc.readCharacter(j));
         }
         file.seek(0);
@@ -440,8 +442,14 @@ void tst_TextDocument::modified()
     QCOMPARE(doc.isModified(), false);
     doc.undo();
     QCOMPARE(doc.isModified(), true);
+}
+
+void tst_TextDocument::unicode()
+{
+
 
 }
+
 
 QTEST_MAIN(tst_TextDocument)
 #include "tst_textdocument.moc"
