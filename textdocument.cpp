@@ -538,6 +538,11 @@ bool TextDocument::insert(int pos, const QString &ba)
 
     if (d->hasChunksWithLineNumbers) {
         const int extraLines = ba.count(QLatin1Char('\n'));
+#ifdef TEXTDOCUMENT_LINENUMBER_CACHE
+        c->lineNumbers.clear();
+        // ### could be optimized
+#endif
+
         if (extraLines != 0) {
             c = c->next;
             while (c) {
@@ -635,8 +640,13 @@ void TextDocument::remove(int pos, int size)
             const int removed = qMin(size, c->size() - offset);
             if (d->hasChunksWithLineNumbers) {
                 newLinesRemoved += ::count(c->data, offset, removed, QLatin1Char('\n'));
+#ifdef TEXTDOCUMENT_LINENUMBER_CACHE
+                chunk->lineNumbers.clear();
+                // Could clear only the parts that need to be cleared really
+#endif
             }
             c->data.remove(offset, removed);
+
             size -= removed;
         }
     }
@@ -937,7 +947,7 @@ int TextDocument::lineNumber(int position) const
     int offset;
     Chunk *c = d->chunkAt(position, &offset);
     d->updateChunkLineNumbers(c, position - offset);
-    const int extra = (offset == 0 ? 0 : ::count(d->chunkData(c, position - offset), 0, offset, QLatin1Char('\n')));
+    const int extra = (offset == 0 ? 0 : countNewLines(c, position - offset, 0, offset));
     return c->firstLineIndex + extra;
 }
 
@@ -1179,8 +1189,63 @@ void TextDocumentPrivate::updateChunkLineNumbers(Chunk *c, int pos) // pos is po
             const int prevSize = c->previous->size();
             updateChunkLineNumbers(c->previous, pos - prevSize);
             Q_ASSERT(c->previous->firstLineIndex != -1);
-            const int previousChunkLineCount = chunkData(c->previous, pos - prevSize).count(QLatin1Char('\n'));
+            const int previousChunkLineCount = countNewLines(c->previous, pos - prevSize, 0, prevSize);
             c->firstLineIndex = c->previous->firstLineIndex + previousChunkLineCount;
         }
     }
 }
+
+int TextDocumentPrivate::countNewLines(Chunk *c, int chunkPos, int offset, int size) const
+{
+#ifndef TEXTDOCUMENT_LINENUMBER_CACHE
+    return ::count(chunkData(c, chunkPos), offset, size, QLatin1Char('\n'));
+#else
+    if (lineNumber.isEmpty()) {
+        static const int lineNumberCacheInterval = Chunk::lineNumberCacheInterval();
+        int ret = 0;
+        const QString data = chunkData(c, chunkPos);
+        Q_ASSERT(!data.isEmpty());
+        const int s = data.size();
+        c->lineNumbers = QVector<int>((data.size() + lineNumberCacheInterval - 1)
+                                      / lineNumberCacheInterval, 0);
+        for (int i=0; i<s; ++i) {
+            if (data.at(i) == QLatin1Char('\n')) {
+                ++c->lineNumbers[i % lineNumberCacheInterval];
+                if (i >= offset && i < (offset + size))
+                    ++ret;
+            }
+        }
+        return ret;
+    } else {
+        int ret = 0;
+        for (int i=0; i<c->lineNumbers.size(); ++i) {
+            const int from = i * lineNumberCacheInterval;
+            const int to = from + lineNumberCacheInterval - 1;
+            // probably some off by one errors here
+            if (offset > to) {
+                break;
+            } else if (from < offset && to > offset) {
+                if (c->lineNumbers.at(i) > 0) {
+                    ret += ::count(chunkData(c, chunkPos), from,
+                }
+                // partly covered by this area
+            } else if (offset >= from && offset + size <= to) {
+                // completely covered by this area
+                ret += c->lineNumbers.at(i);
+            }
+        }
+
+
+
+    }
+
+
+
+//     mutable QVector<int> lineNumbers;
+//     // format is how many endlines in the area from (n *
+//     // TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL) to
+//     // ((n + 1) * TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL)
+
+#endif
+}
+

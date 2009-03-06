@@ -15,6 +15,10 @@
 #define NO_TEXTDOCUMENT_READ_CACHE
 #endif
 
+#if defined TEXTDOCUMENT_LINENUMBER_CACHE and !defined TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL
+#define TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL 50
+#endif
+
 struct Chunk {
     Chunk() : previous(0), next(0), from(-1), length(0), firstLineIndex(-1) {}
 
@@ -22,6 +26,13 @@ struct Chunk {
     Chunk *previous, *next;
     int size() const { return data.isEmpty() ? length : data.size(); }
     mutable int from, length, firstLineIndex; // Not used when all is loaded
+#ifdef TEXTDOCUMENT_LINENUMBER_CACHE
+    mutable QVector<int> lineNumbers;
+    // format is how many endlines in the area from (n *
+    // TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL) to
+    // ((n + 1) * TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL)
+    static int lineNumberCacheInterval() { return TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL; }
+#endif
 };
 
 class SectionManager : public QObject
@@ -122,6 +133,7 @@ public:
     // evil API. pos < 0 means don't cache
 
     void updateChunkLineNumbers(Chunk *c, int pos);
+    int countNewLines(Chunk *c, int chunkPos, int offset, int size) const;
 
     void instantiateChunk(Chunk *chunk);
     Chunk *chunkAt(int pos, int *offset) const;
