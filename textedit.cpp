@@ -234,7 +234,6 @@ bool TextEdit::load(const QString &file, TextDocument::DeviceMode mode)
 
 void TextEdit::paintEvent(QPaintEvent *e)
 {
-
     if (d->ensureCursorVisiblePending) {
         d->ensureCursorVisiblePending = false;
         ensureCursorVisible();
@@ -260,6 +259,8 @@ void TextEdit::paintEvent(QPaintEvent *e)
     const QRect er = e->rect();
     foreach(const QTextLayout *l, d->textLayouts) {
         const QRect r = l->boundingRect().toRect();
+        QRect backgroundFillRect = r;
+        backgroundFillRect.setRight(er.right());
         if (r.intersects(er)) {
 //             if (r.bottom() > er.bottom())
 //                 break;

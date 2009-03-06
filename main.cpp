@@ -176,7 +176,7 @@ public:
             }
         }
 
-//        textEdit->setSyntaxHighlighter(new Highlighter(textEdit));
+        textEdit->setSyntaxHighlighter(new Highlighter(textEdit));
         if (!textEdit->load(fileName, TextDocument::Sparse)) {
 #ifndef QT_NO_DEBUG_STREAM
             qDebug() << "Can't load" << fileName;

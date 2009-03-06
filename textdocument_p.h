@@ -22,6 +22,7 @@ struct Chunk {
     Chunk *previous, *next;
     int size() const { return data.isEmpty() ? length : data.size(); }
     mutable int from, length; // Not used when all is loaded
+
 };
 
 class SectionManager : public QObject

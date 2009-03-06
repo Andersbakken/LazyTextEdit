@@ -36,11 +36,12 @@ protected:
 private:
     struct Private {
         Private() : textEdit(0), textLayout(0), previousBlockState(0), currentBlockState(0),
-                    currentBlockOffset(0), currentBlockPosition(-1) {}
+                    currentBlockOffset(0), currentBlockPosition(-1), hasBackground(false) {}
         TextEdit *textEdit;
         TextLayout *textLayout;
         int previousBlockState, currentBlockState, currentBlockOffset, currentBlockPosition;
         QList<QTextLayout::FormatRange> formatRanges;
+        bool hasBackground;
     } *d;
 
     friend class TextEdit;

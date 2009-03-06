@@ -49,6 +49,7 @@ void SyntaxHighlighter::setFormat(int start, int count, const QTextCharFormat &f
     range.start = d->currentBlockOffset + start;
     range.length = count;
     range.format = format;
+    d->hasBackground |= format.hasProperty(QTextCharFormat::BackgroundBrush);
 }
 
 void SyntaxHighlighter::setFormat(int start, int count, const QColor &color)
