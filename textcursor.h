@@ -89,6 +89,7 @@ public:
     void clearSelection();
     int selectionStart() const;
     int selectionEnd() const;
+    int selectionSize() const;
 
     QString selectedText() const;
 

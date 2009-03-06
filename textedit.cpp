@@ -634,7 +634,8 @@ bool TextEdit::moveCursorPosition(TextCursor::MoveOperation op, TextCursor::Move
 
 void TextEdit::copy(QClipboard::Mode mode)
 {
-    QApplication::clipboard()->setText(selectedText(), mode);
+    if (d->textCursor.selectionSize() <= d->maximumSizeCopy)
+        QApplication::clipboard()->setText(selectedText(), mode);
 }
 
 void TextEdit::paste(QClipboard::Mode mode)
@@ -1078,7 +1079,8 @@ void TextEditPrivate::onSectionFormatChanged(Section *section)
 
 void TextEditPrivate::onSelectionChanged()
 {
-    if (inMouseEvent)
+    if (inMouseEvent) {
         textEdit->copy(QClipboard::Selection);
+    }
 }
 

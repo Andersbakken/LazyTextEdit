@@ -396,6 +396,12 @@ int TextCursor::selectionEnd() const
     return qMax(d->anchor, d->position);
 }
 
+int TextCursor::selectionSize() const
+{
+    return selectionEnd() - selectionStart();
+}
+
+
 QString TextCursor::selectedText() const
 {
     Q_ASSERT(!isNull());
