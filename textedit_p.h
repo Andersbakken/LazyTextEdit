@@ -22,7 +22,8 @@ public:
         : requestedScrollBarPosition(-1), lastRequestedScrollBarPosition(-1), cursorWidth(1),
         sectionCount(0), maximumSizeCopy(50000), pendingTimeOut(-1), autoScrollLines(-1),
         readOnly(false), cursorVisible(false), blockScrollBarUpdate(false), updateScrollBarPageStepPending(true),
-        ensureCursorVisiblePending(false), sectionPressed(0), sectionHovered(0), pendingScrollBarUpdate(false)
+        ensureCursorVisiblePending(false), inMouseEvent(false), sectionPressed(0), sectionHovered(0),
+        pendingScrollBarUpdate(false)
     {
         textEdit = qptr;
         connect(SectionManager::instance(), SIGNAL(sectionFormatChanged(Section *)),
@@ -41,7 +42,7 @@ public:
     int requestedScrollBarPosition, lastRequestedScrollBarPosition, cursorWidth, sectionCount,
         maximumSizeCopy, pendingTimeOut, autoScrollLines;
     bool readOnly, cursorVisible, blockScrollBarUpdate, updateScrollBarPageStepPending,
-        ensureCursorVisiblePending;
+        ensureCursorVisiblePending, inMouseEvent;
     QBasicTimer autoScrollTimer, cursorBlinkTimer;
     QAction *actions[TextEdit::SelectAllAction];
     Section *sectionPressed, *sectionHovered;

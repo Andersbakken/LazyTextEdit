@@ -315,6 +315,7 @@ bool TextEdit::isRedoAvailable() const
 
 void TextEdit::mousePressEvent(QMouseEvent *e)
 {
+    d->inMouseEvent = true;
     if (e->button() == Qt::LeftButton) {
 #ifndef QT_NO_DEBUG
         if (doLog) {
@@ -426,6 +427,7 @@ void TextEdit::mouseMoveEvent(QMouseEvent *e)
 
 void TextEdit::mouseReleaseEvent(QMouseEvent *e)
 {
+    d->inMouseEvent = false;
     if (e->button() == Qt::LeftButton) {
 #ifndef QT_NO_DEBUG
         if (doLog) {
@@ -1076,6 +1078,7 @@ void TextEditPrivate::onSectionFormatChanged(Section *section)
 
 void TextEditPrivate::onSelectionChanged()
 {
-    textEdit->copy(QClipboard::Selection);
+    if (inMouseEvent)
+        textEdit->copy(QClipboard::Selection);
 }
 
