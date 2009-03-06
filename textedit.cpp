@@ -56,7 +56,9 @@ TextEdit::TextEdit(QWidget *parent)
 
     viewport()->setAttribute(Qt::WA_NoSystemBackground); // ### only here because I explicitly fill background in paintEvent because of weird bug
     viewport()->setAttribute(Qt::WA_OpaquePaintEvent); // ### only here because I explicitly fill background in paintEvent because of weird bug
-
+    if (qApp->clipboard()->supportsSelection()) {
+        connect(this, SIGNAL(selectionChanged()), d, SLOT(onSelectionChanged()));
+    }
 }
 
 
@@ -1070,5 +1072,10 @@ void TextEditPrivate::onSectionFormatChanged(Section *section)
         return;
     }
     dirty(textEdit->viewport()->width());
+}
+
+void TextEditPrivate::onSelectionChanged()
+{
+    textEdit->copy(QClipboard::Selection);
 }
 

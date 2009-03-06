@@ -8,6 +8,7 @@
 #include "textedit.h"
 
 // ### TODO ###
+// ### Should clear selection when something else selects something.
 // ### Line break. Could vastly simplify textlayout if not breaking lines.
 // ### saving to same file. Need something there.
 // ### could refactor chunks so that I only have one and split when I need. Not sure if it's worth it. Would

@@ -51,6 +51,7 @@ public:
     QPoint lastHoverPos, lastMouseMove;
     QHash<DocumentCommand *, QPair<CursorData, CursorData> > undoRedoCommands;
 public slots:
+    void onSelectionChanged();
     void onSectionAdded();
     void onSectionRemoved(Section *section);
     void onSectionFormatChanged(Section *section);
