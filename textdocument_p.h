@@ -16,13 +16,12 @@
 #endif
 
 struct Chunk {
-    Chunk() : previous(0), next(0), from(-1), length(0) {}
+    Chunk() : previous(0), next(0), from(-1), length(0), firstLineIndex(-1) {}
 
     mutable QString data;
     Chunk *previous, *next;
     int size() const { return data.isEmpty() ? length : data.size(); }
-    mutable int from, length; // Not used when all is loaded
-
+    mutable int from, length, firstLineIndex; // Not used when all is loaded
 };
 
 class SectionManager : public QObject
@@ -78,7 +77,8 @@ public:
         documentSize(0),
         saveState(NotSaving), device(0), ownDevice(false), modified(false),
         deviceMode(TextDocument::Sparse), chunkSize(16384),
-        undoRedoStackCurrent(0), modifiedIndex(-1), undoRedoEnabled(true), ignoreUndoRedo(false)
+        undoRedoStackCurrent(0), modifiedIndex(-1), undoRedoEnabled(true), ignoreUndoRedo(false),
+        hasChunksWithLineNumbers(false)
     {
         first = last = new Chunk;
     }
@@ -108,6 +108,8 @@ public:
     QList<DocumentCommand*> undoRedoStack;
     int undoRedoStackCurrent, modifiedIndex;
     bool undoRedoEnabled, ignoreUndoRedo;
+
+    bool hasChunksWithLineNumbers;
 
     void joinLastTwoCommands();
 

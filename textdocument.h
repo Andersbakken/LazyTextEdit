@@ -112,6 +112,7 @@ public:
 
     bool isModified() const;
     void setModified(bool modified);
+    int lineNumber(int position) const;
 public slots:
     void undo();
     void redo();

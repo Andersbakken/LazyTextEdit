@@ -536,6 +536,18 @@ bool TextDocument::insert(int pos, const QString &ba)
         section->d.position += ba.size();
     }
 
+    if (d->hasChunksWithLineNumbers) {
+        const int extraLines = ba.count(QLatin1Char('\n'));
+        if (offset != 0)
+            c = c->next;
+        while (c) {
+            if (c->firstLineIndex != -1) {
+                c->firstLineIndex += extraLines;
+            }
+            c = c->next;
+        }
+    }
+
     emit charactersAdded(pos, ba.size());
     emit documentSizeChanged(d->documentSize);
     if (isUndoAvailable() != undoAvailable) {
@@ -546,6 +558,21 @@ bool TextDocument::insert(int pos, const QString &ba)
 
     return true;
 }
+
+static inline int count(const QString &string, int from, int size, QChar ch)
+{
+    Q_ASSERT(from + size <= string.size());
+    ushort c = ch.unicode();
+    int num = 0;
+    const ushort *b = string.utf16() + from;
+    const ushort *i = b + size;
+    while (i != b) {
+        if (*--i == c)
+            ++num;
+    }
+    return num;
+}
+
 
 void TextDocument::remove(int pos, int size)
 {
@@ -588,15 +615,23 @@ void TextDocument::remove(int pos, int size)
         delete section; // ### undo ??
 
     const int s = size;
+    int newLinesRemoved = 0;
     while (size > 0) {
         int offset;
         Chunk *c = d->chunkAt(pos, &offset);
         if (offset == 0 && size >= c->size()) {
             size -= c->size();
+            if (d->hasChunksWithLineNumbers) {
+                newLinesRemoved += d->chunkData(c, pos).count('\n');
+            }
             d->removeChunk(c);
+            c = 0;
         } else {
             d->instantiateChunk(c);
             const int removed = qMin(size, c->size() - offset);
+            if (d->hasChunksWithLineNumbers) {
+                newLinesRemoved += ::count(c->data, offset, removed, QLatin1Char('\n'));
+            }
             c->data.remove(offset, removed);
             size -= removed;
         }
@@ -624,6 +659,20 @@ void TextDocument::remove(int pos, int size)
     foreach(Section *section, sections(pos, -1)) {
         section->d.position -= size;
     }
+
+    if (d->hasChunksWithLineNumbers) {
+        int offset;
+        Chunk *c = d->chunkAt(pos, &offset);
+        if (offset != 0)
+            c = c->next;
+        while (c) {
+            if (c->firstLineIndex != -1) {
+                c->firstLineIndex -= newLinesRemoved;
+            }
+            c = c->next;
+        }
+    }
+
 
     emit charactersRemoved(pos, size);
     emit documentSizeChanged(d->documentSize);
