@@ -69,6 +69,7 @@ public:
     {
         QString fileName = "main.cpp";
         bool replay = false;
+        bool readOnly = false;
         const QStringList list = QApplication::arguments().mid(1);
         for (int i=0; i<list.size(); ++i) {
             const QString &arg = list.at(i);
@@ -79,6 +80,8 @@ public:
                 replay = true;
                 add = true;
                 fileName.clear();
+            } else if (arg == "--readonly") {
+                readOnly = true;
             } else {
                 fileName = arg;
             }
@@ -167,6 +170,7 @@ public:
         QVBoxLayout *l = new QVBoxLayout(w);
         setCentralWidget(w);
         l->addWidget(textEdit = new TextEdit(w));
+        textEdit->setReadOnly(readOnly);
         connect(textEdit->document(), SIGNAL(foo(int, int)), this, SLOT(onFoo(int, int)), Qt::QueuedConnection);
         QFontDatabase fdb;
         foreach(QString family, fdb.families()) {

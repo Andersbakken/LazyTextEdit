@@ -663,7 +663,7 @@ void TextEdit::setCursorVisible(bool cc)
     if (cc == d->cursorBlinkTimer.isActive())
         return;
 
-    d->cursorVisible = true;
+    d->cursorVisible = cc;
     if (cc) {
         d->cursorBlinkTimer.start(QApplication::cursorFlashTime(), d);
     } else {
