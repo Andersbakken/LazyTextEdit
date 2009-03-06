@@ -72,6 +72,8 @@ QTextCharFormat SyntaxHighlighter::format(int pos) const
     foreach(const QTextLayout::FormatRange &range, d->formatRanges) {
         if (range.start <= pos && range.start + range.length > pos) {
             ret.merge(range.format);
+        } else if (range.start > pos) {
+            break;
         }
     }
     return ret;
