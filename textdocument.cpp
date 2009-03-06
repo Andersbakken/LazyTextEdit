@@ -570,6 +570,7 @@ static inline int count(const QString &string, int from, int size, QChar ch)
         if (*--i == c)
             ++num;
     }
+    qDebug() << "counting" << num << ch << "for" << string.mid(from, size);
     return num;
 }
 
@@ -927,6 +928,17 @@ void TextDocument::setModified(bool modified)
     emit modificationChanged(modified);
 }
 
+int TextDocument::lineNumber(int position) const
+{
+    d->hasChunksWithLineNumbers = true;
+    int offset;
+    Chunk *c = d->chunkAt(position, &offset);
+    d->updateChunkLineNumbers(c, position - offset);
+    const int extra = (offset == 0 ? 0 : ::count(d->chunkData(c, position - offset), 0, offset, QLatin1Char('\n')));
+    return c->firstLineIndex + extra;
+}
+
+
 
 // --- TextDocumentPrivate ---
 
@@ -1140,4 +1152,20 @@ void TextDocumentPrivate::onDeviceDestroyed(QObject *o)
     Q_UNUSED(o);
     Q_ASSERT(o == device || !device);
     device = 0;
+}
+
+void TextDocumentPrivate::updateChunkLineNumbers(Chunk *c, int pos) // pos is position of c
+{
+    Q_ASSERT(c);
+    if (c->firstLineIndex == -1) {
+        if (!c->previous) {
+            c->firstLineIndex = 0;
+        } else {
+            const int prevSize = c->previous->size();
+            updateChunkLineNumbers(c->previous, pos - prevSize);
+            Q_ASSERT(c->previous->firstLineIndex != -1);
+            const int previousChunkLineCount = chunkData(c->previous, pos - prevSize).count(QLatin1Char('\n'));
+            c->firstLineIndex = c->previous->firstLineIndex + previousChunkLineCount;
+        }
+    }
 }

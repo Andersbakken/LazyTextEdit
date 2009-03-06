@@ -65,11 +65,12 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 public:
     MainWindow(QWidget *parent = 0)
-        : QMainWindow(parent)
+        : QMainWindow(parent), doLineNumbers(false)
     {
         QString fileName = "main.cpp";
         bool replay = false;
         bool readOnly = false;
+        int chunkSize = -1;
         const QStringList list = QApplication::arguments().mid(1);
         for (int i=0; i<list.size(); ++i) {
             const QString &arg = list.at(i);
@@ -82,6 +83,15 @@ public:
                 fileName.clear();
             } else if (arg == "--readonly") {
                 readOnly = true;
+            } else if (arg == "--linenumbers") {
+                doLineNumbers = true;
+            } else if (arg.startsWith("--chunksize=")) {
+                bool ok;
+                chunkSize = arg.mid(12).toInt(&ok);
+                if (!ok) {
+                    qWarning("Can't parse %s", qPrintable(arg));
+                    exit(1);
+                }
             } else {
                 fileName = arg;
             }
@@ -170,6 +180,9 @@ public:
         QVBoxLayout *l = new QVBoxLayout(w);
         setCentralWidget(w);
         l->addWidget(textEdit = new TextEdit(w));
+        if (chunkSize != -1) {
+            textEdit->document()->setChunkSize(chunkSize);
+        }
         textEdit->setReadOnly(readOnly);
         connect(textEdit->document(), SIGNAL(foo(int, int)), this, SLOT(onFoo(int, int)), Qt::QueuedConnection);
         QFontDatabase fdb;
@@ -268,12 +281,13 @@ public slots:
 
     void onCursorPositionChanged(int pos)
     {
-        lbl->setText(QString("Position: %1\n"
-                             "Word: %2\n").
-//                             "Paragraph: %3").
-                     arg(pos).
-                     arg(textEdit->textCursor().wordUnderCursor()));
-//                     arg(QString())); //textEdit->textCursor().paragraphUnderCursor()));
+        QString text = QString("Position: %1\n"
+                               "Word: %2\n").
+                       arg(pos).
+                       arg(textEdit->textCursor().wordUnderCursor());
+        if (doLineNumbers)
+            text += QString("Line number: %0").arg(textEdit->document()->lineNumber(pos));
+        lbl->setText(text);
     }
 
     void sendNextEvent()
@@ -314,6 +328,7 @@ public slots:
             const int pos = cursor.selectionStart();
             const int size = cursor.selectionEnd() - pos;
             Section *s = textEdit->document()->insertSection(pos, size, format, cursor.selectedText());
+            Q_UNUSED(s);
             Q_ASSERT(s);
             Q_ASSERT(!textEdit->document()->sections().isEmpty());
         }
@@ -363,6 +378,7 @@ private:
     TextEdit *textEdit;
     QLabel *lbl;
     QLinkedList<QEvent*> events;
+    bool doLineNumbers;
 };
 
 #include "main.moc"

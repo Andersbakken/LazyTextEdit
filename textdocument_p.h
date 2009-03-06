@@ -117,6 +117,8 @@ public:
     QString chunkData(const Chunk *chunk, int pos) const;
     // evil API. pos < 0 means don't cache
 
+    void updateChunkLineNumbers(Chunk *c, int pos);
+
     void instantiateChunk(Chunk *chunk);
     Chunk *chunkAt(int pos, int *offset) const;
     void clearRedo();
