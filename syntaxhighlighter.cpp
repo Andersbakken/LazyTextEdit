@@ -1,5 +1,6 @@
 #include "syntaxhighlighter.h"
 #include "textedit.h"
+#include "textdocument.h"
 #include "textlayout_p.h"
 
 SyntaxHighlighter::SyntaxHighlighter(QObject *parent)
@@ -31,6 +32,12 @@ void SyntaxHighlighter::setTextEdit(TextEdit *doc)
 TextEdit *SyntaxHighlighter::textEdit() const
 {
     return d->textEdit;
+}
+
+
+TextDocument * SyntaxHighlighter::document() const
+{
+    return d->textEdit ? d->textEdit->document() : 0;
 }
 
 void SyntaxHighlighter::rehighlight()
@@ -107,4 +114,3 @@ int SyntaxHighlighter::currentBlockPosition() const
 {
     return d->currentBlockPosition;
 }
-

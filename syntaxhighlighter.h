@@ -11,6 +11,7 @@
 
 class TextEdit;
 class TextLayout;
+class TextDocument;
 class SyntaxHighlighter : public QObject
 {
     Q_OBJECT
@@ -20,6 +21,7 @@ public:
     ~SyntaxHighlighter();
     void setTextEdit(TextEdit *doc);
     TextEdit *textEdit() const;
+    TextDocument *document() const;
 public Q_SLOTS:
     void rehighlight();
 protected:
