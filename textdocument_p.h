@@ -115,6 +115,10 @@ public:
 
     void removeChunk(Chunk *c);
     QString chunkData(const Chunk *chunk, int pos) const;
+#ifndef QT_NO_DEBUG
+    int chunkIndex(const Chunk *c) const;
+#endif
+
     // evil API. pos < 0 means don't cache
 
     void updateChunkLineNumbers(Chunk *c, int pos);

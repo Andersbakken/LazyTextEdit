@@ -538,13 +538,17 @@ bool TextDocument::insert(int pos, const QString &ba)
 
     if (d->hasChunksWithLineNumbers) {
         const int extraLines = ba.count(QLatin1Char('\n'));
-        if (offset != 0)
+        if (extraLines != 0) {
             c = c->next;
-        while (c) {
-            if (c->firstLineIndex != -1) {
-                c->firstLineIndex += extraLines;
+            while (c) {
+                if (c->firstLineIndex != -1) {
+                    qDebug() << "changing chunk number" << d->chunkIndex(c)
+                             << "starting with" << d->chunkData(c, -1).left(5)
+                             << "from" << c->firstLineIndex << "to" << (c->firstLineIndex + extraLines);
+                    c->firstLineIndex += extraLines;
+                }
+                c = c->next;
             }
-            c = c->next;
         }
     }
 
@@ -570,7 +574,6 @@ static inline int count(const QString &string, int from, int size, QChar ch)
         if (*--i == c)
             ++num;
     }
-    qDebug() << "counting" << num << ch << "for" << string.mid(from, size);
     return num;
 }
 
@@ -1031,6 +1034,18 @@ QString TextDocumentPrivate::chunkData(const Chunk *chunk, int chunkPos) const
         return data;
     }
 }
+
+#ifndef QT_NO_DEBUG
+int TextDocumentPrivate::chunkIndex(const Chunk *c) const
+{
+    int index = 0;
+    while (c->previous) {
+        ++index;
+        c = c->previous;
+    }
+    return index;
+}
+#endif
 
 void TextDocumentPrivate::instantiateChunk(Chunk *chunk)
 {

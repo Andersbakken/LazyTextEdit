@@ -149,9 +149,8 @@ void TextCursor::insertText(const QString &text)
     if (doJoin) {
         removeSelectedText();
     }
-    const int old = d->position;
-    if (d->document->insert(d->position, text)) {
-        d->anchor = d->position = (old + text.size());
+    if (d->document->insert(d->position, text) && textEdit) {
+        emit textEdit->cursorPositionChanged(d->position);
     }
     if (doJoin)
         d->document->d->joinLastTwoCommands();
