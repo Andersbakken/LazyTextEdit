@@ -1092,7 +1092,6 @@ QString TextDocumentPrivate::chunkData(const Chunk *chunk, int chunkPos) const
     }
 }
 
-#ifndef QT_NO_DEBUG
 int TextDocumentPrivate::chunkIndex(const Chunk *c) const
 {
     int index = 0;
@@ -1102,7 +1101,6 @@ int TextDocumentPrivate::chunkIndex(const Chunk *c) const
     }
     return index;
 }
-#endif
 
 void TextDocumentPrivate::instantiateChunk(Chunk *chunk)
 {
