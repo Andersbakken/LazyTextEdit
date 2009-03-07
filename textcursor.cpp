@@ -371,6 +371,7 @@ void TextCursor::removeSelectedText()
     const int min = qMin(d->anchor, d->position);
     const int max = qMax(d->anchor, d->position);
     d->flipSelection(TextCursor::Left);
+    qDebug() << "removing" << d->document->read(min, max - min) << min << max;
     d->document->remove(min, max - min);
     cursorChanged(true);
 }

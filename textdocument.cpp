@@ -12,6 +12,35 @@
 #include <QTextCharFormat>
 #include <QVariant>
 
+
+// should really use this stuff for all of this stuff
+struct Stretch {
+    Stretch(int i = -1, int s = -1) : index(i), size(s) {}
+
+    int index, size;
+    QPair<int, int> toPair() const { return qMakePair(index, size); }
+};
+
+static inline Stretch intersection(const Stretch &one, const Stretch &two)
+{
+//     if (one.index + one.size < two.index)
+//         return Stretch();
+//     if (two.index + two.size < one.index)
+//         return Stretch();
+    Stretch ret;
+    ret.index = qMax(one.index, two.index);
+    const int right = qMin(one.index + one.size, two.index + two.size);
+    ret.size = right - ret.index;
+    if (ret.size <= 0)
+        return Stretch();
+    return ret;
+}
+
+static inline Stretch intersection(int index1, int size1, int index2, int size2)
+{
+    return intersection(Stretch(index1, size1), Stretch(index2, size2));
+}
+
 Section::~Section()
 {
     if (d.document)
@@ -475,6 +504,7 @@ TextCursor TextDocument::find(const QChar &chIn, int pos, FindMode flags) const
 
 bool TextDocument::insert(int pos, const QString &ba)
 {
+    qDebug() << intersection(0, 10, 11, 2).toPair();;
     Q_ASSERT(pos >= 0 && pos <= d->documentSize);
     if (ba.isEmpty())
         return false;
@@ -620,8 +650,15 @@ void TextDocument::remove(int pos, int size)
         if (cursor->anchor >= pos)
             cursor->anchor -= qMin(size, cursor->anchor - pos);
     }
-    if (section && (section->d.size -= size) <= 0)
-        delete section; // ### undo ??
+    if (section) {
+//      1111|110000|
+//         int overlapSize = size;
+//         if (section->d.position >= pos &&
+//         if (section->d.position ==
+        if ((section->d.size -= size) <= 0)
+            delete section; // ### undo ??
+        qWarning("%s %s:%d This stuff doesn't quite work", __FUNCTION__, __FILE__, __LINE__);
+    }
 
     const int s = size;
     int newLinesRemoved = 0;
@@ -639,13 +676,26 @@ void TextDocument::remove(int pos, int size)
             d->instantiateChunk(c);
             const int removed = qMin(size, c->size() - offset);
             if (d->hasChunksWithLineNumbers) {
-                newLinesRemoved += ::count(c->data, offset, removed, QLatin1Char('\n'));
+                const int tmp = ::count(c->data, offset, removed, QLatin1Char('\n'));
+                newLinesRemoved += tmp;
 #ifdef TEXTDOCUMENT_LINENUMBER_CACHE
-                chunk->lineNumbers.clear();
-                // Could clear only the parts that need to be cleared really
+                if (tmp > 0)
+                    c->lineNumbers.clear();
+                    // Could clear only the parts that need to be cleared really
 #endif
             }
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
+            qDebug() << "removing from" << c << d->cachedChunk;
+            if (d->cachedChunk == c) {
+                d->cachedChunkData.clear();
+            }
+#endif
             c->data.remove(offset, removed);
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
+            if (d->cachedChunk == c)
+                d->cachedChunkData = c->data;
+#endif
+
 
             size -= removed;
         }
@@ -946,12 +996,9 @@ int TextDocument::lineNumber(int position) const
     d->hasChunksWithLineNumbers = true;
     int offset;
     Chunk *c = d->chunkAt(position, &offset);
-    d->updateChunkLineNumbers(c, position - offset);
-    const int extra = (offset == 0 ? 0 : countNewLines(c, position - offset, 0, offset));
+    const int extra = (offset == 0 ? 0 : d->countNewLines(c, position - offset, offset));
     return c->firstLineIndex + extra;
 }
-
-
 
 // --- TextDocumentPrivate ---
 
@@ -1179,7 +1226,7 @@ void TextDocumentPrivate::onDeviceDestroyed(QObject *o)
     device = 0;
 }
 
-void TextDocumentPrivate::updateChunkLineNumbers(Chunk *c, int pos) // pos is position of c
+void TextDocumentPrivate::updateChunkLineNumbers(Chunk *c, int chunkPos) const
 {
     Q_ASSERT(c);
     if (c->firstLineIndex == -1) {
@@ -1187,65 +1234,71 @@ void TextDocumentPrivate::updateChunkLineNumbers(Chunk *c, int pos) // pos is po
             c->firstLineIndex = 0;
         } else {
             const int prevSize = c->previous->size();
-            updateChunkLineNumbers(c->previous, pos - prevSize);
+            updateChunkLineNumbers(c->previous, chunkPos - prevSize);
             Q_ASSERT(c->previous->firstLineIndex != -1);
-            const int previousChunkLineCount = countNewLines(c->previous, pos - prevSize, 0, prevSize);
+            const int previousChunkLineCount = countNewLines(c->previous,
+                                                             chunkPos - prevSize, prevSize);
             c->firstLineIndex = c->previous->firstLineIndex + previousChunkLineCount;
         }
     }
 }
 
-int TextDocumentPrivate::countNewLines(Chunk *c, int chunkPos, int offset, int size) const
+static inline QList<int> dumpNewLines(const QString &string, int from, int size)
 {
+    QList<int> ret;
+    for (int i=from; i<from + size; ++i) {
+        if (string.at(i) == QLatin1Char('\n'))
+            ret.append(i);
+    }
+    return ret;
+}
+
+
+int TextDocumentPrivate::countNewLines(Chunk *c, int chunkPos, int size) const
+{
+    updateChunkLineNumbers(c, chunkPos);
+    int ret = c->previous ? c->previous->firstLineIndex : 0;
 #ifndef TEXTDOCUMENT_LINENUMBER_CACHE
-    return ::count(chunkData(c, chunkPos), offset, size, QLatin1Char('\n'));
+    ret += ::count(chunkData(c, chunkPos), 0, size, QLatin1Char('\n'));
 #else
-    if (lineNumber.isEmpty()) {
-        static const int lineNumberCacheInterval = Chunk::lineNumberCacheInterval();
-        int ret = 0;
+    qDebug() << size << ret << c->lineNumbers << chunkPos
+             << dumpNewLines(chunkData(c, chunkPos), 0, c->size());
+    static const int lineNumberCacheInterval = Chunk::lineNumberCacheInterval();
+    if (c->lineNumbers.isEmpty()) {
         const QString data = chunkData(c, chunkPos);
         Q_ASSERT(!data.isEmpty());
         const int s = data.size();
-        c->lineNumbers = QVector<int>((data.size() + lineNumberCacheInterval - 1)
-                                      / lineNumberCacheInterval, 0);
+        c->lineNumbers.fill(0, (data.size() + lineNumberCacheInterval - 1)
+                            / lineNumberCacheInterval);
+//        qDebug() << data.size() << c->lineNumbers.size() << lineNumberCacheInterval;
+
         for (int i=0; i<s; ++i) {
             if (data.at(i) == QLatin1Char('\n')) {
-                ++c->lineNumbers[i % lineNumberCacheInterval];
-                if (i >= offset && i < (offset + size))
+                ++c->lineNumbers[i / lineNumberCacheInterval];
+                qDebug() << "found one at" << i << "put it in" << (i / lineNumberCacheInterval)
+                         << "chunkPos" << chunkPos;
+                if (i < size)
                     ++ret;
             }
         }
-        return ret;
     } else {
-        int ret = 0;
         for (int i=0; i<c->lineNumbers.size(); ++i) {
-            const int from = i * lineNumberCacheInterval;
-            const int to = from + lineNumberCacheInterval - 1;
-            // probably some off by one errors here
-            if (offset > to) {
+            if (i * lineNumberCacheInterval > size) {
                 break;
-            } else if (from < offset && to > offset) {
-                if (c->lineNumbers.at(i) > 0) {
-                    ret += ::count(chunkData(c, chunkPos), from,
-                }
-                // partly covered by this area
-            } else if (offset >= from && offset + size <= to) {
-                // completely covered by this area
+            } else if (c->lineNumbers.at(i) == 0) {
+                // nothing in this area
+                continue;
+            } else if ((i + 1) * lineNumberCacheInterval > size) {
+                ret += ::count(chunkData(c, chunkPos), i * lineNumberCacheInterval,
+                               size - i * lineNumberCacheInterval, QChar('\n'));
+                // partly
+                break;
+            } else {
                 ret += c->lineNumbers.at(i);
             }
         }
-
-
-
     }
-
-
-
-//     mutable QVector<int> lineNumbers;
-//     // format is how many endlines in the area from (n *
-//     // TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL) to
-//     // ((n + 1) * TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL)
-
 #endif
+    return ret;
 }
 

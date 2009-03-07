@@ -16,7 +16,7 @@
 #endif
 
 #if defined TEXTDOCUMENT_LINENUMBER_CACHE and !defined TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL
-#define TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL 50
+#define TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL 100
 #endif
 
 struct Chunk {
@@ -132,8 +132,8 @@ public:
 
     // evil API. pos < 0 means don't cache
 
-    void updateChunkLineNumbers(Chunk *c, int pos);
-    int countNewLines(Chunk *c, int chunkPos, int offset, int size) const;
+    void updateChunkLineNumbers(Chunk *c, int pos) const;
+    int countNewLines(Chunk *c, int chunkPos, int index) const;
 
     void instantiateChunk(Chunk *chunk);
     Chunk *chunkAt(int pos, int *offset) const;

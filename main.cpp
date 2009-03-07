@@ -142,16 +142,10 @@ public:
                     events.append(new QKeyEvent(static_cast<QEvent::Type>(type), key,
                                                 static_cast<Qt::KeyboardModifiers>(modifiers),
                                                 text, isAutoRepeat, count));
-#ifndef QT_NO_DEBUG_STREAM
-                    qDebug() << "creating keyevent" << text;
-#endif
                 } else if (type == QEvent::Resize) {
                     QSize size;
                     ds >> size;
                     events.append(new QResizeEvent(size, QSize()));
-#ifndef QT_NO_DEBUG_STREAM
-                    qDebug() << "creating resizeevent" << size;
-#endif
                 } else {
                     Q_ASSERT(type == QEvent::MouseMove || type == QEvent::MouseButtonPress || type == QEvent::MouseButtonRelease);
                     QPoint pos;
@@ -166,10 +160,6 @@ public:
                                                   static_cast<Qt::MouseButton>(button),
                                                   static_cast<Qt::MouseButtons>(buttons),
                                                   static_cast<Qt::KeyboardModifiers>(modifiers)));
-#ifndef QT_NO_DEBUG_STREAM
-                    qDebug() << "creating mouseEvent" << pos;
-#endif
-
                 }
             }
             if (!events.isEmpty())
