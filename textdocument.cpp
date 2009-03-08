@@ -473,10 +473,10 @@ TextCursor TextDocument::find(const QChar &chIn, int pos, FindMode flags) const
     return TextCursor();
 }
 
-bool TextDocument::insert(int pos, const QString &ba)
+bool TextDocument::insert(int pos, const QString &string)
 {
     Q_ASSERT(pos >= 0 && pos <= d->documentSize);
-    if (ba.isEmpty())
+    if (string.isEmpty())
         return false;
 
     const bool undoAvailable = isUndoAvailable();
@@ -486,9 +486,9 @@ bool TextDocument::insert(int pos, const QString &ba)
         if (!d->undoRedoStack.isEmpty()
             && d->undoRedoStack.last()->type == DocumentCommand::Inserted
             && d->undoRedoStack.last()->position + d->undoRedoStack.last()->text.size() == pos) {
-            d->undoRedoStack.last()->text += ba;
+            d->undoRedoStack.last()->text += string;
         } else {
-            cmd = new DocumentCommand(DocumentCommand::Inserted, pos, ba);
+            cmd = new DocumentCommand(DocumentCommand::Inserted, pos, string);
             if (!d->modified)
                 d->modifiedIndex = d->undoRedoStackCurrent;
             emit d->undoRedoCommandInserted(cmd);
@@ -510,18 +510,18 @@ bool TextDocument::insert(int pos, const QString &ba)
     }
 #endif
 
-    c->data.insert(offset, ba);
+    c->data.insert(offset, string);
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
     if (c == d->cachedChunk) {
         d->cachedChunkData = c->data;
     } else if (pos <= d->cachedChunkPos) {
         Q_ASSERT(d->cachedChunk);
-        d->cachedChunkPos += ba.size();
+        d->cachedChunkPos += string.size();
     }
 #endif
 #ifndef NO_TEXTDOCUMENT_READ_CACHE
     if (pos <= d->cachePos) {
-        d->cachePos += ba.size();
+        d->cachePos += string.size();
     } else if (pos < d->cachePos + d->cache.size()) {
         d->cachePos = -1;
         d->cache.clear();
@@ -529,26 +529,23 @@ bool TextDocument::insert(int pos, const QString &ba)
 #endif
 
     Section *s = sectionAt(pos);
-    if (s && s->position() == pos) {
-        s = 0;
+    if (s && s->position() != pos) {
+        s->d.size += string.size();
     }
-    if (s) {
-        s->d.size += ba.size();
-    }
-    d->documentSize += ba.size();
+    d->documentSize += string.size();
 
     foreach(TextCursorSharedPrivate *cursor, d->textCursors) {
         if (cursor->position >= pos)
-            cursor->position += ba.size();
+            cursor->position += string.size();
         if (cursor->anchor >= pos)
-            cursor->anchor += ba.size();
+            cursor->anchor += string.size();
     }
     foreach(Section *section, sections(pos, -1)) {
-        section->d.position += ba.size();
+        section->d.position += string.size();
     }
 
     if (d->hasChunksWithLineNumbers) {
-        const int extraLines = ba.count(QLatin1Char('\n'));
+        const int extraLines = string.count(QLatin1Char('\n'));
 #ifdef TEXTDOCUMENT_LINENUMBER_CACHE
         c->lineNumbers.clear();
         // ### could be optimized
@@ -568,7 +565,7 @@ bool TextDocument::insert(int pos, const QString &ba)
         }
     }
 
-    emit charactersAdded(pos, ba.size());
+    emit charactersAdded(pos, string.size());
     emit documentSizeChanged(d->documentSize);
     if (isUndoAvailable() != undoAvailable) {
         emit undoAvailableChanged(!undoAvailable);
