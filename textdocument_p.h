@@ -267,7 +267,7 @@ public:
         convert = on;
     }
 
-//private:
+private:
     const TextDocumentPrivate *doc;
     int pos;
     int offset;
