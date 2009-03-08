@@ -1233,8 +1233,8 @@ int TextDocumentPrivate::countNewLines(Chunk *c, int chunkPos, int size) const
 #ifndef TEXTDOCUMENT_LINENUMBER_CACHE
     ret += ::count(chunkData(c, chunkPos), 0, size, QLatin1Char('\n'));
 #else
-    qDebug() << size << ret << c->lineNumbers << chunkPos
-             << dumpNewLines(chunkData(c, chunkPos), 0, c->size());
+//     qDebug() << size << ret << c->lineNumbers << chunkPos
+//              << dumpNewLines(chunkData(c, chunkPos), 0, c->size());
     static const int lineNumberCacheInterval = Chunk::lineNumberCacheInterval();
     if (c->lineNumbers.isEmpty()) {
         const QString data = chunkData(c, chunkPos);
@@ -1247,8 +1247,8 @@ int TextDocumentPrivate::countNewLines(Chunk *c, int chunkPos, int size) const
         for (int i=0; i<s; ++i) {
             if (data.at(i) == QLatin1Char('\n')) {
                 ++c->lineNumbers[i / lineNumberCacheInterval];
-                qDebug() << "found one at" << i << "put it in" << (i / lineNumberCacheInterval)
-                         << "chunkPos" << chunkPos;
+//                 qDebug() << "found one at" << i << "put it in" << (i / lineNumberCacheInterval)
+//                          << "chunkPos" << chunkPos;
                 if (i < size)
                     ++ret;
             }
