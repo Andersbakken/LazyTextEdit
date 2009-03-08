@@ -10,6 +10,7 @@
 #include <QtTest/QtTest>
 
 #define private public
+// to be able to access private data in textdocument
 #include <textdocument.h>
 #include <textdocument_p.h>
 QT_FORWARD_DECLARE_CLASS(TextDocument)
