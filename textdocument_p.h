@@ -35,6 +35,20 @@ struct Chunk {
 #endif
 };
 
+
+// should really use this stuff for all of this stuff
+
+static inline QPair<int, int> intersection(int index1, int size1, int index2, int size2)
+{
+    QPair<int, int> ret;
+    ret.first = qMax(index1, index2);
+    const int right = qMin(index1 + size1, index2 + size2);
+    ret.second = right - ret.first;
+    if (ret.second <= 0)
+        return qMakePair(-1, 0);
+    return ret;
+}
+
 class SectionManager : public QObject
 {
     Q_OBJECT

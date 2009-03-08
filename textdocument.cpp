@@ -12,35 +12,6 @@
 #include <QTextCharFormat>
 #include <QVariant>
 
-
-// should really use this stuff for all of this stuff
-struct Stretch {
-    Stretch(int i = -1, int s = -1) : index(i), size(s) {}
-
-    int index, size;
-    QPair<int, int> toPair() const { return qMakePair(index, size); }
-};
-
-static inline Stretch intersection(const Stretch &one, const Stretch &two)
-{
-//     if (one.index + one.size < two.index)
-//         return Stretch();
-//     if (two.index + two.size < one.index)
-//         return Stretch();
-    Stretch ret;
-    ret.index = qMax(one.index, two.index);
-    const int right = qMin(one.index + one.size, two.index + two.size);
-    ret.size = right - ret.index;
-    if (ret.size <= 0)
-        return Stretch();
-    return ret;
-}
-
-static inline Stretch intersection(int index1, int size1, int index2, int size2)
-{
-    return intersection(Stretch(index1, size1), Stretch(index2, size2));
-}
-
 Section::~Section()
 {
     if (d.document)
@@ -504,15 +475,9 @@ TextCursor TextDocument::find(const QChar &chIn, int pos, FindMode flags) const
 
 bool TextDocument::insert(int pos, const QString &ba)
 {
-    qDebug() << intersection(0, 10, 11, 2).toPair();;
     Q_ASSERT(pos >= 0 && pos <= d->documentSize);
     if (ba.isEmpty())
         return false;
-
-    Section *s = sectionAt(pos);
-    if (s && s->position() == pos) {
-        s = 0;
-    }
 
     const bool undoAvailable = isUndoAvailable();
     DocumentCommand *cmd = 0;
@@ -538,11 +503,22 @@ bool TextDocument::insert(int pos, const QString &ba)
     int offset;
     c = d->chunkAt(pos, &offset);
     d->instantiateChunk(c);
-    c->data.insert(offset, ba);
-    if (s) {
-        s->d.size += ba.size();
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
+    if (c == d->cachedChunk) {
+        d->cachedChunkData.clear();
+        // avoid detach
     }
-    d->documentSize += ba.size();
+#endif
+
+    c->data.insert(offset, ba);
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
+    if (c == d->cachedChunk) {
+        d->cachedChunkData = c->data;
+    } else if (pos <= d->cachedChunkPos) {
+        Q_ASSERT(d->cachedChunk);
+        d->cachedChunkPos += ba.size();
+    }
+#endif
 #ifndef NO_TEXTDOCUMENT_READ_CACHE
     if (pos <= d->cachePos) {
         d->cachePos += ba.size();
@@ -551,11 +527,16 @@ bool TextDocument::insert(int pos, const QString &ba)
         d->cache.clear();
     }
 #endif
-#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
-    if (d->cachedChunk && pos <= d->cachedChunkPos) {
-        d->cachedChunkPos += ba.size();
+
+    Section *s = sectionAt(pos);
+    if (s && s->position() == pos) {
+        s = 0;
     }
-#endif
+    if (s) {
+        s->d.size += ba.size();
+    }
+    d->documentSize += ba.size();
+
     foreach(TextCursorSharedPrivate *cursor, d->textCursors) {
         if (cursor->position >= pos)
             cursor->position += ba.size();
@@ -577,9 +558,9 @@ bool TextDocument::insert(int pos, const QString &ba)
             c = c->next;
             while (c) {
                 if (c->firstLineIndex != -1) {
-                    qDebug() << "changing chunk number" << d->chunkIndex(c)
-                             << "starting with" << d->chunkData(c, -1).left(5)
-                             << "from" << c->firstLineIndex << "to" << (c->firstLineIndex + extraLines);
+//                     qDebug() << "changing chunk number" << d->chunkIndex(c)
+//                              << "starting with" << d->chunkData(c, -1).left(5)
+//                              << "from" << c->firstLineIndex << "to" << (c->firstLineIndex + extraLines);
                     c->firstLineIndex += extraLines;
                 }
                 c = c->next;
@@ -621,8 +602,6 @@ void TextDocument::remove(int pos, int size)
     if (size == 0)
         return;
 
-    Section *section = sectionAt(pos);
-
     DocumentCommand *cmd = 0;
     const bool undoAvailable = isUndoAvailable();
     if (!d->ignoreUndoRedo && d->undoRedoEnabled) {
@@ -644,37 +623,21 @@ void TextDocument::remove(int pos, int size)
     }
     d->modified = true;
 
-    foreach(TextCursorSharedPrivate *cursor, d->textCursors) {
-        if (cursor->position >= pos)
-            cursor->position -= qMin(size, cursor->position - pos);
-        if (cursor->anchor >= pos)
-            cursor->anchor -= qMin(size, cursor->anchor - pos);
-    }
-    if (section) {
-//      1111|110000|
-//         int overlapSize = size;
-//         if (section->d.position >= pos &&
-//         if (section->d.position ==
-        if ((section->d.size -= size) <= 0)
-            delete section; // ### undo ??
-        qWarning("%s %s:%d This stuff doesn't quite work", __FUNCTION__, __FILE__, __LINE__);
-    }
-
-    const int s = size;
+    int toRemove = size;
     int newLinesRemoved = 0;
-    while (size > 0) {
+    while (toRemove > 0) {
         int offset;
         Chunk *c = d->chunkAt(pos, &offset);
-        if (offset == 0 && size >= c->size()) {
-            size -= c->size();
+        if (offset == 0 && toRemove >= c->size()) {
+            toRemove -= c->size();
             if (d->hasChunksWithLineNumbers) {
                 newLinesRemoved += d->chunkData(c, pos).count('\n');
+                // ### should use the QVector<int> stuff if possible
             }
             d->removeChunk(c);
-            c = 0;
         } else {
             d->instantiateChunk(c);
-            const int removed = qMin(size, c->size() - offset);
+            const int removed = qMin(toRemove, c->size() - offset);
             if (d->hasChunksWithLineNumbers) {
                 const int tmp = ::count(c->data, offset, removed, QLatin1Char('\n'));
                 newLinesRemoved += tmp;
@@ -685,7 +648,7 @@ void TextDocument::remove(int pos, int size)
 #endif
             }
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
-            qDebug() << "removing from" << c << d->cachedChunk;
+//            qDebug() << "removing from" << c << d->cachedChunk;
             if (d->cachedChunk == c) {
                 d->cachedChunkData.clear();
             }
@@ -697,16 +660,30 @@ void TextDocument::remove(int pos, int size)
 #endif
 
 
-            size -= removed;
+            toRemove -= removed;
         }
     }
-    if (!d->first) {
-        d->first = d->last = new Chunk;
+
+    foreach(TextCursorSharedPrivate *cursor, d->textCursors) {
+        if (cursor->position >= pos)
+            cursor->position -= qMin(size, cursor->position - pos);
+        if (cursor->anchor >= pos)
+            cursor->anchor -= qMin(size, cursor->anchor - pos);
     }
 
-    d->documentSize -= s;
-    Q_ASSERT(size == 0);
+    QList<Section*> s = sections(pos, -1);
+    foreach(Section *section, s) {
+        const QPair<int, int> intersection = ::intersection(pos, size, section->position(), section->size());
+        if (intersection.second == section->size()) {
+            delete section;
+        } else {
+            if (intersection.first == section->position() || intersection.first == -1)
+                section->d.position -= size;
+            section->d.size -= intersection.second;
+        }
+    }
 
+    d->documentSize -= size;
 #ifndef NO_TEXTDOCUMENT_READ_CACHE
     if (pos + size < d->cachePos) {
         d->cachePos -= size;
@@ -715,16 +692,8 @@ void TextDocument::remove(int pos, int size)
         d->cache.clear();
     }
 #endif
-#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
-    if (pos + size < d->cachedChunkPos) {
-        d->cachedChunkPos -= size;
-    }
-#endif
-    foreach(Section *section, sections(pos, -1)) {
-        section->d.position -= size;
-    }
-
-    if (d->hasChunksWithLineNumbers) {
+    if (newLinesRemoved > 0) {
+        Q_ASSERT(d->hasChunksWithLineNumbers);
         int offset;
         Chunk *c = d->chunkAt(pos, &offset);
         if (offset != 0)
@@ -1139,6 +1108,11 @@ void TextDocumentPrivate::removeChunk(Chunk *c)
         cachedChunkData.clear();
     }
 #endif
+    if (!first) {
+        Q_ASSERT(!last);
+        first = last = new Chunk;
+    }
+
     delete c;
 }
 
