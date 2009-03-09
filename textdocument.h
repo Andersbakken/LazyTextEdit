@@ -102,7 +102,6 @@ public:
     TextCursor find(const QString &ba, int pos = 0, FindMode flags = 0) const;
     TextCursor find(const QChar &ch, int pos = 0, FindMode flags = 0) const;
     bool insert(int pos, const QString &ba);
-    inline bool append(const QString &ba) { return insert(documentSize(), ba); }
     void remove(int pos, int size);
     enum SectionOption {
         IncludePartial = 0x01
@@ -121,10 +120,11 @@ public:
     bool isRedoAvailable() const;
 
     bool isModified() const;
-    void setModified(bool modified);
 
     int lineNumber(int position) const;
 public slots:
+    inline bool append(const QString &ba) { return insert(documentSize(), ba); }
+    void setModified(bool modified);
     void undo();
     void redo();
     bool abortSave();
