@@ -72,6 +72,7 @@ public:
         bool replay = false;
         bool readOnly = false;
         int chunkSize = -1;
+        QTextCodec *codec = 0;
         const QStringList list = QApplication::arguments().mid(1);
         for (int i=0; i<list.size(); ++i) {
             const QString &arg = list.at(i);
@@ -86,6 +87,12 @@ public:
                 readOnly = true;
             } else if (arg == "--linenumbers") {
                 doLineNumbers = true;
+            } else if (arg.startsWith("--codec=")) {
+                codec = QTextCodec::codecForName(arg.mid(8).toLatin1());
+                if (!codec) {
+                    qWarning("Can't load codec called '%s'", qPrintable(arg.mid(8)));
+                    exit(1);
+                }
             } else if (arg.startsWith("--chunksize=")) {
                 bool ok;
                 chunkSize = arg.mid(12).toInt(&ok);
