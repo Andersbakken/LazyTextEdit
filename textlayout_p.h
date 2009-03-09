@@ -43,6 +43,7 @@ public:
     int bufferPosition, viewportPosition, layoutEnd, viewport, visibleLines, lastVisibleCharacter;
     bool layoutDirty, sectionsDirty;
     QList<QTextLayout*> textLayouts, unusedTextLayouts;
+    QHash<QTextLayout*, QTextBlockFormat> blockFormats;
     QList<QPair<int, QTextLine> > lines; // int is start position of line in document coordinates
     QRect contentRect; // contentRect means the laid out area, not just the area currently visible
     QString buffer;
