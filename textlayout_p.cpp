@@ -73,6 +73,8 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
     if (syntaxHighlighter) {
         syntaxHighlighter->d->currentBlockPosition = lineStart;
         syntaxHighlighter->d->formatRanges.clear();
+        syntaxHighlighter->highlightBlock(string);
+        syntaxHighlighter->d->previousBlockState = syntaxHighlighter->d->currentBlockState;
     }
 
     textLayout->beginLayout();
@@ -83,11 +85,6 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
             break;
         }
         line.setLineWidth(viewportWidth() - LeftMargin);
-        if (syntaxHighlighter) {
-            syntaxHighlighter->d->currentBlockOffset = line.textStart();
-            syntaxHighlighter->highlightBlock(string.mid(syntaxHighlighter->d->currentBlockOffset, line.textLength()));
-            syntaxHighlighter->d->previousBlockState = syntaxHighlighter->d->currentBlockState;
-        }
         int y = 0;
         if (!lines.isEmpty()) {
             y = int(lines.last().second.rect().bottom());
