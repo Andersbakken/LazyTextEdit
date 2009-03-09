@@ -103,7 +103,7 @@ public:
         saveState(NotSaving), device(0), ownDevice(false), modified(false),
         deviceMode(TextDocument::Sparse), chunkSize(16384),
         undoRedoStackCurrent(0), modifiedIndex(-1), undoRedoEnabled(true), ignoreUndoRedo(false),
-        hasChunksWithLineNumbers(false)
+        hasChunksWithLineNumbers(false), textCodec(0)
     {
         first = last = new Chunk;
     }
@@ -135,6 +135,7 @@ public:
     bool undoRedoEnabled, ignoreUndoRedo;
 
     bool hasChunksWithLineNumbers;
+    QTextCodec *textCodec;
 
     void joinLastTwoCommands();
 

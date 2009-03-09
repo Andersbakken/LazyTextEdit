@@ -9,6 +9,9 @@
 #include <QList>
 #include <QVariant>
 #include <QTextCharFormat>
+#include <QTextCodec>
+#include <QChar>
+#include <QRegExp>
 #include "textcursor.h"
 
 class Section
@@ -60,10 +63,17 @@ public:
         LoadAll
     };
 
-    bool load(QIODevice *device, DeviceMode mode = Sparse);
-    bool load(const QString &fileName, DeviceMode mode = Sparse);
+    inline bool load(QIODevice *device, DeviceMode mode, const QByteArray &codecName)
+    { return load(device, mode, QTextCodec::codecForName(codecName)); }
+    inline bool load(const QString &fileName, DeviceMode mode, const QByteArray &codecName)
+    { return load(fileName, mode, QTextCodec::codecForName(codecName)); }
+    bool load(QIODevice *device, DeviceMode mode = Sparse, QTextCodec *codec = 0);
+    bool load(const QString &fileName, DeviceMode mode = Sparse, QTextCodec *codec = 0);
+
     void clear();
     DeviceMode deviceMode() const;
+
+    QTextCodec *textCodec() const;
 
     void setText(const QString &text);
     QString read(int pos, int size) const;

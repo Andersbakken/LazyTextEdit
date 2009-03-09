@@ -55,7 +55,7 @@ TextDocument::~TextDocument()
     delete d;
 }
 
-bool TextDocument::load(QIODevice *device, DeviceMode mode)
+bool TextDocument::load(QIODevice *device, DeviceMode mode, QTextCodec *codec)
 {
     Q_ASSERT(device);
     if (!device->isReadable())
@@ -72,6 +72,7 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
         delete tmp;
     }
 
+    d->textCodec = codec;
     d->documentSize = device->size();
     if (d->documentSize <= d->chunkSize && mode == Sparse)
         mode = LoadAll;
@@ -101,6 +102,8 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
     case LoadAll: {
         device->seek(0);
         QTextStream ts(device);
+        if (d->textCodec)
+            ts.setCodec(d->textCodec);
         Chunk *current = 0;
         d->documentSize = 0; // in case of unicode
         do {
@@ -145,14 +148,14 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode)
     return true;
 }
 
-bool TextDocument::load(const QString &fileName, DeviceMode mode)
+bool TextDocument::load(const QString &fileName, DeviceMode mode, QTextCodec *codec)
 {
     if (mode == LoadAll) {
         QFile from(fileName);
-        return from.open(QIODevice::ReadOnly) && load(&from, mode);
+        return from.open(QIODevice::ReadOnly) && load(&from, mode, codec);
     } else {
         QFile *file = new QFile(fileName);
-        if (file->open(QIODevice::ReadOnly) && load(file, mode)) {
+        if (file->open(QIODevice::ReadOnly) && load(file, mode, codec)) {
             d->ownDevice = true;
             return true;
         } else {
@@ -336,6 +339,11 @@ int TextDocument::documentSize() const
 TextDocument::DeviceMode TextDocument::deviceMode() const
 {
     return d->deviceMode;
+}
+
+QTextCodec * TextDocument::textCodec() const
+{
+    return d->textCodec;
 }
 
 TextCursor TextDocument::find(const QRegExp &rx, int pos, FindMode flags) const
@@ -1042,6 +1050,8 @@ QString TextDocumentPrivate::chunkData(const Chunk *chunk, int chunkPos) const
         return QString().fill(QLatin1Char(' '), chunk->size());
     } else {
         QTextStream ts(device);
+        if (textCodec)
+            ts.setCodec(textCodec);
         ts.seek(chunk->from);
         const QString data = ts.read(chunk->length);
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
