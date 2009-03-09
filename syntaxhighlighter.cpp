@@ -103,14 +103,12 @@ void SyntaxHighlighter::setCurrentBlockState(int s)
     d->currentBlockState = s; // ### These don't entirely follow QSyntaxHighlighter's behavior
 }
 
-
-QString SyntaxHighlighter::currentBlockText() const
-{
-    return QString();
-//    return d->textEdit && d->currentBlockIndex != -1 ? d->textEdit->blockText(d->currentBlockIndex)
-}
-
 int SyntaxHighlighter::currentBlockPosition() const
 {
     return d->currentBlockPosition;
+}
+
+void SyntaxHighlighter::setBlockFormat(const QTextBlockFormat &format)
+{
+    d->blockFormat = format;
 }

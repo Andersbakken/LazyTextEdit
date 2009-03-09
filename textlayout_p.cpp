@@ -70,12 +70,25 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
         } while (!sections->isEmpty());
     }
 
+    int leftMargin = LeftMargin;
+    int rightMargin = 0;
+    int topMargin = 0;
+    int bottomMargin = 0;
     if (syntaxHighlighter) {
         syntaxHighlighter->d->currentBlockPosition = lineStart;
         syntaxHighlighter->d->formatRanges.clear();
         syntaxHighlighter->highlightBlock(string);
         if (syntaxHighlighter->d->blockFormat.isValid()) {
             blockFormats[textLayout] = syntaxHighlighter->d->blockFormat;
+            if (syntaxHighlighter->d->blockFormat.hasProperty(QTextFormat::BlockLeftMargin))
+                leftMargin = syntaxHighlighter->d->blockFormat.leftMargin();
+            if (syntaxHighlighter->d->blockFormat.hasProperty(QTextFormat::BlockRightMargin))
+                rightMargin = syntaxHighlighter->d->blockFormat.rightMargin();
+            if (syntaxHighlighter->d->blockFormat.hasProperty(QTextFormat::BlockTopMargin))
+                topMargin = syntaxHighlighter->d->blockFormat.topMargin();
+            if (syntaxHighlighter->d->blockFormat.hasProperty(QTextFormat::BlockBottomMargin))
+                bottomMargin = syntaxHighlighter->d->blockFormat.bottomMargin();
+
         }
         syntaxHighlighter->d->previousBlockState = syntaxHighlighter->d->currentBlockState;
     }
@@ -87,15 +100,15 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
         if (!line.isValid()) {
             break;
         }
-        line.setLineWidth(viewportWidth() - LeftMargin);
+        line.setLineWidth(viewportWidth() - (leftMargin + rightMargin));
         // ### support blockformat margins etc
-        int y = 0;
+        int y = topMargin + lastBottomMargin;
         if (!lines.isEmpty()) {
-            y = int(lines.last().second.rect().bottom());
+            y += int(lines.last().second.rect().bottom());
             // QTextLine doesn't seem to get its rect() update until a
             // new line has been created (or presumably in endLayout)
         }
-        line.setPosition(QPoint(LeftMargin, y));
+        line.setPosition(QPoint(leftMargin, y));
         lines.append(qMakePair(lineStart + line.textStart(), line));
     }
     if (syntaxHighlighter) {
@@ -104,6 +117,7 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
     } else if (!sectionFormats.isEmpty()) {
         textLayout->setAdditionalFormats(sectionFormats);
     }
+    lastBottomMargin = bottomMargin;
 
     textLayout->endLayout();
 #ifndef QT_NO_DEBUG
@@ -115,8 +129,11 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
     contentRect |= textLayout->boundingRect().toRect();
     Q_ASSERT(contentRect.right() <= viewportWidth() + LeftMargin);
 
-    if (syntaxHighlighter)
+    if (syntaxHighlighter) {
         syntaxHighlighter->d->formatRanges.clear();
+        syntaxHighlighter->d->blockFormat = QTextBlockFormat();
+        syntaxHighlighter->d->currentBlockPosition = -1;
+    }
 
     return index;
 }

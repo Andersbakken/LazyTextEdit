@@ -47,15 +47,16 @@ public:
 
     virtual void highlightBlock(const QString &text)
     {
-        QTextCharFormat format;
+        QTextBlockFormat format;
         if (previousBlockState() == 1) {
             format.setBackground(Qt::yellow);
             setCurrentBlockState(0);
         } else {
             format.setBackground(Qt::lightGray);
+            format.setLeftMargin(20);
             setCurrentBlockState(1);
         }
-        setFormat(0, text.size(), format);
+        setBlockFormat(format);
     }
 };
 

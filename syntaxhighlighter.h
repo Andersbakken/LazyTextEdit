@@ -34,7 +34,6 @@ protected:
     int previousBlockState() const;
     int currentBlockState() const;
     void setCurrentBlockState(int s);
-    QString currentBlockText() const;
     int currentBlockPosition() const;
 private:
     struct Private {

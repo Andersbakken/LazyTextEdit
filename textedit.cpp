@@ -259,13 +259,13 @@ void TextEdit::paintEvent(QPaintEvent *e)
 
     const QTextLayout *cursorLayout = d->cursorVisible ? d->layoutForPosition(d->textCursor.position()) : 0;
     const QRect er = e->rect();
-    foreach(const QTextLayout *l, d->textLayouts) {
+    foreach(QTextLayout *l, d->textLayouts) {
         const QRect r = l->boundingRect().toRect();
-        QRect backgroundFillRect = r;
-        backgroundFillRect.setRight(er.right());
         if (r.intersects(er)) {
-//             if (r.bottom() > er.bottom())
-//                 break;
+            const QBrush background = d->blockFormats.value(l).background();
+            if (background.style() != Qt::NoBrush) {
+                p.fillRect(r, background);
+            }
             if (d->textCursor.hasSelection()
                 && (!(min > textLayoutOffset + l->text().size() || max < textLayoutOffset))) {
                 selection.append(QTextLayout::FormatRange());

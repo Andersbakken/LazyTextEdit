@@ -27,8 +27,8 @@ public:
     TextLayout(TextDocument *doc = 0)
         : document(doc), textEdit(0), bufferPosition(0),
           viewportPosition(0), layoutEnd(-1), viewport(-1),
-          visibleLines(-1), lastVisibleCharacter(-1), layoutDirty(true),
-          sectionsDirty(true)
+          visibleLines(-1), lastVisibleCharacter(-1), lastBottomMargin(0),
+          layoutDirty(true), sectionsDirty(true)
     {}
 
     ~TextLayout()
@@ -40,7 +40,7 @@ public:
     TextDocument *document;
     TextEdit *textEdit;
     QPointer<SyntaxHighlighter> syntaxHighlighter;
-    int bufferPosition, viewportPosition, layoutEnd, viewport, visibleLines, lastVisibleCharacter;
+    int bufferPosition, viewportPosition, layoutEnd, viewport, visibleLines, lastVisibleCharacter, lastBottomMargin;
     bool layoutDirty, sectionsDirty;
     QList<QTextLayout*> textLayouts, unusedTextLayouts;
     QHash<QTextLayout*, QTextBlockFormat> blockFormats;
