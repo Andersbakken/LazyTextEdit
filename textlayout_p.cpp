@@ -96,12 +96,14 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
         }
         line.setPosition(QPoint(LeftMargin, y));
         lines.append(qMakePair(lineStart + line.textStart(), line));
-        if (syntaxHighlighter) {
-            textLayout->setAdditionalFormats(syntaxHighlighter->d->formatRanges + sectionFormats);
-        } else if (!sectionFormats.isEmpty()) {
-            textLayout->setAdditionalFormats(sectionFormats);
-        }
     }
+    if (syntaxHighlighter) {
+        textLayout->setAdditionalFormats(syntaxHighlighter->d->formatRanges + sectionFormats);
+        // do block format
+    } else if (!sectionFormats.isEmpty()) {
+        textLayout->setAdditionalFormats(sectionFormats);
+    }
+
     textLayout->endLayout();
 #ifndef QT_NO_DEBUG
     for (int i=1; i<lines.size(); ++i) {
