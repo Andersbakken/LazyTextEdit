@@ -53,7 +53,7 @@ void SyntaxHighlighter::setFormat(int start, int count, const QTextCharFormat &f
     Q_ASSERT(d->textEdit);
     d->formatRanges.append(QTextLayout::FormatRange());
     QTextLayout::FormatRange &range = d->formatRanges.last();
-    range.start = d->currentBlockOffset + start;
+    range.start = start;
     range.length = count;
     range.format = format;
     d->hasBackground |= format.hasProperty(QTextCharFormat::BackgroundBrush);

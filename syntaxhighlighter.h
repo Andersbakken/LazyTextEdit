@@ -29,6 +29,7 @@ protected:
     void setFormat(int start, int count, const QTextCharFormat &format);
     void setFormat(int start, int count, const QColor &color);
     void setFormat(int start, int count, const QFont &font);
+    void setBlockFormat(const QTextBlockFormat &format);
     QTextCharFormat format(int pos) const;
     int previousBlockState() const;
     int currentBlockState() const;
@@ -38,11 +39,12 @@ protected:
 private:
     struct Private {
         Private() : textEdit(0), textLayout(0), previousBlockState(0), currentBlockState(0),
-                    currentBlockOffset(0), currentBlockPosition(-1), hasBackground(false) {}
+                    currentBlockPosition(-1), hasBackground(false) {}
         TextEdit *textEdit;
         TextLayout *textLayout;
-        int previousBlockState, currentBlockState, currentBlockOffset, currentBlockPosition;
+        int previousBlockState, currentBlockState, currentBlockPosition;
         QList<QTextLayout::FormatRange> formatRanges;
+        QTextBlockFormat blockFormat;
         bool hasBackground;
     } *d;
 
