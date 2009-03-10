@@ -340,7 +340,14 @@ void TextEdit::mousePressEvent(QMouseEvent *e)
                               : TextCursor::MoveAnchor);
         }
         e->accept();
-    } else {
+    } else if (e->button() == Qt::MidButton && qApp->clipboard()->supportsSelection()) {
+        int pos = textPositionAt(e->pos());
+        if (pos == -1)
+            pos = d->document->documentSize() - 1;
+        setCursorPosition(pos);
+        paste(QClipboard::Selection);
+        e->accept();
+} else {
         QAbstractScrollArea::mousePressEvent(e);
     }
 }
@@ -642,7 +649,7 @@ void TextEdit::paste(QClipboard::Mode mode)
 {
     if (d->readOnly)
         return;
-    paste(QApplication::clipboard()->text(mode).toLatin1());
+    paste(QApplication::clipboard()->text(mode));
 }
 
 void TextEdit::paste(const QString &ba)
