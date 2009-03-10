@@ -103,7 +103,7 @@ signals:
     void undoAvailableChanged(bool on);
     void redoAvailableChanged(bool on);
 protected:
-    virtual void paste(const QString &ba); // int pos?
+    virtual void paste(int position, QClipboard::Mode mode);
     virtual void changeEvent(QEvent *e);
     virtual void keyPressEvent(QKeyEvent *e);
     virtual void keyReleaseEvent(QKeyEvent *e);

@@ -344,10 +344,9 @@ void TextEdit::mousePressEvent(QMouseEvent *e)
         int pos = textPositionAt(e->pos());
         if (pos == -1)
             pos = d->document->documentSize() - 1;
-        setCursorPosition(pos);
-        paste(QClipboard::Selection);
+        paste(pos, QClipboard::Selection);
         e->accept();
-} else {
+    } else {
         QAbstractScrollArea::mousePressEvent(e);
     }
 }
@@ -641,24 +640,23 @@ bool TextEdit::moveCursorPosition(TextCursor::MoveOperation op, TextCursor::Move
 
 void TextEdit::copy(QClipboard::Mode mode)
 {
-    if (d->textCursor.selectionSize() <= d->maximumSizeCopy)
+    if (d->textCursor.selectionSize() <= d->maximumSizeCopy) {
         QApplication::clipboard()->setText(selectedText(), mode);
+    }
 }
 
 void TextEdit::paste(QClipboard::Mode mode)
 {
-    if (d->readOnly)
-        return;
-    paste(QApplication::clipboard()->text(mode));
+    paste(cursorPosition(), mode);
 }
 
-void TextEdit::paste(const QString &ba)
+void TextEdit::paste(int pos, QClipboard::Mode mode)
 {
     if (d->readOnly)
         return;
-    textCursor().insertText(ba);
+    textCursor().setPosition(pos);
+    textCursor().insertText(qApp->clipboard()->text(mode));
 }
-
 
 bool TextEdit::cursorVisible() const
 {
@@ -1086,7 +1084,7 @@ void TextEditPrivate::onSectionFormatChanged(Section *section)
 
 void TextEditPrivate::onSelectionChanged()
 {
-    if (inMouseEvent) {
+    if (inMouseEvent && textCursor.hasSelection()) {
         textEdit->copy(QClipboard::Selection);
     }
 }
