@@ -602,7 +602,7 @@ void TextEdit::keyPressEvent(QKeyEvent *e)
         }
     } else if (e->key() == Qt::Key_Enter || e->key() == Qt::Key_Return) {
         ensureCursorVisible();
-        d->textCursor.insertText("\n");
+        d->textCursor.insertText(QLatin1String("\n"));
     } else if (!e->text().isEmpty() && !(e->modifiers() & ~Qt::ShiftModifier)) {
         ensureCursorVisible();
         d->textCursor.insertText(e->text().toLocal8Bit());
