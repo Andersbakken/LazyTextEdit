@@ -30,8 +30,8 @@ public:
     void setSyntaxHighlighter(SyntaxHighlighter *highlighter);
     SyntaxHighlighter *syntaxHighlighter() const;
 
-    bool load(QIODevice *device, TextDocument::DeviceMode mode = TextDocument::Sparse);
-    bool load(const QString &fileName, TextDocument::DeviceMode mode = TextDocument::Sparse);
+    bool load(QIODevice *device, TextDocument::DeviceMode mode = TextDocument::Sparse, QTextCodec *codec = 0);
+    bool load(const QString &fileName, TextDocument::DeviceMode mode = TextDocument::Sparse, QTextCodec *codec = 0);
     void paintEvent(QPaintEvent *e);
     void scrollContentsBy(int dx, int dy);
 

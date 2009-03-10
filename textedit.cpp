@@ -204,7 +204,7 @@ void TextEdit::setCursorWidth(int cw)
 */
 
 
-bool TextEdit::load(QIODevice *dev, TextDocument::DeviceMode mode)
+bool TextEdit::load(QIODevice *dev, TextDocument::DeviceMode mode, QTextCodec *codec)
 {
 #ifndef QT_NO_DEBUG
     if (doLog) {
@@ -218,10 +218,10 @@ bool TextEdit::load(QIODevice *dev, TextDocument::DeviceMode mode)
         }
     }
 #endif
-    return d->document->load(dev, mode);
+    return d->document->load(dev, mode, codec);
 }
 
-bool TextEdit::load(const QString &file, TextDocument::DeviceMode mode)
+bool TextEdit::load(const QString &file, TextDocument::DeviceMode mode, QTextCodec *codec)
 {
 #ifndef QT_NO_DEBUG
     if (doLog) {
@@ -231,7 +231,7 @@ bool TextEdit::load(const QString &file, TextDocument::DeviceMode mode)
         ds << file;
     }
 #endif
-    return d->document->load(file, mode);
+    return d->document->load(file, mode, codec);
 }
 
 void TextEdit::paintEvent(QPaintEvent *e)

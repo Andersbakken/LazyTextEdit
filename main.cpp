@@ -193,7 +193,12 @@ public:
         }
 
         textEdit->setSyntaxHighlighter(new Highlighter(textEdit));
-        if (!textEdit->load(fileName, TextDocument::Sparse)) {
+#ifndef QT_NO_DEBUG_STREAM
+        if (codec) {
+            qDebug() << "using codec" << codec->name();
+        }
+#endif
+        if (!textEdit->load(fileName, TextDocument::Sparse, codec)) {
 #ifndef QT_NO_DEBUG_STREAM
             qDebug() << "Can't load" << fileName;
 #endif
