@@ -77,7 +77,9 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
     if (syntaxHighlighter) {
         syntaxHighlighter->d->currentBlockPosition = lineStart;
         syntaxHighlighter->d->formatRanges.clear();
+        syntaxHighlighter->d->currentBlockSize = string.size();
         syntaxHighlighter->highlightBlock(string);
+        syntaxHighlighter->d->currentBlockSize = -1;
         if (syntaxHighlighter->d->blockFormat.isValid()) {
             blockFormats[textLayout] = syntaxHighlighter->d->blockFormat;
             if (syntaxHighlighter->d->blockFormat.hasProperty(QTextFormat::BlockLeftMargin))
