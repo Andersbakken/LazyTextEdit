@@ -45,18 +45,38 @@ public:
 
     }
 
+    void helper(int from, int size, bool blackForeground)
+    {
+        QTextCharFormat format;
+        format.setBackground(blackForeground ? Qt::yellow : Qt::black);
+        format.setForeground(blackForeground ? Qt::black : Qt::yellow);
+        setFormat(from, size, format);
+    }
+
     virtual void highlightBlock(const QString &text)
     {
-        QTextBlockFormat format;
-        if (previousBlockState() == 1) {
-            format.setBackground(Qt::yellow);
-            setCurrentBlockState(0);
-        } else {
-            format.setBackground(Qt::lightGray);
-            format.setLeftMargin(20);
-            setCurrentBlockState(1);
+        enum { Space, LetterOrNumber, Other } state = Space;
+        int last = 0;
+        for (int i=0; i<text.size(); ++i) {
+            if (text.at(i).isSpace()) {
+                if (state != Space)
+                    helper(last, i - last, state == LetterOrNumber);
+                state = Space;
+                last = i;
+            } else if (text.at(i).isLetterOrNumber()
+                       != (state == LetterOrNumber) || state == Space) {
+                if (state != Space) {
+                    helper(last, i - last, state == LetterOrNumber);
+                }
+                state = (text.at(i).isLetterOrNumber()
+                         ? LetterOrNumber
+                         : Other);
+                last = i;
+            }
         }
-        setBlockFormat(format);
+        if (state != Space) {
+            helper(last, text.size() - last, state == LetterOrNumber);
+        }
     }
 };
 
