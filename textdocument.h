@@ -54,6 +54,9 @@ class TextDocument : public QObject
     Q_PROPERTY(bool undoRedoEnabled READ isUndoRedoEnabled WRITE setUndoRedoEnabled)
     Q_PROPERTY(bool modified READ isModified WRITE setModified DESIGNABLE false)
     Q_ENUMS(DeviceMode)
+    Q_FLAGS(Options)
+    Q_FLAGS(FindMode)
+
 public:
     TextDocument(QObject *parent = 0);
     ~TextDocument();
@@ -62,6 +65,17 @@ public:
         Sparse,
         LoadAll
     };
+
+    enum Option {
+        NoOptions = 0x00,
+        SwapChunks = 0x01,
+        KeepTemporaryFiles = 0x02
+    };
+    Q_DECLARE_FLAGS(Options, Option);
+
+    Options options() const;
+    void setOptions(Options opt);
+    inline void setOption(Option opt, bool on = true) { setOptions(on ? (options() | opt) : (options() &= ~opt)); }
 
     inline bool load(QIODevice *device, DeviceMode mode, const QByteArray &codecName)
     { return load(device, mode, QTextCodec::codecForName(codecName)); }
@@ -145,5 +159,8 @@ private:
     friend class TextCursor;
     friend class TextDocumentPrivate;
 };
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(TextDocument::FindMode);
+Q_DECLARE_OPERATORS_FOR_FLAGS(TextDocument::Options);
 
 #endif

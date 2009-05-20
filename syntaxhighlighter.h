@@ -26,6 +26,7 @@ public Q_SLOTS:
     void rehighlight();
 protected:
     virtual void highlightBlock(const QString &text) = 0;
+    QString currentBlock() const { return d->currentBlock; }
     void setFormat(int start, int count, const QTextCharFormat &format);
     void setFormat(int start, int count, const QColor &color);
     void setFormat(int start, int count, const QFont &font);
@@ -38,12 +39,13 @@ protected:
 private:
     struct Private {
         Private() : textEdit(0), textLayout(0), previousBlockState(0), currentBlockState(0),
-                    currentBlockPosition(-1), currentBlockSize(-1) {}
+                    currentBlockPosition(-1) {}
         TextEdit *textEdit;
         TextLayout *textLayout;
-        int previousBlockState, currentBlockState, currentBlockPosition, currentBlockSize;
+        int previousBlockState, currentBlockState, currentBlockPosition;
         QList<QTextLayout::FormatRange> formatRanges;
         QTextBlockFormat blockFormat;
+        QString currentBlock;
     } *d;
 
     friend class TextEdit;

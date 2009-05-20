@@ -23,6 +23,7 @@ public:
 
     TextDocument *document() const;
     bool isNull() const;
+    inline bool isValid() const { return !isNull(); }
 
     enum MoveMode {
         MoveAnchor,

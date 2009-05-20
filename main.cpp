@@ -51,6 +51,7 @@ public:
         format.setBackground(blackForeground ? Qt::yellow : Qt::black);
         format.setForeground(blackForeground ? Qt::black : Qt::yellow);
         setFormat(from, size, format);
+//        qDebug() << "setting format" << from << size << currentBlock().mid(from, size) << blackForeground;
     }
 
     virtual void highlightBlock(const QString &text)
@@ -103,6 +104,11 @@ public:
                 replay = true;
                 add = true;
                 fileName.clear();
+            } else if (arg == "--log") {
+                fileName.clear();
+                appendTimer.start(10, this);
+                readOnly = true;
+                chunkSize = 1000;
             } else if (arg == "--readonly") {
                 readOnly = true;
             } else if (arg == "--linenumbers") {
@@ -124,7 +130,7 @@ public:
                 fileName = arg;
             }
         }
-        if (fileName.isEmpty()) {
+        if (fileName.isEmpty() && !appendTimer.isActive()) {
             Q_ASSERT(replay);
             QStringList list = QDir(".").entryList(QStringList() << "*.log");
             if (list.isEmpty()) {
@@ -218,7 +224,9 @@ public:
             qDebug() << "using codec" << codec->name();
         }
 #endif
-        if (!textEdit->load(fileName, TextDocument::Sparse, codec)) {
+        if (appendTimer.isActive())
+            textEdit->document()->setOption(TextDocument::SwapChunks, true);
+        if (!fileName.isEmpty() && !textEdit->load(fileName, TextDocument::Sparse, codec)) {
 #ifndef QT_NO_DEBUG_STREAM
             qDebug() << "Can't load" << fileName;
 #endif
@@ -255,6 +263,26 @@ public:
         textEdit->viewport()->setAutoFillBackground(true);
         connect(textEdit->document(), SIGNAL(modificationChanged(bool)), this, SLOT(onModificationChanged(bool)));
     }
+
+    void timerEvent(QTimerEvent *e)
+    {
+        if (e->timerId() == appendTimer.timerId()) {
+            static int line = 0;
+            textEdit->append(QString("This is line number %1\n").arg(++line));
+            TextCursor curs = textEdit->textCursor();
+            curs.movePosition(TextCursor::End);
+            curs.movePosition(TextCursor::PreviousBlock);
+            textEdit->setTextCursor(curs);
+            textEdit->ensureCursorVisible();
+            if (line % 100 == 0) {
+                qDebug() << "memory used" << textEdit->document()->currentMemoryUsage()
+                         << "documentSize" << textEdit->document()->documentSize();
+            }
+        } else {
+            QMainWindow::timerEvent(e);
+        }
+    }
+
     void closeEvent(QCloseEvent *e)
     {
         QSettings("LazyTextEditor", "LazyTextEditor").setValue("geometry", saveGeometry());
@@ -395,13 +423,13 @@ public slots:
         cursor.setPosition(pos);
     }
 
-
 private:
     QSpinBox *box;
     TextEdit *textEdit;
     QLabel *lbl;
     QLinkedList<QEvent*> events;
     bool doLineNumbers;
+    QBasicTimer appendTimer;
 };
 
 #include "main.moc"

@@ -113,6 +113,11 @@ protected:
     virtual void mouseMoveEvent(QMouseEvent *e);
     virtual void mouseReleaseEvent(QMouseEvent *e);
     virtual void resizeEvent(QResizeEvent *e);
+#if 0 // ### not done yet
+    virtual void dragEnterEvent(QDragEnterEvent *e);
+    virtual void dragMoveEvent(QDragMoveEvent *e);
+    virtual void dropEvent(QDropEvent *e);
+#endif
 private:
     TextEditPrivate *d;
     friend class TextLayoutCacheManager;

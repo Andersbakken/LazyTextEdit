@@ -149,11 +149,14 @@ void TextCursor::insertText(const QString &text)
     if (doJoin) {
         removeSelectedText();
     }
+    const bool old = d->document->d->cursorCommand;
+    d->document->d->cursorCommand = true;
     if (d->document->insert(d->position, text) && textEdit) {
         emit textEdit->cursorPositionChanged(d->position);
     }
     if (doJoin)
         d->document->d->joinLastTwoCommands();
+    d->document->d->cursorCommand = old;
 }
 
 bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode mode, int n)
@@ -311,7 +314,10 @@ void TextCursor::deleteChar()
     if (hasSelection()) {
         removeSelectedText();
     } else if (d->position < d->document->documentSize()) {
+        const bool old = d->document->d->cursorCommand;
+        d->document->d->cursorCommand = true;
         d->document->remove(d->position, 1);
+        d->document->d->cursorCommand = old;
     }
 }
 
@@ -321,7 +327,10 @@ void TextCursor::deletePreviousChar()
     if (hasSelection()) {
         removeSelectedText();
     } else if (d->position > 0) {
+        const bool old = d->document->d->cursorCommand;
+        d->document->d->cursorCommand = true;
         d->document->remove(d->position - 1, 1);
+        d->document->d->cursorCommand = old;
         d->anchor = --d->position;
     }
 }
@@ -371,8 +380,10 @@ void TextCursor::removeSelectedText()
     const int min = qMin(d->anchor, d->position);
     const int max = qMax(d->anchor, d->position);
     d->flipSelection(TextCursor::Left);
-    qDebug() << "removing" << d->document->read(min, max - min) << min << max;
+    const bool old = d->document->d->cursorCommand;
+    d->document->d->cursorCommand = true;
     d->document->remove(min, max - min);
+    d->document->d->cursorCommand = old;
     cursorChanged(true);
 }
 

@@ -24,7 +24,6 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
         textLayout->clearAdditionalFormats();
     } else {
         textLayout = new QTextLayout;
-        textLayout->setCacheEnabled(true);
         textLayout->setFont(font);
         QTextOption option;
         option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
@@ -78,9 +77,9 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
     if (syntaxHighlighter) {
         syntaxHighlighter->d->currentBlockPosition = lineStart;
         syntaxHighlighter->d->formatRanges.clear();
-        syntaxHighlighter->d->currentBlockSize = string.size();
+        syntaxHighlighter->d->currentBlock = string;
         syntaxHighlighter->highlightBlock(string);
-        syntaxHighlighter->d->currentBlockSize = -1;
+        syntaxHighlighter->d->currentBlock.clear();
         if (syntaxHighlighter->d->blockFormat.isValid()) {
             blockFormats[textLayout] = syntaxHighlighter->d->blockFormat;
             if (syntaxHighlighter->d->blockFormat.hasProperty(QTextFormat::BlockLeftMargin))

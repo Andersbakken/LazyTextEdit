@@ -84,9 +84,9 @@ public:
                     break;
                 }
                 startPos = c.position();
-                Q_ASSERT(c.position() == 0 || c.cursorCharacter() == QLatin1Char('\n'));
-                Q_ASSERT(c.position() == 0 || doc->readCharacter(c.position()) == QLatin1Char('\n'));
-                Q_ASSERT(c.cursorCharacter() == doc->readCharacter(c.position()));
+                ASSUME(c.position() == 0 || c.cursorCharacter() == QLatin1Char('\n'));
+                ASSUME(c.position() == 0 || doc->readCharacter(c.position()) == QLatin1Char('\n'));
+                ASSUME(c.cursorCharacter() == doc->readCharacter(c.position()));
 
                 --linesAbove;
             }
@@ -109,11 +109,11 @@ public:
             ++startPos; // in this case startPos points to the newline before it
         l->viewportPosition = startPos;
         l->dirty(cursor.viewportWidth());
-        Q_ASSERT(l->viewportPosition == 0 || doc->readCharacter(l->viewportPosition - 1) == QLatin1Char('\n'));
+        ASSUME(l->viewportPosition == 0 || doc->readCharacter(l->viewportPosition - 1) == QLatin1Char('\n'));
         l->relayoutByPosition(endPos - startPos + 100); // ### fudged a couple of lines likely
-        Q_ASSERT(l->viewportPosition < l->layoutEnd
-                 || (l->viewportPosition == l->layoutEnd && l->viewportPosition == doc->documentSize()));
-        Q_ASSERT(l->textLayouts.size() > margin * 2 || l->viewportPosition == 0 || l->layoutEnd == doc->documentSize());
+        ASSUME(l->viewportPosition < l->layoutEnd
+               || (l->viewportPosition == l->layoutEnd && l->viewportPosition == doc->documentSize()));
+        ASSUME(l->textLayouts.size() > margin * 2 || l->viewportPosition == 0 || l->layoutEnd == doc->documentSize());
         return l;
     }
 private slots:
@@ -125,7 +125,7 @@ private slots:
     void onCharactersAddedOrRemoved(int pos)
     {
         QList<TextLayout*> &layouts = cache[qobject_cast<TextDocument*>(sender())];
-        Q_ASSERT(!layouts.isEmpty());
+        ASSUME(!layouts.isEmpty());
         for (int i=layouts.size() - 1; i>=0; --i) {
             TextLayout *l = layouts.at(i);
             if (pos <= l->layoutEnd) {
@@ -160,12 +160,12 @@ public:
 
     ~TextCursorSharedPrivate()
     {
-        Q_ASSERT(ref == 0);
+        ASSUME(ref == 0);
     }
 
     void flipSelection(TextCursor::MoveOperation op)
     {
-        Q_ASSERT(ref == 1);
+        ASSUME(ref == 1);
         const int min = qMin(anchor, position);
         const int max = qMax(anchor, position);
         if (min == max)

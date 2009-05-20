@@ -47,6 +47,9 @@ TextDocument::~TextDocument()
     while (c) {
         Chunk *tmp = c;
         c = c->next;
+        tmp->swap = 0; // no sense in deleting them here. Will be
+                       // deleted in a moment in a more optimized
+                       // manner.
         delete tmp;
     }
     if (d->ownDevice)
@@ -82,12 +85,10 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode, QTextCodec *codec)
     d->first = d->last = 0;
 
     if (d->device) {
-        disconnect(d->device, SIGNAL(destroyed(QObject*)), d, SLOT(onDeviceDestroyed(QObject*)));
         if (d->ownDevice && d->device != device) // this is done when saving to the same file
             delete d->device;
     }
 
-    connect(device, SIGNAL(destroyed(QObject*)), d, SLOT(onDeviceDestroyed(QObject*)));
     d->ownDevice = false;
     d->device = device;
     d->deviceMode = mode;
@@ -163,7 +164,6 @@ bool TextDocument::load(const QString &fileName, DeviceMode mode, QTextCodec *co
             return true;
         } else {
             delete file;
-            d->device = 0;
             d->ownDevice = false;
             return false;
         }
@@ -181,6 +181,7 @@ QString TextDocument::read(int pos, int size) const
     if (size == 0 || pos == d->documentSize) {
         return QString();
     }
+    Q_ASSERT(pos < d->documentSize);
 
 #ifndef NO_TEXTDOCUMENT_READ_CACHE
 #ifdef DEBUG_CACHE_HITS
@@ -486,13 +487,16 @@ TextCursor TextDocument::find(const QChar &chIn, int pos, FindMode flags) const
 
 bool TextDocument::insert(int pos, const QString &string)
 {
+#ifdef QT_DEBUG
+    Q_ASSERT(d->iterators.isEmpty());
+#endif
     Q_ASSERT(pos >= 0 && pos <= d->documentSize);
     if (string.isEmpty())
         return false;
 
     const bool undoAvailable = isUndoAvailable();
     DocumentCommand *cmd = 0;
-    if (!d->ignoreUndoRedo && d->undoRedoEnabled) {
+    if (!d->ignoreUndoRedo && d->undoRedoEnabled && d->cursorCommand) { // can only undo commands from
         d->clearRedo();
         if (!d->undoRedoStack.isEmpty()
             && d->undoRedoStack.last()->type == DocumentCommand::Inserted
@@ -513,65 +517,82 @@ bool TextDocument::insert(int pos, const QString &string)
     Chunk *c;
     int offset;
     c = d->chunkAt(pos, &offset);
-    d->instantiateChunk(c);
+    if (c == d->last && offset == c->size() && c->size() >= d->chunkSize) {
+        Chunk *chunk = new Chunk;
+        c->next = chunk;
+        chunk->previous = c;
+        d->last = chunk;
+        offset = 0;
+        chunk->data = string;
+        d->documentSize += string.size();
+        if (d->options & SwapChunks) {
+            if (c->previous) {
+                d->swapOutChunk(c->previous);
+            }
+        }
+        c = chunk;
+    } else {
+        d->instantiateChunk(c);
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
-    if (c == d->cachedChunk) {
-        d->cachedChunkData.clear();
-        // avoid detach
-    }
+        if (c == d->cachedChunk) {
+            d->cachedChunkData.clear();
+            // avoid detach
+        }
 #endif
 
-    c->data.insert(offset, string);
+        c->data.insert(offset, string);
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
-    if (c == d->cachedChunk) {
-        d->cachedChunkData = c->data;
-    } else if (pos <= d->cachedChunkPos) {
-        Q_ASSERT(d->cachedChunk);
-        d->cachedChunkPos += string.size();
-    }
+        if (c == d->cachedChunk) {
+            d->cachedChunkData = c->data;
+        } else if (pos <= d->cachedChunkPos) {
+            Q_ASSERT(d->cachedChunk);
+            d->cachedChunkPos += string.size();
+        }
 #endif
 #ifndef NO_TEXTDOCUMENT_READ_CACHE
-    if (pos <= d->cachePos) {
-        d->cachePos += string.size();
-    } else if (pos < d->cachePos + d->cache.size()) {
-        d->cachePos = -1;
-        d->cache.clear();
-    }
+        if (pos <= d->cachePos) {
+            d->cachePos += string.size();
+        } else if (pos < d->cachePos + d->cache.size()) {
+            d->cachePos = -1;
+            d->cache.clear();
+        }
 #endif
 
-    Section *s = sectionAt(pos);
-    if (s && s->position() != pos) {
-        s->d.size += string.size();
-    }
-    d->documentSize += string.size();
+        Section *s = sectionAt(pos);
+        if (s && s->position() != pos) {
+            s->d.size += string.size();
+        }
 
-    foreach(TextCursorSharedPrivate *cursor, d->textCursors) {
-        if (cursor->position >= pos)
-            cursor->position += string.size();
-        if (cursor->anchor >= pos)
-            cursor->anchor += string.size();
-    }
-    foreach(Section *section, sections(pos, -1)) {
-        section->d.position += string.size();
-    }
+        d->documentSize += string.size();
 
-    if (d->hasChunksWithLineNumbers) {
-        const int extraLines = string.count(QLatin1Char('\n'));
+        foreach(TextCursorSharedPrivate *cursor, d->textCursors) {
+            if (cursor->position >= pos)
+                cursor->position += string.size();
+            if (cursor->anchor >= pos)
+                cursor->anchor += string.size();
+        }
+        foreach(Section *section, sections(pos, -1)) {
+            section->d.position += string.size();
+        }
+
+        if (d->hasChunksWithLineNumbers) {
+            const int extraLines = string.count(QLatin1Char('\n'));
 #ifdef TEXTDOCUMENT_LINENUMBER_CACHE
-        c->lineNumbers.clear();
-        // ### could be optimized
+            c->lineNumbers.clear();
+            // ### could be optimized
 #endif
 
-        if (extraLines != 0) {
-            c = c->next;
-            while (c) {
-                if (c->firstLineIndex != -1) {
+            if (extraLines != 0) {
+                c = c->next;
+                while (c) {
+                    if (c->firstLineIndex != -1) {
 //                     qDebug() << "changing chunk number" << d->chunkIndex(c)
 //                              << "starting with" << d->chunkData(c, -1).left(5)
 //                              << "from" << c->firstLineIndex << "to" << (c->firstLineIndex + extraLines);
-                    c->firstLineIndex += extraLines;
+                        c->firstLineIndex += extraLines;
+                    }
+                    c = c->next;
                 }
-                c = c->next;
             }
         }
     }
@@ -604,6 +625,9 @@ static inline int count(const QString &string, int from, int size, QChar ch)
 
 void TextDocument::remove(int pos, int size)
 {
+#ifdef QT_DEBUG
+    Q_ASSERT(d->iterators.isEmpty());
+#endif
     Q_ASSERT(pos >= 0 && pos + size <= d->documentSize);
     Q_ASSERT(size >= 0);
 
@@ -612,7 +636,7 @@ void TextDocument::remove(int pos, int size)
 
     DocumentCommand *cmd = 0;
     const bool undoAvailable = isUndoAvailable();
-    if (!d->ignoreUndoRedo && d->undoRedoEnabled) {
+    if (!d->ignoreUndoRedo && d->undoRedoEnabled && d->cursorCommand) {
         d->clearRedo();
         if (!d->undoRedoStack.isEmpty()
             && d->undoRedoStack.last()->type == DocumentCommand::Removed
@@ -849,7 +873,7 @@ QChar TextDocument::readCharacter(int pos) const
 {
     if (pos == d->documentSize)
         return QChar();
-
+    Q_ASSERT(pos >= 0 && pos < d->documentSize);
 #ifndef NO_TEXTDOCUMENT_READ_CACHE
 #ifdef DEBUG_CACHE_HITS
     static int hits = 0;
@@ -880,7 +904,6 @@ void TextDocument::setText(const QString &text)
     buffer.close();
     buffer.open(QIODevice::ReadOnly);
     const bool ret = load(&buffer, LoadAll);
-    d->device = 0;
     Q_ASSERT(ret);
     Q_UNUSED(ret);
 }
@@ -977,6 +1000,16 @@ int TextDocument::lineNumber(int position) const
     return c->firstLineIndex + extra;
 }
 
+void TextDocument::setOptions(Options opt)
+{
+    d->options = opt;
+}
+
+TextDocument::Options TextDocument::options() const
+{
+    return d->options;
+}
+
 // --- TextDocumentPrivate ---
 
 Chunk *TextDocumentPrivate::chunkAt(int p, int *offset) const
@@ -1043,20 +1076,25 @@ QString TextDocumentPrivate::chunkData(const Chunk *chunk, int chunkPos) const
 #ifdef DEBUG_CACHE_HITS
         qWarning() << "chunkData hits" << ++hits << "misses" << misses;
 #endif
+        Q_ASSERT(cachedChunkData.size() == chunk->size());
         return cachedChunkData;
     } else
 #endif
     if (chunk->from == -1) {
         return chunk->data;
-    } else if (!device) {
+    } else if (!device && !chunk->swap) {
         // Can only happen if the device gets deleted behind our back when in Sparse mode
         return QString().fill(QLatin1Char(' '), chunk->size());
     } else {
-        QTextStream ts(device);
+        QTextStream ts(chunk->swap ? static_cast<QIODevice*>(chunk->swap) : device.data());
         if (textCodec)
             ts.setCodec(textCodec);
+//         if (chunk->swap) {
+//             qDebug() << "reading stuff from swap" << chunk << chunk->from << chunk->size();
+//         }
         ts.seek(chunk->from);
         const QString data = ts.read(chunk->length);
+        Q_ASSERT(data.size() == chunk->size());
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
 #ifdef DEBUG_CACHE_HITS
         qWarning() << "chunkData hits" << hits << "misses" << ++misses;
@@ -1083,9 +1121,11 @@ int TextDocumentPrivate::chunkIndex(const Chunk *c) const
 
 void TextDocumentPrivate::instantiateChunk(Chunk *chunk)
 {
-    if (chunk->from == -1 || !device)
+    if (chunk->from == -1 && !chunk->swap)
         return;
     chunk->data = chunkData(chunk, -1);
+//    qDebug() << "instantiateChunk" << chunk << chunk->swap;
+    delete chunk->swap;
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
     // Don't want to cache this chunk since it's going away. If it
     // already was cached then sure, but otherwise don't
@@ -1201,13 +1241,6 @@ void TextDocumentPrivate::joinLastTwoCommands()
     undoRedoStack.at(undoRedoStack.size() - 2)->joinStatus = DocumentCommand::Forward;
 }
 
-void TextDocumentPrivate::onDeviceDestroyed(QObject *o)
-{
-    Q_UNUSED(o);
-    Q_ASSERT(o == device || !device);
-    device = 0;
-}
-
 void TextDocumentPrivate::updateChunkLineNumbers(Chunk *c, int chunkPos) const
 {
     Q_ASSERT(c);
@@ -1284,3 +1317,29 @@ int TextDocumentPrivate::countNewLines(Chunk *c, int chunkPos, int size) const
     return ret;
 }
 
+void TextDocumentPrivate::swapOutChunk(Chunk *c)
+{
+//    qDebug() << "swapOutChunk" << c << c->swap;
+    Q_ASSERT(!c->data.isEmpty());
+    if (c->swap)
+        return;
+    c->from = 0;
+    c->length = c->data.size();
+    c->swap = new QTemporaryFile(this);
+    c->swap->setAutoRemove(!(options & TextDocument::KeepTemporaryFiles));
+    c->swap->open();
+//    qDebug() << "swapping out" << c << "to" << c->swap->fileName() << c->data.size();
+    QTextStream ts(c->swap);
+    if (textCodec)
+        ts.setCodec(textCodec);
+    ts << c->data;
+    c->data.clear();
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
+    // ### do I want to do this?
+    if (cachedChunk == c) {
+        cachedChunk = 0;
+        cachedChunkPos = -1;
+        cachedChunkData.clear();
+    }
+#endif
+}

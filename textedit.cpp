@@ -8,7 +8,6 @@ bool doLog = true;
 QString logFileName;
 #endif
 
-
 /*!
     Constructs an empty TextEdit with parent \a parent.
 */
@@ -470,6 +469,68 @@ void TextEdit::resizeEvent(QResizeEvent *e)
     d->dirty(viewport()->width());
 }
 
+#if 0
+void TextEdit::dragEnterEvent(QDragEnterEvent *e)
+{
+    if (!d->readOnly && d->canInsertFromMimeData(e->mimeData())) {
+        e->acceptProposedAction();
+    } else {
+        e->ignore();
+    }
+}
+
+void TextEdit::dragMoveEvent(QDragMoveEvent *e)
+{
+    if (d->dragOverrideCursor.isValid()) {
+        const QRect r = d->cursorRect(d->dragOverrideCursor);
+        if (!r.isNull())
+            viewport()->update(r);
+        d->dragOverrideCursor = TextCursor();
+    }
+
+    if (!d->readOnly && d->canInsertFromMimeData(e->mimeData())) {
+        int pos;
+        if (e->pos().y() > viewport()->rect().bottom()) {
+            pos = d->document->documentSize();
+        } else {
+            pos = textPositionAt(e->pos());
+        }
+        if (pos != -1) {
+            e->acceptProposedAction();
+            d->dragOverrideCursor = TextCursor(this);
+            d->dragOverrideCursor.setPosition(pos);
+            const QRect r = d->cursorRect(d->dragOverrideCursor);
+            if (!r.isNull())
+                viewport()->update(r);
+            return;
+        }
+    }
+    e->ignore();
+}
+
+void TextEdit::dropEvent(QDropEvent *e)
+{
+    if (!d->readOnly && d->canInsertFromMimeData(e->mimeData())) {
+        int pos;
+        if (e->pos().y() > viewport()->rect().bottom()) {
+            pos = d->document->documentSize();
+        } else {
+            pos = textPositionAt(e->pos());
+        }
+        if (pos != -1) {
+            e->acceptProposedAction();
+            d->dragOverrideCursor = TextCursor(this);
+            d->dragOverrideCursor.setPosition(pos);
+            const QRect r = d->cursorRect(d->dragOverrideCursor);
+            if (!r.isNull())
+                viewport()->update(r);
+            return;
+        }
+    }
+    e->ignore();
+}
+#endif
+
 int TextEdit::textPositionAt(const QPoint &pos) const
 {
     if (!viewport()->rect().contains(pos))
@@ -503,10 +564,7 @@ void TextEdit::setMaximumSizeCopy(int max)
 
 QRect TextEdit::cursorBlockRect() const
 {
-    if (const QTextLayout *l = d->layoutForPosition(d->textCursor.position())) {
-        return l->boundingRect().toRect();
-    }
-    return QRect();
+    return d->cursorRect(d->textCursor);
 }
 
 void TextEdit::wheelEvent(QWheelEvent *e)
@@ -697,8 +755,6 @@ bool TextEdit::hasSelection() const
 
 void TextEdit::insert(int pos, const QString &text)
 {
-    if (d->readOnly)
-        return;
     Q_ASSERT(d->document);
     d->document->insert(pos, text);
 }
@@ -713,10 +769,12 @@ void TextEdit::remove(int from, int size)
 
 void TextEdit::append(const QString &text)
 {
-    if (d->readOnly)
-        return;
     Q_ASSERT(d->document);
+    enum { Margin = 1 };
+    const int diff = verticalScrollBar()->maximum() - verticalScrollBar()->value();
     d->document->append(text);
+    if (diff <= Margin)
+        verticalScrollBar()->setValue(verticalScrollBar()->maximum() - diff);
 }
 
 void TextEdit::removeSelectedText()
@@ -1089,3 +1147,15 @@ void TextEditPrivate::onSelectionChanged()
     }
 }
 
+bool TextEditPrivate::canInsertFromMimeData(const QMimeData *data) const
+{
+    return data->hasText();
+}
+
+QRect TextEditPrivate::cursorRect(const TextCursor &cursor) const
+{
+    if (const QTextLayout *l = layoutForPosition(cursor.position())) {
+        return l->boundingRect().toRect();
+    }
+    return QRect();
+}

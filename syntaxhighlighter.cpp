@@ -2,6 +2,7 @@
 #include "textedit.h"
 #include "textdocument.h"
 #include "textlayout_p.h"
+#include "textdocument_p.h"
 
 SyntaxHighlighter::SyntaxHighlighter(QObject *parent)
     : QObject(parent), d(new Private)
@@ -50,9 +51,9 @@ void SyntaxHighlighter::rehighlight()
 
 void SyntaxHighlighter::setFormat(int start, int count, const QTextCharFormat &format)
 {
-    Q_ASSERT(d->textEdit);
+    ASSUME(d->textEdit);
     Q_ASSERT(start >= 0);
-    Q_ASSERT(start + count < d->currentBlockSize);
+    Q_ASSERT(start + count <= d->currentBlock.size());
     d->formatRanges.append(QTextLayout::FormatRange());
     QTextLayout::FormatRange &range = d->formatRanges.last();
     range.start = start;

@@ -30,12 +30,14 @@ public:
                 this, SLOT(onSectionFormatChanged(Section *)));
     }
 
+    bool canInsertFromMimeData(const QMimeData *data) const;
     void updateHorizontalPosition();
     void updateScrollBarPosition();
     void updateScrollBarPageStep();
     void scrollLines(int lines);
     void timerEvent(QTimerEvent *e);
     void updateCursorPosition(const QPoint &pos);
+    QRect cursorRect(const TextCursor &cursor) const;
     bool atBeginning() const { return viewportPosition == 0; }
     bool atEnd() const { return textEdit->verticalScrollBar()->value() == textEdit->verticalScrollBar()->maximum(); }
 
@@ -46,7 +48,7 @@ public:
     QBasicTimer autoScrollTimer, cursorBlinkTimer;
     QAction *actions[TextEdit::SelectAllAction];
     Section *sectionPressed, *sectionHovered;
-    TextCursor textCursor;
+    TextCursor textCursor, dragOverrideCursor;
     QBasicTimer tripleClickTimer;
     bool pendingScrollBarUpdate;
     QPoint lastHoverPos, lastMouseMove;

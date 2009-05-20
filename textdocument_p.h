@@ -9,6 +9,17 @@
 #include <QMutexLocker>
 #include <QMutex>
 #include <QSet>
+#include <QTemporaryFile>
+#include <QDebug>
+
+#ifndef ASSUME
+#ifdef FATAL_ASSUMES
+#define ASSUME(cond) Q_ASSERT(cond)
+#else
+#define ASSUME(cond) if (!(cond)) qWarning("Failed assumption %s:%d (%s) %s", __FILE__, __LINE__, __FUNCTION__, #cond);
+#endif
+#endif
+
 #include "textdocument.h"
 #ifdef NO_TEXTDOCUMENT_CACHE
 #define NO_TEXTDOCUMENT_CHUNK_CACHE
@@ -20,11 +31,15 @@
 #endif
 
 struct Chunk {
-    Chunk() : previous(0), next(0), from(-1), length(0), firstLineIndex(-1) {}
+    Chunk() : previous(0), next(0), from(-1), length(0), firstLineIndex(-1), swap(0) {}
+    ~Chunk() { delete swap; }
 
     mutable QString data;
     Chunk *previous, *next;
     int size() const { return data.isEmpty() ? length : data.size(); }
+#ifdef QT_DEBUG
+    int pos() const { int p = 0; Chunk *c = previous; while (c) { p += c->size(); c = c->previous; }; return p; }
+#endif
     mutable int from, length, firstLineIndex; // Not used when all is loaded
 #ifdef TEXTDOCUMENT_LINENUMBER_CACHE
     mutable QVector<int> lineNumbers;
@@ -33,6 +48,7 @@ struct Chunk {
     // ((n + 1) * TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL)
     static int lineNumberCacheInterval() { return TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL; }
 #endif
+    QTemporaryFile *swap;
 };
 
 
@@ -103,7 +119,7 @@ public:
         saveState(NotSaving), device(0), ownDevice(false), modified(false),
         deviceMode(TextDocument::Sparse), chunkSize(16384),
         undoRedoStackCurrent(0), modifiedIndex(-1), undoRedoEnabled(true), ignoreUndoRedo(false),
-        hasChunksWithLineNumbers(false), textCodec(0)
+        hasChunksWithLineNumbers(false), textCodec(0), options(0), cursorCommand(false)
     {
         first = last = new Chunk;
     }
@@ -125,7 +141,7 @@ public:
     int documentSize;
     enum SaveState { NotSaving, Saving, AbortSave } saveState;
     QList<Section*> sections;
-    QIODevice *device;
+    QPointer<QIODevice> device;
     bool ownDevice, modified;
     TextDocument::DeviceMode deviceMode;
     int chunkSize;
@@ -136,7 +152,12 @@ public:
 
     bool hasChunksWithLineNumbers;
     QTextCodec *textCodec;
+    TextDocument::Options options;
+    bool cursorCommand;
 
+#ifdef QT_DEBUG
+    mutable QSet<TextDocumentIterator*> iterators;
+#endif
     void joinLastTwoCommands();
 
     void removeChunk(Chunk *c);
@@ -161,8 +182,7 @@ public:
     {
         return ch.isLetterOrNumber() || ch.isMark() || ch == QLatin1Char('_');
     }
-public slots:
-    void onDeviceDestroyed(QObject *o);
+    void swapOutChunk(Chunk *c);
 signals:
     void undoRedoCommandInserted(DocumentCommand *cmd);
     void undoRedoCommandRemoved(DocumentCommand *cmd);
@@ -178,11 +198,32 @@ public:
         : doc(d), pos(p), convert(false)
     {
         Q_ASSERT(doc);
-        chunk = doc->chunkAt(p, &offset);
-        Q_ASSERT(chunk);
-        const int chunkPos = p - offset;
-        chunkData = doc->chunkData(chunk, chunkPos);
+        if (p == d->documentSize) {
+            chunk = d->last;
+            offset = chunk->size() - 1;
+        } else {
+            chunk = doc->chunkAt(p, &offset);
+            Q_ASSERT(chunk);
+            const int chunkPos = p - offset;
+            chunkData = doc->chunkData(chunk, chunkPos);
+#ifdef QT_DEBUG
+            if (doc->q->readCharacter(p) != chunkData.at(offset)) {
+                qDebug() << doc->q->readCharacter(p) << pos
+                         << chunkData.at(offset) << offset << chunkData.size();
+            }
+#endif
+            Q_ASSERT(chunkData.at(offset) == doc->q->readCharacter(p));
+        }
+#ifdef QT_DEBUG
+        doc->iterators.insert(this);
+#endif
     }
+#ifdef QT_DEBUG
+    ~TextDocumentIterator()
+    {
+        Q_ASSERT(doc->iterators.remove(this));
+    }
+#endif
 
     inline bool hasNext() const
     {
@@ -205,7 +246,13 @@ public:
         Q_ASSERT(chunk);
         if (pos == doc->documentSize)
             return QChar();
-        Q_ASSERT(doc->q->readCharacter(pos) == chunkData.at(offset));
+#ifdef QT_DEBUG
+        if (doc->q->readCharacter(pos) != chunkData.at(offset)) {
+            qDebug() << doc->q->readCharacter(pos) << pos
+                     << chunkData.at(offset) << offset << chunkData.size();
+        }
+#endif
+        ASSUME(doc->q->readCharacter(pos) == chunkData.at(offset));
         return convert ? chunkData.at(offset).toLower() : chunkData.at(offset);
     }
 
