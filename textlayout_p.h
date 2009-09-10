@@ -13,6 +13,7 @@
 #include <QDebug>
 #endif
 #include "textdocument.h"
+#include "textedit.h"
 #include "syntaxhighlighter.h"
 
 #ifndef QT_NO_DEBUG_STREAM
@@ -44,6 +45,7 @@ public:
     bool layoutDirty, sectionsDirty;
     QList<QTextLayout*> textLayouts, unusedTextLayouts;
     QHash<QTextLayout*, QTextBlockFormat> blockFormats;
+    QList<TextEdit::ExtraSelection> extraSelections;
     QList<QPair<int, QTextLine> > lines; // int is start position of line in document coordinates
     QRect contentRect; // contentRect means the laid out area, not just the area currently visible
     QString buffer;

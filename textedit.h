@@ -27,6 +27,15 @@ public:
     int cursorWidth() const;
     void setCursorWidth(int cc);
 
+    struct ExtraSelection
+    {
+        TextCursor cursor;
+        QTextCharFormat format;
+    };
+
+    void setExtraSelections(const QList<ExtraSelection> &selections);
+    QList<ExtraSelection> extraSelections() const;
+
     void setSyntaxHighlighter(SyntaxHighlighter *highlighter);
     SyntaxHighlighter *syntaxHighlighter() const;
 

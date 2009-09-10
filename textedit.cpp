@@ -868,6 +868,23 @@ SyntaxHighlighter * TextEdit::syntaxHighlighter() const
     return d->syntaxHighlighter;
 }
 
+static inline bool compareExtraSelection(const TextEdit::ExtraSelection &left, const TextEdit::ExtraSelection &right)
+{
+    return left.cursor < right.cursor;
+}
+
+void TextEdit::setExtraSelections(const QList<ExtraSelection> &selections)
+{
+    d->extraSelections = selections;
+    qSort(d->extraSelections.begin(), d->extraSelections.end(), compareExtraSelection);
+    d->dirty(viewport()->width());
+}
+
+QList<TextEdit::ExtraSelection> TextEdit::extraSelections() const
+{
+    return d->extraSelections;
+}
+
 void TextEditPrivate::onSectionRemoved(Section *section)
 {
     Q_ASSERT(section);
@@ -1159,3 +1176,4 @@ QRect TextEditPrivate::cursorRect(const TextCursor &cursor) const
     }
     return QRect();
 }
+

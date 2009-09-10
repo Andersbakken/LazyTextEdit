@@ -47,7 +47,7 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
         ++index; // for the newline
     textLayout->setText(string);
 
-    QList<QTextLayout::FormatRange> sectionFormats;
+    QList<QTextLayout::FormatRange> formats;
     if (sections) {
         do {
             Q_ASSERT(!sections->isEmpty());
@@ -61,7 +61,7 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
             range.start = qMax(0, l->position() - lineStart); // offset in QTextLayout
             range.length = qMin(l->position() + l->size(), index) - lineStart - range.start;
             range.format = l->format();
-            sectionFormats.append(range);
+            formats.append(range);
             if (l->position() + l->size() >= index) { // > ### ???
                 // means section didn't end here. It continues in the next QTextLayout
                 break;
@@ -113,12 +113,10 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
         line.setPosition(QPoint(leftMargin, y));
         lines.append(qMakePair(lineStart + line.textStart(), line));
     }
-    if (syntaxHighlighter) {
-        textLayout->setAdditionalFormats(syntaxHighlighter->d->formatRanges + sectionFormats);
-        // do block format
-    } else if (!sectionFormats.isEmpty()) {
-        textLayout->setAdditionalFormats(sectionFormats);
+    if (syntaxHighlighter && !syntaxHighlighter->d->formatRanges.isEmpty()) {
+        formats += syntaxHighlighter->d->formatRanges;
     }
+    textLayout->setAdditionalFormats(formats);
     lastBottomMargin = bottomMargin;
 
     textLayout->endLayout();
