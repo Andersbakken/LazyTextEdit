@@ -26,8 +26,8 @@ public:
         pendingScrollBarUpdate(false)
     {
         textEdit = qptr;
-        connect(SectionManager::instance(), SIGNAL(sectionFormatChanged(Section *)),
-                this, SLOT(onSectionFormatChanged(Section *)));
+        connect(TextSectionManager::instance(), SIGNAL(sectionFormatChanged(TextSection *)),
+                this, SLOT(onTextSectionFormatChanged(TextSection *)));
     }
 
     bool canInsertFromMimeData(const QMimeData *data) const;
@@ -47,7 +47,7 @@ public:
         ensureCursorVisiblePending, inMouseEvent;
     QBasicTimer autoScrollTimer, cursorBlinkTimer;
     QAction *actions[TextEdit::SelectAllAction];
-    Section *sectionPressed, *sectionHovered;
+    TextSection *sectionPressed, *sectionHovered;
     TextCursor textCursor, dragOverrideCursor;
     QBasicTimer tripleClickTimer;
     bool pendingScrollBarUpdate;
@@ -55,9 +55,9 @@ public:
     QHash<DocumentCommand *, QPair<CursorData, CursorData> > undoRedoCommands;
 public slots:
     void onSelectionChanged();
-    void onSectionAdded();
-    void onSectionRemoved(Section *section);
-    void onSectionFormatChanged(Section *section);
+    void onTextSectionAdded();
+    void onTextSectionRemoved(TextSection *section);
+    void onTextSectionFormatChanged(TextSection *section);
     void updateScrollBar();
     void updateCopyAndCutEnabled();
     void onDocumentDestroyed();

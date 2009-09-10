@@ -539,7 +539,7 @@ bool TextDocument::insert(int pos, const QString &string)
         }
 #endif
 
-        Section *s = sectionAt(pos);
+        TextSection *s = sectionAt(pos);
         if (s && s->position() != pos) {
             s->d.size += string.size();
         }
@@ -552,7 +552,7 @@ bool TextDocument::insert(int pos, const QString &string)
             if (cursor->anchor >= pos)
                 cursor->anchor += string.size();
         }
-        foreach(Section *section, sections(pos, -1)) {
+        foreach(TextSection *section, sections(pos, -1)) {
             section->d.position += string.size();
         }
 
@@ -684,8 +684,8 @@ void TextDocument::remove(int pos, int size)
             cursor->anchor -= qMin(size, cursor->anchor - pos);
     }
 
-    QList<Section*> s = sections(pos, -1);
-    foreach(Section *section, s) {
+    QList<TextSection*> s = sections(pos, -1);
+    foreach(TextSection *section, s) {
         const QPair<int, int> intersection = ::intersection(pos, size, section->position(), section->size());
         if (intersection.second == section->size()) {
             delete section;
@@ -729,8 +729,8 @@ void TextDocument::remove(int pos, int size)
         emit d->undoRedoCommandFinished(cmd);
 }
 
-typedef QList<Section*>::iterator SectionIterator;
-static inline bool compareSection(const Section *left, const Section *right)
+typedef QList<TextSection*>::iterator TextSectionIterator;
+static inline bool compareTextSection(const TextSection *left, const TextSection *right)
 {
     // don't make this compare document. Look at ::sections()
     return left->position() < right->position();
@@ -741,7 +741,7 @@ static inline bool match(int pos, int left, int size)
     return pos >= left && pos < left + size;
 }
 
-static inline bool match(int pos, int size, const Section *section, TextDocument::SectionOptions flags)
+static inline bool match(int pos, int size, const TextSection *section, TextDocument::TextSectionOptions flags)
 {
     const int sectionPos = section->position();
     const int sectionSize = section->size();
@@ -759,33 +759,33 @@ static inline bool match(int pos, int size, const Section *section, TextDocument
 }
 
 
-void TextDocument::takeSection(Section *section)
+void TextDocument::takeTextSection(TextSection *section)
 {
     Q_ASSERT(section);
     Q_ASSERT(section->document() == this);
-    const SectionIterator it = qBinaryFind(d->sections.begin(), d->sections.end(), section, compareSection);
+    const TextSectionIterator it = qBinaryFind(d->sections.begin(), d->sections.end(), section, compareTextSection);
     Q_ASSERT(it != d->sections.end());
     emit sectionRemoved(section);
     d->sections.erase(it);
     remove(section->position(), section->size());
 }
 
-QList<Section*> TextDocument::sections(int pos, int size, SectionOptions flags) const
+QList<TextSection*> TextDocument::sections(int pos, int size, TextSectionOptions flags) const
 {
     if (size == -1)
         size = d->documentSize - pos;
     if (pos == 0 && size == d->documentSize)
         return d->sections;
-    // binary search. Sections are sorted in order of position
-    QList<Section*> ret;
+    // binary search. TextSections are sorted in order of position
+    QList<TextSection*> ret;
     if (d->sections.isEmpty()) {
         return ret;
     }
 
-    const Section tmp(pos, size, 0);
-    SectionIterator it = qLowerBound<SectionIterator>(d->sections.begin(), d->sections.end(), &tmp, compareSection);
+    const TextSection tmp(pos, size, static_cast<TextDocument*>(0));
+    TextSectionIterator it = qLowerBound<TextSectionIterator>(d->sections.begin(), d->sections.end(), &tmp, compareTextSection);
     if (flags & IncludePartial && it != d->sections.begin()) {
-        SectionIterator prev = it;
+        TextSectionIterator prev = it;
         do {
             if (::match(pos, size, *--prev, flags))
                 ret.append(*prev);
@@ -802,38 +802,38 @@ QList<Section*> TextDocument::sections(int pos, int size, SectionOptions flags) 
     return ret;
 }
 
-void TextDocument::removeSection(Section *section)
+void TextDocument::removeTextSection(TextSection *section)
 {
-    takeSection(section);
+    takeTextSection(section);
     delete section;
 }
 
-Section *TextDocument::insertSection(int pos, int size,
+TextSection *TextDocument::insertTextSection(int pos, int size,
                                      const QTextCharFormat &format, const QVariant &data)
 {
     Q_ASSERT(pos >= 0);
     Q_ASSERT(size >= 0);
     Q_ASSERT(pos < d->documentSize);
 
-    Section *l = new Section(pos, size, this, format, data);
-    SectionIterator it = qLowerBound<SectionIterator>(d->sections.begin(), d->sections.end(), l, compareSection);
+    TextSection *l = new TextSection(pos, size, this, format, data);
+    TextSectionIterator it = qLowerBound<TextSectionIterator>(d->sections.begin(), d->sections.end(), l, compareTextSection);
     if (it != d->sections.begin()) {
-        SectionIterator before = (it - 1);
+        TextSectionIterator before = (it - 1);
         if ((*before)->position() + size > pos) {
-            l->d.document = 0; // don't want it to call takeSection since it isn't in the list yet
+            l->d.document = 0; // don't want it to call takeTextSection since it isn't in the list yet
             delete l;
             return 0;
             // no overlapping. Not all that awesome to construct the
-            // Section first and then delete it but I might allow
+            // TextSection first and then delete it but I might allow
             // overlapping soon enough
         }
     }
     if (it != d->sections.end() && pos + size > (*it)->position()) {
-        l->d.document = 0; // don't want it to call takeSection since it isn't in the list yet
+        l->d.document = 0; // don't want it to call takeTextSection since it isn't in the list yet
         delete l;
         return 0;
         // no overlapping. Not all that awesome to construct the
-        // Section first and then delete it but I might allow
+        // TextSection first and then delete it but I might allow
         // overlapping soon enough
     }
     d->sections.insert(it, l);

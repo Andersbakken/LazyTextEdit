@@ -147,10 +147,10 @@ void TextEdit::setDocument(TextDocument *doc)
     d->textCursor.textEdit = this;
     connect(d->document->d, SIGNAL(undoRedoCommandInserted(DocumentCommand *)),
             d, SLOT(onDocumentCommandInserted(DocumentCommand *)));
-    connect(d->document, SIGNAL(sectionAdded(Section *)),
-            d, SLOT(onSectionAdded()));
-    connect(d->document, SIGNAL(sectionRemoved(Section *)),
-            d, SLOT(onSectionRemoved(Section *)));
+    connect(d->document, SIGNAL(sectionAdded(TextSection *)),
+            d, SLOT(onTextSectionAdded()));
+    connect(d->document, SIGNAL(sectionRemoved(TextSection *)),
+            d, SLOT(onTextSectionRemoved(TextSection *)));
     connect(d->document->d, SIGNAL(undoRedoCommandRemoved(DocumentCommand *)),
             d, SLOT(onDocumentCommandRemoved(DocumentCommand *)));
     connect(d->document->d, SIGNAL(undoRedoCommandTriggered(DocumentCommand *, bool)),
@@ -885,7 +885,7 @@ QList<TextEdit::ExtraSelection> TextEdit::extraSelections() const
     return d->extraSelections;
 }
 
-void TextEditPrivate::onSectionRemoved(Section *section)
+void TextEditPrivate::onTextSectionRemoved(TextSection *section)
 {
     Q_ASSERT(section);
     if (section == sectionPressed) {
@@ -897,7 +897,7 @@ void TextEditPrivate::onSectionRemoved(Section *section)
     }
 }
 
-void TextEditPrivate::onSectionAdded()
+void TextEditPrivate::onTextSectionAdded()
 {
     updateCursorPosition(lastHoverPos);
     sectionsDirty = true;
@@ -982,7 +982,7 @@ void TextEdit::setTextCursor(const TextCursor &textCursor)
     }
 }
 
-Section *TextEdit::sectionAt(const QPoint &pos) const
+TextSection *TextEdit::sectionAt(const QPoint &pos) const
 {
     Q_ASSERT(d->document);
     const int textPos = textPositionAt(pos);
@@ -1147,7 +1147,7 @@ void TextEditPrivate::updateCursorPosition(const QPoint &pos)
 }
 
 
-void TextEditPrivate::onSectionFormatChanged(Section *section)
+void TextEditPrivate::onTextSectionFormatChanged(TextSection *section)
 {
     if (section->document() != document
         || section->position() > layoutEnd

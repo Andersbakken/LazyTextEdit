@@ -6,10 +6,11 @@
 #include <QVariant>
 
 class TextDocument;
-class Section
+class TextEdit;
+class TextSection
 {
 public:
-    ~Section();
+    ~TextSection();
     QString text() const;
     int position() const { return d.position; }
     int size() const { return d.size; }
@@ -20,20 +21,27 @@ public:
     TextDocument *document() const { return d.document; }
 private:
     struct Data {
-        Data(int p, int s, TextDocument *doc, const QTextCharFormat &f, const QVariant &d)
-            : position(p), size(s), document(doc), format(f), data(d)
+        Data(int p, int s, TextDocument *doc, TextEdit *e, const QTextCharFormat &f, const QVariant &d)
+            : position(p), size(s), document(doc), edit(e), format(f), data(d)
         {}
         int position, size;
         TextDocument *document;
+        TextEdit *edit;
         QTextCharFormat format;
         QVariant data;
     } d;
 
-    Section(int pos, int size, TextDocument *doc, const QTextCharFormat &format = QTextCharFormat(),
+    TextSection(int pos, int size, TextDocument *doc, const QTextCharFormat &format = QTextCharFormat(),
             const QVariant &data = QVariant())
-        : d(pos, size, doc, format, data)
+        : d(pos, size, doc, 0, format, data)
     {}
+    TextSection(int pos, int size, TextEdit *edit, const QTextCharFormat &format = QTextCharFormat(),
+            const QVariant &data = QVariant())
+        : d(pos, size, 0, edit, format, data)
+    {}
+
     friend class TextDocument;
+    friend class TextEdit;
 };
 
 #endif

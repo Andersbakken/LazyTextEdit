@@ -88,17 +88,17 @@ public:
     TextCursor find(const QChar &ch, int pos = 0, FindMode flags = 0) const;
     bool insert(int pos, const QString &ba);
     void remove(int pos, int size);
-    enum SectionOption {
+    enum TextSectionOption {
         IncludePartial = 0x01
     };
-    Q_DECLARE_FLAGS(SectionOptions, SectionOption);
+    Q_DECLARE_FLAGS(TextSectionOptions, TextSectionOption);
 
-    QList<Section*> sections(int from = 0, int size = -1, SectionOptions opt = 0) const;
-    inline Section *sectionAt(int pos) const { return sections(pos, 1, IncludePartial).value(0); }
-    Section *insertSection(int pos, int size, const QTextCharFormat &format = QTextCharFormat(),
+    QList<TextSection*> sections(int from = 0, int size = -1, TextSectionOptions opt = 0) const;
+    inline TextSection *sectionAt(int pos) const { return sections(pos, 1, IncludePartial).value(0); }
+    TextSection *insertTextSection(int pos, int size, const QTextCharFormat &format = QTextCharFormat(),
                            const QVariant &data = QVariant());
-    void removeSection(Section *section);
-    void takeSection(Section *section);
+    void removeTextSection(TextSection *section);
+    void takeTextSection(TextSection *section);
     int currentMemoryUsage() const;
 
     bool isUndoAvailable() const;
@@ -114,9 +114,8 @@ public slots:
     void redo();
     bool abortSave();
 signals:
-    void foo(int pos, int size);
-    void sectionAdded(Section *section);
-    void sectionRemoved(Section *removed);
+    void sectionAdded(TextSection *section);
+    void sectionRemoved(TextSection *removed);
     void charactersAdded(int from, int count);
     void charactersRemoved(int from, int count);
     void saveProgress(int progress);

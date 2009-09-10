@@ -38,7 +38,7 @@ public:
         static TextLayoutCacheManager *inst = new TextLayoutCacheManager(QCoreApplication::instance());
         return inst;
     }
-    // ### this class doesn't react to Sections added or removed. I
+    // ### this class doesn't react to TextSections added or removed. I
     // ### don't think it needs to since it's only being used for
     // ### cursor movement which shouldn't be impacted by these things
 

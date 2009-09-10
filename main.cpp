@@ -208,7 +208,6 @@ public:
             textEdit->document()->setChunkSize(chunkSize);
         }
         textEdit->setReadOnly(readOnly);
-        connect(textEdit->document(), SIGNAL(foo(int, int)), this, SLOT(onFoo(int, int)), Qt::QueuedConnection);
         QFontDatabase fdb;
         foreach(QString family, fdb.families()) {
             if (fdb.isFixedPitch(family)) {
@@ -218,7 +217,7 @@ public:
             }
         }
 
-        textEdit->setSyntaxHighlighter(new Highlighter(textEdit));
+//        textEdit->setSyntaxHighlighter(new Highlighter(textEdit));
 #ifndef QT_NO_DEBUG_STREAM
         if (codec) {
             qDebug() << "using codec" << codec->name();
@@ -237,9 +236,9 @@ public:
         l->addWidget(lbl);
 
         new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_E), textEdit, SLOT(ensureCursorVisible()));
-        new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_L), this, SLOT(createSection()));
+        new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_L), this, SLOT(createTextSection()));
         new QShortcut(QKeySequence(QKeySequence::Close), this, SLOT(close()));
-        new QShortcut(QKeySequence(Qt::Key_F2), this, SLOT(changeSectionFormat()));
+        new QShortcut(QKeySequence(Qt::Key_F2), this, SLOT(changeTextSectionFormat()));
 
         new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_S), this, SLOT(save()));
         new QShortcut(QKeySequence(Qt::ALT + Qt::Key_S), this, SLOT(saveAs()));
@@ -258,7 +257,7 @@ public:
         box->setRange(0, INT_MAX);
         l->addLayout(h);
 
-        connect(textEdit, SIGNAL(sectionClicked(Section *, QPoint)), this, SLOT(onSectionClicked(Section *, QPoint)));
+        connect(textEdit, SIGNAL(sectionClicked(TextSection *, QPoint)), this, SLOT(onTextSectionClicked(TextSection *, QPoint)));
 
         textEdit->viewport()->setAutoFillBackground(true);
         connect(textEdit->document(), SIGNAL(modificationChanged(bool)), this, SLOT(onModificationChanged(bool)));
@@ -369,7 +368,7 @@ public slots:
         }
     }
 
-    void createSection()
+    void createTextSection()
     {
         TextCursor cursor = textEdit->textCursor();
         if (cursor.hasSelection()) {
@@ -378,14 +377,14 @@ public slots:
             format.setFontUnderline(true);
             const int pos = cursor.selectionStart();
             const int size = cursor.selectionEnd() - pos;
-            Section *s = textEdit->document()->insertSection(pos, size, format, cursor.selectedText());
+            TextSection *s = textEdit->document()->insertTextSection(pos, size, format, cursor.selectedText());
             Q_UNUSED(s);
             Q_ASSERT(s);
             Q_ASSERT(!textEdit->document()->sections().isEmpty());
         }
     }
 
-    void changeSectionFormat()
+    void changeTextSectionFormat()
     {
         static bool first = true;
         QTextCharFormat format;
@@ -397,12 +396,12 @@ public slots:
             format.setForeground(Qt::blue);
         }
         first = !first;
-        foreach(Section *s, textEdit->document()->sections()) {
+        foreach(TextSection *s, textEdit->document()->sections()) {
             s->setFormat(format);
         }
 
     }
-    void onSectionClicked(Section *section, const QPoint &pos)
+    void onTextSectionClicked(TextSection *section, const QPoint &pos)
     {
 #ifndef QT_NO_DEBUG_STREAM
         qDebug() << section->text() << section->data() << pos;

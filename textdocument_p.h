@@ -65,16 +65,16 @@ static inline QPair<int, int> intersection(int index1, int size1, int index2, in
     return ret;
 }
 
-class SectionManager : public QObject
+class TextSectionManager : public QObject
 {
     Q_OBJECT
 public:
-    static SectionManager *instance() { static SectionManager *inst = new SectionManager; return inst; }
+    static TextSectionManager *instance() { static TextSectionManager *inst = new TextSectionManager; return inst; }
 signals:
-    void sectionFormatChanged(Section *section);
+    void sectionFormatChanged(TextSection *section);
 private:
-    SectionManager() : QObject(qApp) {}
-    friend class Section;
+    TextSectionManager() : QObject(qApp) {}
+    friend class TextSection;
 };
 
 
@@ -101,7 +101,7 @@ struct DocumentCommand {
     } joinStatus;
 };
 
-struct Section;
+struct TextSection;
 struct TextCursorSharedPrivate;
 struct TextDocumentPrivate : public QObject
 {
@@ -140,7 +140,7 @@ public:
 
     int documentSize;
     enum SaveState { NotSaving, Saving, AbortSave } saveState;
-    QList<Section*> sections;
+    QList<TextSection*> sections;
     QPointer<QIODevice> device;
     bool ownDevice, modified;
     TextDocument::DeviceMode deviceMode;

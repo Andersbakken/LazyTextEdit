@@ -49,17 +49,17 @@ public:
     QList<QPair<int, QTextLine> > lines; // int is start position of line in document coordinates
     QRect contentRect; // contentRect means the laid out area, not just the area currently visible
     QString buffer;
-    QList<Section*> sections; // these are all the sections in the buffer. Some might be before the current viewport
+    QList<TextSection*> sections; // these are all the sections in the buffer. Some might be before the current viewport
     QFont font;
 
     void dirty(int width);
-    QList<Section*> relayoutCommon(); // should maybe be smarter about MinimumScreenSize. Detect it based on font and viewport size
+    QList<TextSection*> relayoutCommon(); // should maybe be smarter about MinimumScreenSize. Detect it based on font and viewport size
     void relayoutByPosition(int size);
     void relayoutByGeometry(int height);
 
     int viewportWidth() const;
 
-    int doLayout(int index, QList<Section*> *sections);
+    int doLayout(int index, QList<TextSection*> *sections);
 
     QTextLine lineForPosition(int pos, int *offsetInLine = 0, int *lineIndex = 0) const;
     QTextLayout *layoutForPosition(int pos, int *offset = 0, int *index = 0) const;

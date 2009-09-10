@@ -16,7 +16,7 @@ int TextLayout::viewportWidth() const
     return textEdit ? textEdit->viewport()->width() : viewport;
 }
 
-int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in document coordinates
+int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is in document coordinates
 {
     QTextLayout *textLayout = 0;
     if (!unusedTextLayouts.isEmpty()) {
@@ -51,7 +51,7 @@ int TextLayout::doLayout(int index, QList<Section*> *sections) // index is in do
     if (sections) {
         do {
             Q_ASSERT(!sections->isEmpty());
-            Section *l = sections->first();
+            TextSection *l = sections->first();
             Q_ASSERT(l->position() + l->size() >= lineStart);
             if (l->position() >= index) {
                 break;
@@ -160,7 +160,7 @@ int TextLayout::textPositionAt(const QPoint &p) const
     return -1;
 }
 
-QList<Section*> TextLayout::relayoutCommon()
+QList<TextSection*> TextLayout::relayoutCommon()
 {
     Q_ASSERT(layoutDirty);
     layoutDirty = false;
@@ -185,7 +185,7 @@ QList<Section*> TextLayout::relayoutCommon()
         sections = document->sections(bufferPosition, buffer.size(), TextDocument::IncludePartial);
     }
     sectionsDirty = false;
-    QList<Section*> l = sections;
+    QList<TextSection*> l = sections;
     while (!l.isEmpty() && l.first()->position() + l.first()->size() < viewportPosition)
         l.takeFirst(); // could cache these as well
     return l;
@@ -196,7 +196,7 @@ void TextLayout::relayoutByGeometry(int height)
     if (!layoutDirty)
         return;
 
-    QList<Section*> l = relayoutCommon();
+    QList<TextSection*> l = relayoutCommon();
 
     const int max = viewportPosition + buffer.size() - bufferOffset(); // in document coordinates
     Q_ASSERT(viewportPosition == 0 || bufferReadCharacter(viewportPosition - 1) == '\n');
@@ -235,7 +235,7 @@ void TextLayout::relayoutByPosition(int size)
     if (!layoutDirty)
         return;
 
-    QList<Section*> l = relayoutCommon();
+    QList<TextSection*> l = relayoutCommon();
 
     const int max = viewportPosition + qMin(size, buffer.size() - bufferOffset());
     Q_ASSERT(viewportPosition == 0 || bufferReadCharacter(viewportPosition - 1) == '\n');

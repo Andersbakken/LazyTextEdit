@@ -79,7 +79,7 @@ public:
 
     void setTextCursor(const TextCursor &textCursor);
 
-    Section *sectionAt(const QPoint &pos) const;
+    TextSection *sectionAt(const QPoint &pos) const;
 
     void ensureCursorVisible(const TextCursor &cursor, int linesMargin = 0);
     bool isUndoAvailable() const;
@@ -108,7 +108,7 @@ public slots:
 signals:
     void selectionChanged();
     void cursorPositionChanged(int pos);
-    void sectionClicked(Section *section, const QPoint &pos);
+    void sectionClicked(TextSection *section, const QPoint &pos);
     void undoAvailableChanged(bool on);
     void redoAvailableChanged(bool on);
 protected:

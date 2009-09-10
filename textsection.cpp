@@ -2,21 +2,21 @@
 #include "textdocument.h"
 #include "textdocument_p.h"
 
-Section::~Section()
+TextSection::~TextSection()
 {
     if (d.document)
-        d.document->takeSection(this);
+        d.document->takeTextSection(this);
 }
 
-QString Section::text() const
+QString TextSection::text() const
 {
     Q_ASSERT(d.document);
     return d.document->read(d.position, d.size);
 }
 
-void Section::setFormat(const QTextCharFormat &format)
+void TextSection::setFormat(const QTextCharFormat &format)
 {
     Q_ASSERT(d.document);
     d.format = format;
-    emit SectionManager::instance()->sectionFormatChanged(this);
+    emit TextSectionManager::instance()->sectionFormatChanged(this);
 }
