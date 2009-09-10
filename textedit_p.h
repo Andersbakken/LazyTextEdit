@@ -6,6 +6,7 @@
 #include <QAction>
 #include "textlayout_p.h"
 #include "textdocument_p.h"
+#include "textsection_p.h"
 #include "textcursor.h"
 #include "textedit.h"
 
@@ -28,6 +29,8 @@ public:
         textEdit = qptr;
         connect(TextSectionManager::instance(), SIGNAL(sectionFormatChanged(TextSection *)),
                 this, SLOT(onTextSectionFormatChanged(TextSection *)));
+        connect(TextSectionManager::instance(), SIGNAL(sectionCursorChanged(TextSection *)),
+                this, SLOT(onTextSectionCursorChanged(TextSection *)));
     }
 
     bool canInsertFromMimeData(const QMimeData *data) const;
@@ -58,6 +61,7 @@ public slots:
     void onTextSectionAdded();
     void onTextSectionRemoved(TextSection *section);
     void onTextSectionFormatChanged(TextSection *section);
+    void onTextSectionCursorChanged(TextSection *section);
     void updateScrollBar();
     void updateCopyAndCutEnabled();
     void onDocumentDestroyed();

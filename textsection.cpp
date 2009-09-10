@@ -1,6 +1,6 @@
 #include "textsection.h"
 #include "textdocument.h"
-#include "textdocument_p.h"
+#include "textsection_p.h"
 
 TextSection::~TextSection()
 {
@@ -30,12 +30,14 @@ void TextSection::setCursor(const QCursor &cursor)
 {
     d.cursor = cursor;
     d.hasCursor = true;
+    emit TextSectionManager::instance()->sectionCursorChanged(this);
 }
 
 void TextSection::resetCursor()
 {
     d.hasCursor = false;
     d.cursor = QCursor();
+    emit TextSectionManager::instance()->sectionCursorChanged(this);
 }
 
 bool TextSection::hasCursor() const

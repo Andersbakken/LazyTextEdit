@@ -65,19 +65,6 @@ static inline QPair<int, int> intersection(int index1, int size1, int index2, in
     return ret;
 }
 
-class TextSectionManager : public QObject
-{
-    Q_OBJECT
-public:
-    static TextSectionManager *instance() { static TextSectionManager *inst = new TextSectionManager; return inst; }
-signals:
-    void sectionFormatChanged(TextSection *section);
-private:
-    TextSectionManager() : QObject(qApp) {}
-    friend class TextSection;
-};
-
-
 class TextDocumentIterator;
 struct DocumentCommand {
     enum Type {

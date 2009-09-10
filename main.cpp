@@ -374,6 +374,7 @@ public slots:
             const int pos = cursor.selectionStart();
             const int size = cursor.selectionEnd() - pos;
             TextSection *s = textEdit->document()->insertTextSection(pos, size, format, cursor.selectedText());
+            s->setCursor(Qt::PointingHandCursor);
             Q_UNUSED(s);
             Q_ASSERT(s);
             Q_ASSERT(!textEdit->document()->sections().isEmpty());

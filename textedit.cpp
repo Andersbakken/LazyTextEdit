@@ -1143,7 +1143,9 @@ void TextEditPrivate::updateCursorPosition(const QPoint &pos)
 {
     lastHoverPos = pos;
     sectionHovered = textEdit->sectionAt(pos);
-    textEdit->viewport()->setCursor(sectionHovered ? Qt::PointingHandCursor : Qt::IBeamCursor);
+    textEdit->viewport()->setCursor((sectionHovered && sectionHovered->hasCursor())
+                                    ? sectionHovered->cursor()
+                                    : Qt::IBeamCursor);
 }
 
 
@@ -1155,6 +1157,16 @@ void TextEditPrivate::onTextSectionFormatChanged(TextSection *section)
         return;
     }
     dirty(textEdit->viewport()->width());
+}
+
+void TextEditPrivate::onTextSectionCursorChanged(TextSection *section)
+{
+    if (section->document() != document
+        || section->position() > layoutEnd
+        || section->position() + section->size() < viewportPosition) {
+        return;
+    }
+    updateCursorPosition(lastHoverPos);
 }
 
 void TextEditPrivate::onSelectionChanged()
