@@ -88,13 +88,9 @@ public:
     TextCursor find(const QChar &ch, int pos = 0, FindMode flags = 0) const;
     bool insert(int pos, const QString &ba);
     void remove(int pos, int size);
-    enum TextSectionOption {
-        IncludePartial = 0x01
-    };
-    Q_DECLARE_FLAGS(TextSectionOptions, TextSectionOption);
 
-    QList<TextSection*> sections(int from = 0, int size = -1, TextSectionOptions opt = 0) const;
-    inline TextSection *sectionAt(int pos) const { return sections(pos, 1, IncludePartial).value(0); }
+    QList<TextSection*> sections(int from = 0, int size = -1, TextSection::TextSectionOptions opt = 0) const;
+    inline TextSection *sectionAt(int pos) const { return sections(pos, 1, TextSection::IncludePartial).value(0); }
     TextSection *insertTextSection(int pos, int size, const QTextCharFormat &format = QTextCharFormat(),
                            const QVariant &data = QVariant());
     void removeTextSection(TextSection *section);

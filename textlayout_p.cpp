@@ -180,9 +180,9 @@ QList<TextSection*> TextLayout::relayoutCommon()
             && buffer.size() - bufferOffset() < MinimumBufferSize)) {
         bufferPosition = qMax(0, viewportPosition - MinimumBufferSize);
         buffer = document->read(bufferPosition, int(MinimumBufferSize * 2.5));
-        sections = document->sections(bufferPosition, buffer.size(), TextDocument::IncludePartial);
+        sections = document->sections(bufferPosition, buffer.size(), TextSection::IncludePartial);
     } else if (sectionsDirty) {
-        sections = document->sections(bufferPosition, buffer.size(), TextDocument::IncludePartial);
+        sections = document->sections(bufferPosition, buffer.size(), TextSection::IncludePartial);
     }
     sectionsDirty = false;
     QList<TextSection*> l = sections;

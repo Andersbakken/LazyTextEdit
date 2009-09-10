@@ -11,6 +11,11 @@ class TextEdit;
 class TextSection
 {
 public:
+    enum TextSectionOption {
+        IncludePartial = 0x01
+    };
+    Q_DECLARE_FLAGS(TextSectionOptions, TextSectionOption);
+
     ~TextSection();
     QString text() const;
     int position() const { return d.position; }
@@ -50,5 +55,8 @@ private:
     friend class TextDocument;
     friend class TextEdit;
 };
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(TextSection::TextSectionOptions);
+
 
 #endif

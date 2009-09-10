@@ -741,14 +741,14 @@ static inline bool match(int pos, int left, int size)
     return pos >= left && pos < left + size;
 }
 
-static inline bool match(int pos, int size, const TextSection *section, TextDocument::TextSectionOptions flags)
+static inline bool match(int pos, int size, const TextSection *section, TextSection::TextSectionOptions flags)
 {
     const int sectionPos = section->position();
     const int sectionSize = section->size();
 
     if (::match(sectionPos, pos, size) && ::match(sectionPos + sectionSize - 1, pos, size)) {
         return true;
-    } else if (flags & TextDocument::IncludePartial) {
+    } else if (flags & TextSection::IncludePartial) {
         const int boundaries[] = { pos, pos + size - 1 };
         for (int i=0; i<2; ++i) {
             if (::match(boundaries[i], sectionPos, sectionSize))
@@ -770,7 +770,7 @@ void TextDocument::takeTextSection(TextSection *section)
     remove(section->position(), section->size());
 }
 
-QList<TextSection*> TextDocument::sections(int pos, int size, TextSectionOptions flags) const
+QList<TextSection*> TextDocument::sections(int pos, int size, TextSection::TextSectionOptions flags) const
 {
     if (size == -1)
         size = d->documentSize - pos;
@@ -784,7 +784,7 @@ QList<TextSection*> TextDocument::sections(int pos, int size, TextSectionOptions
 
     const TextSection tmp(pos, size, static_cast<TextDocument*>(0));
     TextSectionIterator it = qLowerBound<TextSectionIterator>(d->sections.begin(), d->sections.end(), &tmp, compareTextSection);
-    if (flags & IncludePartial && it != d->sections.begin()) {
+    if (flags & TextSection::IncludePartial && it != d->sections.begin()) {
         TextSectionIterator prev = it;
         do {
             if (::match(pos, size, *--prev, flags))
