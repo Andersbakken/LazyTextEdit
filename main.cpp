@@ -317,10 +317,6 @@ public slots:
         if (!str.isEmpty())
             textEdit->document()->save(str);
     }
-    void onFoo(int pos, int size)
-    {
-        textEdit->textCursor().setSelection(pos, size);
-    }
     void about()
     {
         textEdit->textCursor().setPosition(0);
