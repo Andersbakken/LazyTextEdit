@@ -20,3 +20,25 @@ void TextSection::setFormat(const QTextCharFormat &format)
     d.format = format;
     emit TextSectionManager::instance()->sectionFormatChanged(this);
 }
+
+QCursor TextSection::cursor() const
+{
+    return d.cursor;
+}
+
+void TextSection::setCursor(const QCursor &cursor)
+{
+    d.cursor = cursor;
+    d.hasCursor = true;
+}
+
+void TextSection::resetCursor()
+{
+    d.hasCursor = false;
+    d.cursor = QCursor();
+}
+
+bool TextSection::hasCursor() const
+{
+    return d.hasCursor;
+}
