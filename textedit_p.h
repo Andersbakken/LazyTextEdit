@@ -43,6 +43,9 @@ public:
     QRect cursorRect(const TextCursor &cursor) const;
     bool atBeginning() const { return viewportPosition == 0; }
     bool atEnd() const { return textEdit->verticalScrollBar()->value() == textEdit->verticalScrollBar()->maximum(); }
+    bool dirtyForSection(TextSection *section);
+    bool isSectionOnScreen(const TextSection *section) const;
+    void cursorMoveKeyEvent(QKeyEvent *e);
 
     int requestedScrollBarPosition, lastRequestedScrollBarPosition, cursorWidth, sectionCount,
         maximumSizeCopy, pendingTimeOut, autoScrollLines;
@@ -58,7 +61,7 @@ public:
     QHash<DocumentCommand *, QPair<CursorData, CursorData> > undoRedoCommands;
 public slots:
     void onSelectionChanged();
-    void onTextSectionAdded();
+    void onTextSectionAdded(TextSection *section);
     void onTextSectionRemoved(TextSection *section);
     void onTextSectionFormatChanged(TextSection *section);
     void onTextSectionCursorChanged(TextSection *section);

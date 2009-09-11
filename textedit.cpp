@@ -148,7 +148,7 @@ void TextEdit::setDocument(TextDocument *doc)
     connect(d->document->d, SIGNAL(undoRedoCommandInserted(DocumentCommand *)),
             d, SLOT(onDocumentCommandInserted(DocumentCommand *)));
     connect(d->document, SIGNAL(sectionAdded(TextSection *)),
-            d, SLOT(onTextSectionAdded()));
+            d, SLOT(onTextSectionAdded(TextSection *)));
     connect(d->document, SIGNAL(sectionRemoved(TextSection *)),
             d, SLOT(onTextSectionRemoved(TextSection *)));
     connect(d->document->d, SIGNAL(undoRedoCommandRemoved(DocumentCommand *)),
@@ -589,10 +589,6 @@ void TextEdit::changeEvent(QEvent *e)
 
 void TextEdit::keyPressEvent(QKeyEvent *e)
 {
-    if (d->readOnly) {
-        e->ignore();
-        return;
-    }
 #ifndef QT_NO_DEBUG
     if (doLog) {
         QFile file(logFileName);
@@ -601,23 +597,13 @@ void TextEdit::keyPressEvent(QKeyEvent *e)
         ds << int(e->type()) << e->key() << int(e->modifiers()) << e->text() << e->isAutoRepeat() << e->count();
     }
 #endif
-#if 0
-    for (int i=0; i<=SelectAllAction; ++i) {
-        QAction *action = d->actions[i];
-        if (d->actions[i]->isEnabled() && e->matches(action->shortcut())) {
-            d->actions[i]->trigger();
-            e->accept();
-            return;
-        }
-    }
-#endif
 
     Q_ASSERT(d->textCursor.textEdit == this);
-    if (d->textCursor.cursorMoveKeyEvent(e)) {
-        e->accept();
+    if (d->readOnly) {
+        d->cursorMoveKeyEvent(e);
         return;
-    } else if (d->readOnly) {
-        e->ignore();
+    } else if (d->textCursor.cursorMoveKeyEvent(e)) {
+        e->accept();
         return;
     }
     TextCursor::MoveOperation operation = TextCursor::NoMove;
@@ -875,6 +861,7 @@ static inline bool compareExtraSelection(const TextEdit::ExtraSelection &left, c
 
 void TextEdit::setExtraSelections(const QList<ExtraSelection> &selections)
 {
+    qWarning() << __FUNCTION__ << "This is currently not used";
     d->extraSelections = selections;
     qSort(d->extraSelections.begin(), d->extraSelections.end(), compareExtraSelection);
     d->dirty(viewport()->width());
@@ -882,12 +869,17 @@ void TextEdit::setExtraSelections(const QList<ExtraSelection> &selections)
 
 QList<TextEdit::ExtraSelection> TextEdit::extraSelections() const
 {
+    qWarning() << __FUNCTION__ << "This is currently not used";
     return d->extraSelections;
 }
 
 void TextEditPrivate::onTextSectionRemoved(TextSection *section)
 {
     Q_ASSERT(section);
+    if (!dirtyForSection(section))
+        return;
+
+    sectionsDirty = true;
     if (section == sectionPressed) {
         sectionPressed = 0;
     }
@@ -898,11 +890,11 @@ void TextEditPrivate::onTextSectionRemoved(TextSection *section)
     }
 }
 
-void TextEditPrivate::onTextSectionAdded()
+void TextEditPrivate::onTextSectionAdded(TextSection *section)
 {
+    dirtyForSection(section);
     updateCursorPosition(lastHoverPos);
     sectionsDirty = true;
-    dirty(textEdit->viewport()->width());
 }
 
 void TextEditPrivate::onScrollBarValueChanged(int value)
@@ -1165,27 +1157,58 @@ void TextEditPrivate::updateCursorPosition(const QPoint &pos)
                                     : Qt::IBeamCursor);
 }
 
+bool TextEditPrivate::isSectionOnScreen(const TextSection *section) const
+{
+    return (section->document() == document
+            && ::matchSection(section, textEdit)
+            && section->position() <= layoutEnd
+            && section->position() + section->size() >= viewportPosition);
+}
+
+void TextEditPrivate::cursorMoveKeyEvent(QKeyEvent *e)
+{
+    if (e == QKeySequence::MoveToNextLine) {
+        scrollLines(1);
+    } else if (e == QKeySequence::MoveToPreviousLine) {
+        scrollLines(-1);
+    } else if (e == QKeySequence::MoveToStartOfLine || e == QKeySequence::MoveToStartOfDocument) {
+        textEdit->verticalScrollBar()->setValue(0);
+    } else if (e == QKeySequence::MoveToEndOfLine || e == QKeySequence::MoveToEndOfDocument) {
+        textEdit->verticalScrollBar()->setValue(textEdit->verticalScrollBar()->maximum());
+    } else if (e == QKeySequence::MoveToNextPage) {
+        scrollLines(qMax(1, visibleLines - 1));
+    } else if (e == QKeySequence::MoveToPreviousPage) {
+        scrollLines(-qMax(1, visibleLines));
+    } else {
+        e->ignore();
+        return;
+    }
+    e->accept();
+    textCursor.setPosition(viewportPosition);
+}
+
+
+
+bool TextEditPrivate::dirtyForSection(TextSection *section)
+{
+    if (isSectionOnScreen(section)) {
+        dirty(textEdit->viewport()->width());
+        return true;
+    } else {
+        return false;
+    }
+}
 
 void TextEditPrivate::onTextSectionFormatChanged(TextSection *section)
 {
-    if (section->document() != document
-        || !::matchSection(section, textEdit)
-        || section->position() > layoutEnd
-        || section->position() + section->size() < viewportPosition) {
-        return;
-    }
-    dirty(textEdit->viewport()->width());
+    dirtyForSection(section);
 }
 
 void TextEditPrivate::onTextSectionCursorChanged(TextSection *section)
 {
-    if (section->document() != document
-        || !::matchSection(section, textEdit)
-        || section->position() > layoutEnd
-        || section->position() + section->size() < viewportPosition) {
-        return;
+    if (isSectionOnScreen(section)) {
+        updateCursorPosition(lastHoverPos);
     }
-    updateCursorPosition(lastHoverPos);
 }
 
 void TextEditPrivate::onSelectionChanged()

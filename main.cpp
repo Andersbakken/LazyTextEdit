@@ -209,6 +209,7 @@ public:
             textEdit->document()->setChunkSize(chunkSize);
         }
         l->addWidget(otherEdit = new TextEdit);
+        otherEdit->setReadOnly(true);
         otherEdit->setObjectName("otherEdit");
         textEdit->setReadOnly(readOnly);
         QFontDatabase fdb;
