@@ -333,7 +333,7 @@ void TextEdit::mousePressEvent(QMouseEvent *e)
             int pos = textPositionAt(e->pos());
             if (pos == -1)
                 pos = d->document->documentSize() - 1;
-            d->sectionPressed = d->document->sectionAt(pos);
+            d->sectionPressed = d->document->d->sectionAt(pos, this);
             setCursorPosition(pos, e->modifiers() & Qt::ShiftModifier
                               ? TextCursor::KeepAnchor
                               : TextCursor::MoveAnchor);
@@ -892,8 +892,9 @@ void TextEditPrivate::onTextSectionRemoved(TextSection *section)
         sectionPressed = 0;
     }
     if (section == sectionHovered) {
+        if (sectionHovered->hasCursor())
+            textEdit->viewport()->setCursor(Qt::IBeamCursor);
         sectionHovered = 0;
-        textEdit->viewport()->setCursor(Qt::IBeamCursor);
     }
 }
 
@@ -988,7 +989,23 @@ TextSection *TextEdit::sectionAt(const QPoint &pos) const
     const int textPos = textPositionAt(pos);
     if (textPos == -1)
         return 0;
-    return d->document->sectionAt(textPos);
+    return d->document->d->sectionAt(textPos, this);
+}
+
+QList<TextSection*> TextEdit::sections(int from, int size, TextSection::TextSectionOptions opt) const
+{
+    Q_ASSERT(d->document);
+    QList<TextSection*> sections = d->document->d->getSections(from, size, opt, this);
+    return sections;
+}
+
+TextSection *TextEdit::insertTextSection(int pos, int size, const QTextCharFormat &format, const QVariant &data)
+{
+    Q_ASSERT(d->document);
+    TextSection *section = d->document->insertTextSection(pos, size, format, data);
+    if (section)
+        section->d.textEdit = this;
+    return section;
 }
 
 void TextEditPrivate::updateHorizontalPosition()
@@ -1152,6 +1169,7 @@ void TextEditPrivate::updateCursorPosition(const QPoint &pos)
 void TextEditPrivate::onTextSectionFormatChanged(TextSection *section)
 {
     if (section->document() != document
+        || !::matchSection(section, textEdit)
         || section->position() > layoutEnd
         || section->position() + section->size() < viewportPosition) {
         return;
@@ -1162,6 +1180,7 @@ void TextEditPrivate::onTextSectionFormatChanged(TextSection *section)
 void TextEditPrivate::onTextSectionCursorChanged(TextSection *section)
 {
     if (section->document() != document
+        || !::matchSection(section, textEdit)
         || section->position() > layoutEnd
         || section->position() + section->size() < viewportPosition) {
         return;

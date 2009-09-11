@@ -30,6 +30,18 @@
 #define TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL 100
 #endif
 
+static inline bool matchSection(const TextSection *section, const TextEdit *textEdit)
+{
+    if (!textEdit) {
+        return true;
+    } else if (!section->textEdit()) {
+        return true;
+    } else {
+        return textEdit == section->textEdit();
+    }
+}
+
+
 struct Chunk {
     Chunk() : previous(0), next(0), from(-1), length(0), firstLineIndex(-1), swap(0) {}
     ~Chunk() { delete swap; }
@@ -63,6 +75,12 @@ static inline QPair<int, int> intersection(int index1, int size1, int index2, in
     if (ret.second <= 0)
         return qMakePair(-1, 0);
     return ret;
+}
+
+static inline bool compareTextSection(const TextSection *left, const TextSection *right)
+{
+    // don't make this compare document. Look at ::sections()
+    return left->position() < right->position();
 }
 
 class TextDocumentIterator;
@@ -170,6 +188,8 @@ public:
         return ch.isLetterOrNumber() || ch.isMark() || ch == QLatin1Char('_');
     }
     void swapOutChunk(Chunk *c);
+    QList<TextSection*> getSections(int from, int size, TextSection::TextSectionOptions opt, const TextEdit *filter) const;
+    inline TextSection *sectionAt(int pos, const TextEdit *filter) const { return getSections(pos, 1, TextSection::IncludePartial, filter).value(0); }
 signals:
     void undoRedoCommandInserted(DocumentCommand *cmd);
     void undoRedoCommandRemoved(DocumentCommand *cmd);

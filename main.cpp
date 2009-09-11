@@ -204,9 +204,12 @@ public:
         QVBoxLayout *l = new QVBoxLayout(w);
         setCentralWidget(w);
         l->addWidget(textEdit = new TextEdit(w));
+        textEdit->setObjectName("primary");
         if (chunkSize != -1) {
             textEdit->document()->setChunkSize(chunkSize);
         }
+        l->addWidget(otherEdit = new TextEdit);
+        otherEdit->setObjectName("otherEdit");
         textEdit->setReadOnly(readOnly);
         QFontDatabase fdb;
         foreach(QString family, fdb.families()) {
@@ -230,6 +233,8 @@ public:
             qDebug() << "Can't load" << fileName;
 #endif
         }
+        otherEdit->setDocument(textEdit->document());
+
         lbl = new QLabel(w);
         connect(textEdit, SIGNAL(cursorPositionChanged(int)),
                 this, SLOT(onCursorPositionChanged(int)));
@@ -368,16 +373,31 @@ public slots:
     {
         TextCursor cursor = textEdit->textCursor();
         if (cursor.hasSelection()) {
+            static bool first = true;
             QTextCharFormat format;
-            format.setForeground(Qt::blue);
-            format.setFontUnderline(true);
+            if (first) {
+                format.setForeground(Qt::blue);
+                format.setFontUnderline(true);
+            } else {
+                format.setBackground(Qt::black);
+                format.setForeground(Qt::white);
+            }
             const int pos = cursor.selectionStart();
             const int size = cursor.selectionEnd() - pos;
-            TextSection *s = textEdit->document()->insertTextSection(pos, size, format, cursor.selectedText());
-            s->setCursor(Qt::PointingHandCursor);
-            Q_UNUSED(s);
-            Q_ASSERT(s);
-            Q_ASSERT(!textEdit->document()->sections().isEmpty());
+            TextSection *s = 0;
+            if (first) {
+                s = textEdit->insertTextSection(pos, size, format, cursor.selectedText());
+                Q_ASSERT(!otherEdit->sections().contains(s));
+                Q_ASSERT(!s || textEdit->sections().contains(s));
+            } else {
+                s = textEdit->document()->insertTextSection(pos, size, format, cursor.selectedText());
+            }
+            first = !first;
+            if (s) {
+                s->setCursor(Qt::PointingHandCursor);
+                Q_UNUSED(s);
+                Q_ASSERT(s);
+            }
         }
     }
 
@@ -393,7 +413,7 @@ public slots:
             format.setForeground(Qt::blue);
         }
         first = !first;
-        foreach(TextSection *s, textEdit->document()->sections()) {
+        foreach(TextSection *s, textEdit->sections()) {
             s->setFormat(format);
         }
 
@@ -421,7 +441,7 @@ public slots:
 
 private:
     QSpinBox *box;
-    TextEdit *textEdit;
+    TextEdit *textEdit, *otherEdit;
     QLabel *lbl;
     QLinkedList<QEvent*> events;
     bool doLineNumbers;

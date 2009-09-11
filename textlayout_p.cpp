@@ -52,6 +52,7 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
         do {
             Q_ASSERT(!sections->isEmpty());
             TextSection *l = sections->first();
+            Q_ASSERT(::matchSection(l, textEdit));
             Q_ASSERT(l->position() + l->size() >= lineStart);
             if (l->position() >= index) {
                 break;
@@ -180,9 +181,9 @@ QList<TextSection*> TextLayout::relayoutCommon()
             && buffer.size() - bufferOffset() < MinimumBufferSize)) {
         bufferPosition = qMax(0, viewportPosition - MinimumBufferSize);
         buffer = document->read(bufferPosition, int(MinimumBufferSize * 2.5));
-        sections = document->sections(bufferPosition, buffer.size(), TextSection::IncludePartial);
+        sections = document->d->getSections(bufferPosition, buffer.size(), TextSection::IncludePartial, textEdit);
     } else if (sectionsDirty) {
-        sections = document->sections(bufferPosition, buffer.size(), TextSection::IncludePartial);
+        sections = document->d->getSections(bufferPosition, buffer.size(), TextSection::IncludePartial, textEdit);
     }
     sectionsDirty = false;
     QList<TextSection*> l = sections;

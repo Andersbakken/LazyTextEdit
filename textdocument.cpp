@@ -11,6 +11,7 @@
 #include <QList>
 #include <QTextCharFormat>
 #include <QVariant>
+#include <qalgorithms.h>
 
 //#define DEBUG_CACHE_HITS
 
@@ -539,7 +540,7 @@ bool TextDocument::insert(int pos, const QString &string)
         }
 #endif
 
-        TextSection *s = sectionAt(pos);
+        TextSection *s = d->sectionAt(pos, 0);
         if (s && s->position() != pos) {
             s->d.size += string.size();
         }
@@ -552,7 +553,7 @@ bool TextDocument::insert(int pos, const QString &string)
             if (cursor->anchor >= pos)
                 cursor->anchor += string.size();
         }
-        foreach(TextSection *section, sections(pos, -1)) {
+        foreach(TextSection *section, d->getSections(pos, -1, 0, 0)) {
             section->d.position += string.size();
         }
 
@@ -684,7 +685,7 @@ void TextDocument::remove(int pos, int size)
             cursor->anchor -= qMin(size, cursor->anchor - pos);
     }
 
-    QList<TextSection*> s = sections(pos, -1);
+    QList<TextSection*> s = d->getSections(pos, -1, 0, 0);
     foreach(TextSection *section, s) {
         const QPair<int, int> intersection = ::intersection(pos, size, section->position(), section->size());
         if (intersection.second == section->size()) {
@@ -729,41 +730,11 @@ void TextDocument::remove(int pos, int size)
         emit d->undoRedoCommandFinished(cmd);
 }
 
-typedef QList<TextSection*>::iterator TextSectionIterator;
-static inline bool compareTextSection(const TextSection *left, const TextSection *right)
-{
-    // don't make this compare document. Look at ::sections()
-    return left->position() < right->position();
-}
-
-static inline bool match(int pos, int left, int size)
-{
-    return pos >= left && pos < left + size;
-}
-
-static inline bool match(int pos, int size, const TextSection *section, TextSection::TextSectionOptions flags)
-{
-    const int sectionPos = section->position();
-    const int sectionSize = section->size();
-
-    if (::match(sectionPos, pos, size) && ::match(sectionPos + sectionSize - 1, pos, size)) {
-        return true;
-    } else if (flags & TextSection::IncludePartial) {
-        const int boundaries[] = { pos, pos + size - 1 };
-        for (int i=0; i<2; ++i) {
-            if (::match(boundaries[i], sectionPos, sectionSize))
-                return true;
-        }
-    }
-    return false;
-}
-
-
 void TextDocument::takeTextSection(TextSection *section)
 {
     Q_ASSERT(section);
     Q_ASSERT(section->document() == this);
-    const TextSectionIterator it = qBinaryFind(d->sections.begin(), d->sections.end(), section, compareTextSection);
+    const QList<TextSection*>::iterator it = qBinaryFind(d->sections.begin(), d->sections.end(), section, compareTextSection);
     Q_ASSERT(it != d->sections.end());
     emit sectionRemoved(section);
     d->sections.erase(it);
@@ -772,34 +743,7 @@ void TextDocument::takeTextSection(TextSection *section)
 
 QList<TextSection*> TextDocument::sections(int pos, int size, TextSection::TextSectionOptions flags) const
 {
-    if (size == -1)
-        size = d->documentSize - pos;
-    if (pos == 0 && size == d->documentSize)
-        return d->sections;
-    // binary search. TextSections are sorted in order of position
-    QList<TextSection*> ret;
-    if (d->sections.isEmpty()) {
-        return ret;
-    }
-
-    const TextSection tmp(pos, size, static_cast<TextDocument*>(0));
-    TextSectionIterator it = qLowerBound<TextSectionIterator>(d->sections.begin(), d->sections.end(), &tmp, compareTextSection);
-    if (flags & TextSection::IncludePartial && it != d->sections.begin()) {
-        TextSectionIterator prev = it;
-        do {
-            if (::match(pos, size, *--prev, flags))
-                ret.append(*prev);
-        } while (prev != d->sections.begin());
-    }
-    while (it != d->sections.end()) {
-        if (::match(pos, size, *it, flags)) {
-            ret.append(*it);
-        } else {
-            break;
-        }
-        ++it;
-    }
-    return ret;
+    return d->getSections(pos, size, flags, 0);
 }
 
 void TextDocument::removeTextSection(TextSection *section)
@@ -809,16 +753,16 @@ void TextDocument::removeTextSection(TextSection *section)
 }
 
 TextSection *TextDocument::insertTextSection(int pos, int size,
-                                     const QTextCharFormat &format, const QVariant &data)
+                                             const QTextCharFormat &format, const QVariant &data)
 {
     Q_ASSERT(pos >= 0);
     Q_ASSERT(size >= 0);
     Q_ASSERT(pos < d->documentSize);
 
     TextSection *l = new TextSection(pos, size, this, format, data);
-    TextSectionIterator it = qLowerBound<TextSectionIterator>(d->sections.begin(), d->sections.end(), l, compareTextSection);
+    QList<TextSection*>::iterator it = qLowerBound<QList<TextSection*>::iterator>(d->sections.begin(), d->sections.end(), l, compareTextSection);
     if (it != d->sections.begin()) {
-        TextSectionIterator before = (it - 1);
+        QList<TextSection*>::iterator before = (it - 1);
         if ((*before)->position() + size > pos) {
             l->d.document = 0; // don't want it to call takeTextSection since it isn't in the list yet
             delete l;
@@ -1324,3 +1268,72 @@ void TextDocumentPrivate::swapOutChunk(Chunk *c)
     }
 #endif
 }
+
+static inline bool match(int pos, int left, int size)
+{
+    return pos >= left && pos < left + size;
+}
+
+static inline bool match(int pos, int size, const TextSection *section, TextSection::TextSectionOptions flags)
+{
+    const int sectionPos = section->position();
+    const int sectionSize = section->size();
+
+    if (::match(sectionPos, pos, size) && ::match(sectionPos + sectionSize - 1, pos, size)) {
+        return true;
+    } else if (flags & TextSection::IncludePartial) {
+        const int boundaries[] = { pos, pos + size - 1 };
+        for (int i=0; i<2; ++i) {
+            if (::match(boundaries[i], sectionPos, sectionSize))
+                return true;
+        }
+    }
+    return false;
+}
+
+static inline void filter(QList<TextSection*> &sections, const TextEdit *filter)
+{
+    if (filter) {
+        for (int i=sections.size() - 1; i>=0; --i) {
+            if (!::matchSection(sections.at(i), filter))
+                sections.removeAt(i);
+        }
+    }
+}
+
+QList<TextSection*> TextDocumentPrivate::getSections(int pos, int size, TextSection::TextSectionOptions flags, const TextEdit *filter) const
+{
+    if (size == -1)
+        size = documentSize - pos;
+    QList<TextSection*> ret;
+    if (pos == 0 && size == documentSize) {
+        ret = sections;
+        ::filter(ret, filter);
+        return ret;
+    }
+    // binary search. TextSections are sorted in order of position
+    if (sections.isEmpty()) {
+        return ret;
+    }
+
+    const TextSection tmp(pos, size, static_cast<TextDocument*>(0), QTextCharFormat(), QVariant());
+    QList<TextSection*>::const_iterator it = qLowerBound(sections.begin(), sections.end(), &tmp, compareTextSection);
+    if (flags & TextSection::IncludePartial && it != sections.begin()) {
+        QList<TextSection*>::const_iterator prev = it;
+        do {
+            if (::match(pos, size, *--prev, flags))
+                ret.append(*prev);
+        } while (prev != sections.begin());
+    }
+    while (it != sections.end()) {
+        if (::match(pos, size, *it, flags)) {
+            ret.append(*it);
+        } else {
+            break;
+        }
+        ++it;
+    }
+    ::filter(ret, filter);
+    return ret;
+}
+

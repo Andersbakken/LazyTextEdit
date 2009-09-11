@@ -4,6 +4,7 @@
 #include <QtGui>
 #include "textdocument.h"
 #include "textcursor.h"
+#include "textsection.h"
 #include "syntaxhighlighter.h"
 
 class TextEditPrivate;
@@ -80,6 +81,11 @@ public:
     void setTextCursor(const TextCursor &textCursor);
 
     TextSection *sectionAt(const QPoint &pos) const;
+
+    QList<TextSection*> sections(int from = 0, int size = -1, TextSection::TextSectionOptions opt = 0) const;
+    inline TextSection *sectionAt(int pos) const { return sections(pos, 1, TextSection::IncludePartial).value(0); }
+    TextSection *insertTextSection(int pos, int size, const QTextCharFormat &format = QTextCharFormat(),
+                                   const QVariant &data = QVariant());
 
     void ensureCursorVisible(const TextCursor &cursor, int linesMargin = 0);
     bool isUndoAvailable() const;
