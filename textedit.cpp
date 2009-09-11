@@ -1165,8 +1165,8 @@ void TextEditPrivate::updateCursorPosition(const QPoint &pos)
 
 bool TextEditPrivate::isSectionOnScreen(const TextSection *section) const
 {
-    return (section->document() == document
-            && ::matchSection(section, textEdit)
+    Q_ASSERT(section->document() == document);
+    return (::matchSection(section, textEdit)
             && section->position() <= layoutEnd
             && section->position() + section->size() >= viewportPosition);
 }
