@@ -77,9 +77,30 @@ int TextEdit::cursorPosition() const
 
 void TextEdit::ensureCursorVisible(const TextCursor &cursor, int linesMargin)
 {
-    Q_UNUSED(cursor);
-    Q_UNUSED(linesMargin);
-    qWarning("ensureCursorVisible not implemented");
+    linesMargin = qMin(d->visibleLines, linesMargin); // ### could this be a problem down at the bottom of the document?
+    Q_ASSERT(cursor.document() == document());
+    TextCursor above = cursor;
+    for (int i=0; i<linesMargin; ++i) {
+        if (!above.movePosition(TextCursor::Up))
+            break;
+    }
+    if (above.position() < d->viewportPosition) {
+        d->updatePosition(above.position(), TextLayout::Backward);
+        return;
+    }
+
+    TextCursor below = cursor;
+    for (int i=0; i<linesMargin; ++i) {
+        if (!below.movePosition(TextCursor::Down))
+            break;
+    }
+
+    if (below.position() > d->lastVisibleCharacter) {
+        for (int i=0; i<d->visibleLines; ++i) {
+            below.movePosition(TextCursor::Up);
+            d->updatePosition(below.position(), TextLayout::Forward);
+        }
+    }
 }
 
 /*!
