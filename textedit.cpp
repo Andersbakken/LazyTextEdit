@@ -131,6 +131,7 @@ void TextEdit::setDocument(TextDocument *doc)
 
     if (d->document) {
         disconnect(d->document, 0, this, 0);
+        disconnect(d->document, 0, d, 0);
         if (d->document->parent() == this)
             delete d->document;
     }
@@ -167,6 +168,11 @@ void TextEdit::setDocument(TextDocument *doc)
 
     connect(d->document, SIGNAL(documentSizeChanged(int)), d, SLOT(onDocumentSizeChanged(int)));
     connect(d->document, SIGNAL(destroyed(QObject*)), d, SLOT(onDocumentDestroyed()));
+    connect(d->document->d, SIGNAL(sectionFormatChanged(TextSection *)),
+            d, SLOT(onTextSectionFormatChanged(TextSection *)));
+    connect(d->document->d, SIGNAL(sectionCursorChanged(TextSection *)),
+            d, SLOT(onTextSectionCursorChanged(TextSection *)));
+
     d->onDocumentSizeChanged(d->document->documentSize());
     d->dirty(viewport()->width());
 }

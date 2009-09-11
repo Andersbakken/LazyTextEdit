@@ -124,6 +124,7 @@ private:
     friend class TextCursor;
     friend class TextDocumentPrivate;
     friend class TextLayout;
+    friend class TextSection;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(TextDocument::FindMode);

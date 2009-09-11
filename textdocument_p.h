@@ -191,10 +191,14 @@ public:
     QList<TextSection*> getSections(int from, int size, TextSection::TextSectionOptions opt, const TextEdit *filter) const;
     inline TextSection *sectionAt(int pos, const TextEdit *filter) const { return getSections(pos, 1, TextSection::IncludePartial, filter).value(0); }
 signals:
+    void sectionFormatChanged(TextSection *section);
+    void sectionCursorChanged(TextSection *section);
     void undoRedoCommandInserted(DocumentCommand *cmd);
     void undoRedoCommandRemoved(DocumentCommand *cmd);
     void undoRedoCommandTriggered(DocumentCommand *cmd, bool undo);
     void undoRedoCommandFinished(DocumentCommand *cmd);
+private:
+    friend class TextSection;
 };
 
 // should not be kept as a member. Invalidated on inserts/removes

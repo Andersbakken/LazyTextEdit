@@ -1,6 +1,6 @@
 #include "textsection.h"
 #include "textdocument.h"
-#include "textsection_p.h"
+#include "textdocument_p.h"
 
 TextSection::~TextSection()
 {
@@ -18,7 +18,7 @@ void TextSection::setFormat(const QTextCharFormat &format)
 {
     Q_ASSERT(d.document);
     d.format = format;
-    emit TextSectionManager::instance()->sectionFormatChanged(this);
+    emit d.document->d->sectionFormatChanged(this);
 }
 
 QCursor TextSection::cursor() const
@@ -30,14 +30,14 @@ void TextSection::setCursor(const QCursor &cursor)
 {
     d.cursor = cursor;
     d.hasCursor = true;
-    emit TextSectionManager::instance()->sectionCursorChanged(this);
+    emit d.document->d->sectionCursorChanged(this);
 }
 
 void TextSection::resetCursor()
 {
     d.hasCursor = false;
     d.cursor = QCursor();
-    emit TextSectionManager::instance()->sectionCursorChanged(this);
+    emit d.document->d->sectionCursorChanged(this);
 }
 
 bool TextSection::hasCursor() const
