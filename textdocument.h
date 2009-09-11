@@ -93,7 +93,6 @@ public:
     inline TextSection *sectionAt(int pos) const { return sections(pos, 1, TextSection::IncludePartial).value(0); }
     TextSection *insertTextSection(int pos, int size, const QTextCharFormat &format = QTextCharFormat(),
                            const QVariant &data = QVariant());
-    void removeTextSection(TextSection *section);
     void takeTextSection(TextSection *section);
     int currentMemoryUsage() const;
 

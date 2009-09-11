@@ -746,12 +746,6 @@ QList<TextSection*> TextDocument::sections(int pos, int size, TextSection::TextS
     return d->getSections(pos, size, flags, 0);
 }
 
-void TextDocument::removeTextSection(TextSection *section)
-{
-    takeTextSection(section);
-    delete section;
-}
-
 TextSection *TextDocument::insertTextSection(int pos, int size,
                                              const QTextCharFormat &format, const QVariant &data)
 {
