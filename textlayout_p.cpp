@@ -333,6 +333,8 @@ void TextLayout::updatePosition(int pos, Direction direction)
     if (document->documentSize() == 0) {
         viewportPosition = 0;
     } else {
+//         if (textEdit) // doesn't quite work
+//             pos = qMin(textEdit->verticalScrollBar()->maximum(), pos);
         Q_ASSERT(document->documentSize() > 0);
         int index = document->find('\n', qMax(0, pos + (direction == Backward ? -1 : 0)),
                                    TextDocument::FindMode(direction)).position();
@@ -353,7 +355,6 @@ void TextLayout::updatePosition(int pos, Direction direction)
             qWarning() << "viewportPosition" << viewportPosition << document->read(viewportPosition - 1, 10) << this;
         Q_ASSERT(viewportPosition == 0 || document->read(viewportPosition - 1, 1) == QString("\n"));
     }
-    dirty(viewportWidth());
 
     if (textEdit) {
         TextEditPrivate *p = static_cast<TextEditPrivate*>(this);
@@ -362,7 +363,13 @@ void TextLayout::updatePosition(int pos, Direction direction)
         if (!textEdit->verticalScrollBar()->isSliderDown()) {
             p->updateScrollBar();
         } // sliderReleased is connected to updateScrollBar()
+
+        qDebug() << "Before" << viewportPosition;
+        viewportPosition = qBound(0, viewportPosition, document->documentSize() - p->lastPageEstimate());
+        qDebug() << "after" << viewportPosition << p->lastPageEstimate() << document->documentSize();
+
     }
+    dirty(viewportWidth());
 }
 
 #ifndef QT_NO_DEBUG_STREAM

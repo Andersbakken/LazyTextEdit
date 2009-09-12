@@ -29,6 +29,7 @@ public:
     }
 
     bool canInsertFromMimeData(const QMimeData *data) const;
+    int lastPageEstimate() const;
     void updateHorizontalPosition();
     void updateScrollBarPosition();
     void updateScrollBarPageStep();

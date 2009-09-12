@@ -849,7 +849,7 @@ bool TextEdit::save()
 
 void TextEditPrivate::onDocumentSizeChanged(int size)
 {
-    textEdit->verticalScrollBar()->setRange(0, size - 1);
+    textEdit->verticalScrollBar()->setMaximum(size - lastPageEstimate());
     updateScrollBarPageStepPending = true;
 }
 
@@ -1249,6 +1249,10 @@ void TextEditPrivate::relayout()
     relayoutByGeometry(s.height());
     textEdit->horizontalScrollBar()->setPageStep(s.width());
     textEdit->horizontalScrollBar()->setMaximum(qMax(0, widest - s.width()));
+    onDocumentSizeChanged(document->documentSize());
+    if (layoutEnd == document->documentSize()) {
+        // I actually have the last page laid out here. I could estimate the last page now
+    }
 //    qDebug() << widest << s.width() << textEdit->horizontalScrollBar()->maximum();
 }
 
@@ -1311,3 +1315,8 @@ int TextEditPrivate::findLastPageSize() const
     return -1;
 }
 
+int TextEditPrivate::lastPageEstimate() const
+{
+    const int lastPageEstimate = qMax(0, lastVisibleCharacter - viewportPosition);
+    return lastPageEstimate;
+}
