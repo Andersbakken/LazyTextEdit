@@ -274,7 +274,8 @@ void TextEdit::paintEvent(QPaintEvent *e)
     }
 
     QPainter p(viewport());
-    p.fillRect(rect(), viewport()->palette().brush(viewport()->backgroundRole()));
+    const QRect er = e->rect();
+    p.fillRect(er, viewport()->palette().brush(viewport()->backgroundRole()));
     // ### this is a weird bug where I get debris with large documents
     // ### on the first and last visible textlayout
     p.setFont(font());
@@ -284,7 +285,6 @@ void TextEdit::paintEvent(QPaintEvent *e)
     const int max = qMax(d->textCursor.anchor(), d->textCursor.position());
 
     const QTextLayout *cursorLayout = d->cursorVisible ? d->layoutForPosition(d->textCursor.position()) : 0;
-    const QRect er = e->rect();
     foreach(QTextLayout *l, d->textLayouts) {
         const QRect r = l->boundingRect().toRect();
         if (r.intersects(er)) {
@@ -320,8 +320,8 @@ void TextEdit::scrollContentsBy(int dx, int dy)
 {
     Q_UNUSED(dx);
     Q_UNUSED(dy);
-    viewport()->update();
-//    viewport()->scroll(dx, dy); // seems to jitter more
+//    viewport()->update();
+    viewport()->scroll(dx, dy); // seems to jitter more
 }
 
 int TextEdit::viewportPosition() const
