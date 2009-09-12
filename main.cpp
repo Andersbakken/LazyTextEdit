@@ -210,6 +210,7 @@ public:
         }
         l->addWidget(otherEdit = new TextEdit);
         otherEdit->setReadOnly(true);
+        otherEdit->hide();
         otherEdit->setObjectName("otherEdit");
         textEdit->setReadOnly(readOnly);
         QFontDatabase fdb;
@@ -234,6 +235,15 @@ public:
             qDebug() << "Can't load" << fileName;
 #endif
         }
+#if 0
+        textEdit->document()->setText("This is a test");
+        QTextCharFormat format;
+        format.setBackground(Qt::yellow);
+        textEdit->insertTextSection(0, 4, format);
+        format = QTextCharFormat();
+        format.setFontItalic(true);
+        textEdit->insertTextSection(0, 4, format);
+#endif
         otherEdit->setDocument(textEdit->document());
 
         lbl = new QLabel(w);
@@ -388,17 +398,18 @@ public slots:
             TextSection *s = 0;
             if (first) {
                 s = textEdit->insertTextSection(pos, size, format, cursor.selectedText());
+                if (s) {
+                    s->setCursor(Qt::PointingHandCursor);
+                    Q_UNUSED(s);
+                    Q_ASSERT(s);
+                }
+
                 Q_ASSERT(!otherEdit->sections().contains(s));
                 Q_ASSERT(!s || textEdit->sections().contains(s));
             } else {
                 s = textEdit->document()->insertTextSection(pos, size, format, cursor.selectedText());
             }
             first = !first;
-            if (s) {
-                s->setCursor(Qt::PointingHandCursor);
-                Q_UNUSED(s);
-                Q_ASSERT(s);
-            }
         }
     }
 
