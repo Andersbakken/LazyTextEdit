@@ -166,7 +166,7 @@ int TextLayout::textPositionAt(const QPoint &p) const
 
 QList<TextSection*> TextLayout::relayoutCommon()
 {
-    widest = -1;
+//    widest = -1; // ### should this be relative to current content or remember? What if you remove the line that was the widest?
     Q_ASSERT(layoutDirty);
     layoutDirty = false;
     Q_ASSERT(document);
