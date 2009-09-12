@@ -42,6 +42,7 @@ public:
     bool dirtyForSection(TextSection *section);
     bool isSectionOnScreen(const TextSection *section) const;
     void cursorMoveKeyEvent(QKeyEvent *e);
+    void relayout();
 
     int requestedScrollBarPosition, lastRequestedScrollBarPosition, cursorWidth, sectionCount,
         maximumSizeCopy, pendingTimeOut, autoScrollLines;

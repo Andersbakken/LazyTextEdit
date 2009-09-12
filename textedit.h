@@ -18,6 +18,8 @@ class TextEdit : public QAbstractScrollArea
     Q_PROPERTY(bool undoAvailable READ isUndoAvailable)
     Q_PROPERTY(bool redoAvailable READ isRedoAvailable)
     Q_PROPERTY(int maximumSizeCopy READ maximumSizeCopy WRITE setMaximumSizeCopy)
+    Q_PROPERTY(bool lineBreaking READ lineBreaking WRITE setLineBreaking)
+
 public:
     TextEdit(QWidget *parent = 0);
     ~TextEdit();
@@ -55,6 +57,9 @@ public:
 
     bool readOnly() const;
     void setReadOnly(bool rr);
+
+    bool lineBreaking() const;
+    void setLineBreaking(bool lb);
 
     int maximumSizeCopy() const;
     void setMaximumSizeCopy(int max);

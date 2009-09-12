@@ -267,7 +267,7 @@ void TextEdit::paintEvent(QPaintEvent *e)
         ensureCursorVisible();
     }
     d->updateScrollBarPosition();
-    d->relayoutByGeometry(viewport()->height());
+    d->relayout();
     if (d->updateScrollBarPageStepPending) {
         d->updateScrollBarPageStepPending = false;
         d->updateScrollBarPageStep();
@@ -276,6 +276,7 @@ void TextEdit::paintEvent(QPaintEvent *e)
     QPainter p(viewport());
     const QRect er = e->rect();
     p.fillRect(er, viewport()->palette().brush(viewport()->backgroundRole()));
+    p.translate(-horizontalScrollBar()->value(), 0);
     // ### this is a weird bug where I get debris with large documents
     // ### on the first and last visible textlayout
     p.setFont(font());
@@ -314,14 +315,17 @@ void TextEdit::paintEvent(QPaintEvent *e)
         }
         textLayoutOffset += l->text().size() + 1;
     }
+//     if (d->widest < viewport()->width()) {
+//         p.drawLine(d->widest, 0, d->widest, viewport()->height());
+//     }
 }
 
 void TextEdit::scrollContentsBy(int dx, int dy)
 {
     Q_UNUSED(dx);
     Q_UNUSED(dy);
-//    viewport()->update();
-    viewport()->scroll(dx, dy); // seems to jitter more
+    viewport()->update();
+//    viewport()->scroll(dx, dy); // seems to jitter more
 }
 
 int TextEdit::viewportPosition() const
@@ -577,6 +581,18 @@ void TextEdit::setReadOnly(bool rr)
     d->actions[PasteAction]->setEnabled(!rr);
     d->actions[CutAction]->setEnabled(!rr);
 }
+
+bool TextEdit::lineBreaking() const
+{
+    return d->lineBreaking;
+}
+
+void TextEdit::setLineBreaking(bool lb)
+{
+    d->lineBreaking = lb;
+    d->dirty(viewport()->width());
+}
+
 
 int TextEdit::maximumSizeCopy() const
 {
@@ -1150,17 +1166,17 @@ void TextEditPrivate::timerEvent(QTimerEvent *e)
         enum { LineCount = 1 };
         if (lastMouseMove.y() < r.top()) {
             scrollLines(-LineCount);
-            relayoutByGeometry(r.height());
+            relayout();
             if (atBeginning())
                 autoScrollTimer.stop();
         } else {
             Q_ASSERT(lastMouseMove.y() > r.bottom());
             scrollLines(LineCount);
-            relayoutByGeometry(r.height());
+            relayout();
             if (atEnd())
                 autoScrollTimer.stop();
         }
-        // called relayoutByGeometry to force the relaying to happen
+        // called relayout to force the relayout to happen
         // immediately to make sure textPositionAt returns a valid
         // position
         const QPoint p(qBound(0, lastMouseMove.x(), r.right()),
@@ -1237,7 +1253,13 @@ void TextEditPrivate::cursorMoveKeyEvent(QKeyEvent *e)
     textCursor.setPosition(viewportPosition);
 }
 
-
+void TextEditPrivate::relayout()
+{
+    const QSize s = textEdit->viewport()->size();
+    relayoutByGeometry(s.height());
+    textEdit->horizontalScrollBar()->setMaximum(qMax(0, widest - s.width()));
+//    qDebug() << widest << s.width() << textEdit->horizontalScrollBar()->maximum();
+}
 
 bool TextEditPrivate::dirtyForSection(TextSection *section)
 {

@@ -13,6 +13,8 @@ void TextLayout::dirty(int width)
 
 int TextLayout::viewportWidth() const
 {
+    if (!lineBreaking)
+        return INT_MAX;
     return textEdit ? textEdit->viewport()->width() : viewport;
 }
 
@@ -107,6 +109,8 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
             break;
         }
         line.setLineWidth(viewportWidth() - (leftMargin + rightMargin));
+        if (!lineBreaking)
+            widest = qMax<int>(widest, line.naturalTextWidth() + (LeftMargin * 2));
         // ### support blockformat margins etc
         int y = topMargin + lastBottomMargin;
         if (!lines.isEmpty()) {
@@ -162,6 +166,7 @@ int TextLayout::textPositionAt(const QPoint &p) const
 
 QList<TextSection*> TextLayout::relayoutCommon()
 {
+    widest = -1;
     Q_ASSERT(layoutDirty);
     layoutDirty = false;
     Q_ASSERT(document);

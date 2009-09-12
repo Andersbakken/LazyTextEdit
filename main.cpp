@@ -225,7 +225,8 @@ public:
         }
         l->addWidget(otherEdit = new TextEdit);
         otherEdit->setReadOnly(true);
-        otherEdit->hide();
+//        otherEdit->hide();
+        otherEdit->setLineBreaking(false);
         otherEdit->setObjectName("otherEdit");
         textEdit->setReadOnly(readOnly);
         QFontDatabase fdb;
