@@ -54,8 +54,6 @@ TextEdit::TextEdit(QWidget *parent)
     connect(this, SIGNAL(selectionChanged()), d, SLOT(updateCopyAndCutEnabled()));
     // ### could optimize and figure out what area to update. Not sure if it's worth it
 
-    viewport()->setAttribute(Qt::WA_NoSystemBackground); // ### only here because I explicitly fill background in paintEvent because of weird bug
-    viewport()->setAttribute(Qt::WA_OpaquePaintEvent); // ### only here because I explicitly fill background in paintEvent because of weird bug
     if (qApp->clipboard()->supportsSelection()) {
         connect(this, SIGNAL(selectionChanged()), d, SLOT(onSelectionChanged()));
     }
@@ -276,10 +274,7 @@ void TextEdit::paintEvent(QPaintEvent *e)
 
     QPainter p(viewport());
     const QRect er = e->rect();
-    p.fillRect(er, viewport()->palette().brush(viewport()->backgroundRole()));
     p.translate(-horizontalScrollBar()->value(), 0);
-    // ### this is a weird bug where I get debris with large documents
-    // ### on the first and last visible textlayout
     p.setFont(font());
     QVector<QTextLayout::FormatRange> selection;
     int textLayoutOffset = d->viewportPosition;
@@ -325,8 +320,8 @@ void TextEdit::scrollContentsBy(int dx, int dy)
 {
     Q_UNUSED(dx);
     Q_UNUSED(dy);
-    viewport()->update();
-//    viewport()->scroll(dx, dy); // seems to jitter more
+//    viewport()->update();
+    viewport()->scroll(dx, dy); // seems to jitter more
 }
 
 int TextEdit::viewportPosition() const
