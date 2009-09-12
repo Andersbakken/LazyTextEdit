@@ -102,15 +102,17 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
     }
     textLayout->setAdditionalFormats(formats);
     textLayout->beginLayout();
+    const int lineWidth = viewportWidth() - (leftMargin + rightMargin);
 
+    int localWidest = -1;
     forever {
         QTextLine line = textLayout->createLine();
         if (!line.isValid()) {
             break;
         }
-        line.setLineWidth(viewportWidth() - (leftMargin + rightMargin));
+        line.setLineWidth(lineWidth);
         if (!lineBreaking)
-            widest = qMax<int>(widest, line.naturalTextWidth() + (LeftMargin * 2));
+            localWidest = qMax<int>(localWidest, line.naturalTextWidth() + (LeftMargin * 2));
         // ### support blockformat margins etc
         int y = topMargin + lastBottomMargin;
         if (!lines.isEmpty()) {
@@ -121,6 +123,7 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
         line.setPosition(QPoint(leftMargin, y));
         lines.append(qMakePair(lineStart + line.textStart(), line));
     }
+    widest = qMax(widest, localWidest);
     lastBottomMargin = bottomMargin;
 
     textLayout->endLayout();
@@ -130,7 +133,13 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
     }
 #endif
 
-    contentRect |= textLayout->boundingRect().toRect();
+
+    QRect r = textLayout->boundingRect().toRect();
+    // this will actually take the entire width set in setLineWidth
+    // and not what it actually uses.
+    r.setWidth(localWidest);
+
+    contentRect |= r;
     Q_ASSERT(contentRect.right() <= viewportWidth() + LeftMargin);
 
     if (syntaxHighlighter) {
