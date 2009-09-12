@@ -36,6 +36,7 @@ public:
     void timerEvent(QTimerEvent *e);
     void updateCursorPosition(const QPoint &pos);
     QRect cursorRect(const TextCursor &cursor) const;
+    int findLastPageSize() const;
     bool atBeginning() const { return viewportPosition == 0; }
     bool atEnd() const { return textEdit->verticalScrollBar()->value() == textEdit->verticalScrollBar()->maximum(); }
     bool dirtyForSection(TextSection *section);

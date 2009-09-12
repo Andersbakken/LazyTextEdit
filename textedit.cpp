@@ -1258,3 +1258,15 @@ QRect TextEditPrivate::cursorRect(const TextCursor &cursor) const
     return QRect();
 }
 
+int TextEditPrivate::findLastPageSize() const
+{
+    TextEditPrivate p(textEdit);
+    const int startPos = qMax(0, d->document->documentSize() - ((layoutEnd - viewportPosition) * 2)); // ### estimate
+    p.viewportPosition = startPos;
+    p.relayoutByPosition(d->document->documentSize() - startPos);
+
+    // ### not done
+
+    return -1;
+}
+
