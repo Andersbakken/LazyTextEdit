@@ -75,6 +75,20 @@ void SyntaxHighlighter::setFormat(int start, int count, const QFont &font)
     setFormat(start, count, format);
 }
 
+void SyntaxHighlighter::setForeground(int start, int count, const QBrush &brush)
+{
+    QTextCharFormat format;
+    format.setForeground(brush);
+    setFormat(start, count, format);
+}
+
+void SyntaxHighlighter::setBackground(int start, int count, const QBrush &brush)
+{
+    QTextCharFormat format;
+    format.setBackground(brush);
+    setFormat(start, count, format);
+}
+
 QTextCharFormat SyntaxHighlighter::format(int pos) const
 {
     QTextCharFormat ret;

@@ -31,6 +31,8 @@ protected:
     void setFormat(int start, int count, const QColor &color);
     void setFormat(int start, int count, const QFont &font);
     void setBlockFormat(const QTextBlockFormat &format);
+    void setForeground(int start, int count, const QBrush &brush);
+    void setBackground(int start, int count, const QBrush &brush);
     QTextCharFormat format(int pos) const;
     int previousBlockState() const;
     int currentBlockState() const;
