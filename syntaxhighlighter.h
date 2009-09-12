@@ -16,7 +16,7 @@ class SyntaxHighlighter : public QObject
 {
     Q_OBJECT
 public:
-    SyntaxHighlighter(QObject *parent);
+    SyntaxHighlighter(QObject *parent = 0);
     SyntaxHighlighter(TextEdit *parent);
     ~SyntaxHighlighter();
     void setTextEdit(TextEdit *doc);
