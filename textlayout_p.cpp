@@ -95,8 +95,10 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
 
         }
         syntaxHighlighter->d->previousBlockState = syntaxHighlighter->d->currentBlockState;
+        if (!syntaxHighlighter->d->formatRanges.isEmpty())
+            formats += syntaxHighlighter->d->formatRanges;
     }
-
+    textLayout->setAdditionalFormats(formats);
     textLayout->beginLayout();
 
     forever {
@@ -115,10 +117,6 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
         line.setPosition(QPoint(leftMargin, y));
         lines.append(qMakePair(lineStart + line.textStart(), line));
     }
-    if (syntaxHighlighter && !syntaxHighlighter->d->formatRanges.isEmpty()) {
-        formats += syntaxHighlighter->d->formatRanges;
-    }
-    textLayout->setAdditionalFormats(formats);
     lastBottomMargin = bottomMargin;
 
     textLayout->endLayout();
