@@ -247,7 +247,10 @@ public:
 #endif
         if (appendTimer.isActive())
             textEdit->document()->setOption(TextDocument::SwapChunks, true);
-        if (!fileName.isEmpty() && !textEdit->load(fileName, TextDocument::Sparse, codec)) {
+        TextDocument::DeviceMode mode = TextDocument::Sparse;
+        if (fileName == "main.cpp")
+            mode = TextDocument::LoadAll;
+        if (!fileName.isEmpty() && !textEdit->load(fileName, mode, codec)) {
 #ifndef QT_NO_DEBUG_STREAM
             qDebug() << "Can't load" << fileName;
 #endif
