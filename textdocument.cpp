@@ -755,6 +755,7 @@ TextSection *TextDocument::insertTextSection(int pos, int size,
 
     TextSection *l = new TextSection(pos, size, this, format, data);
     QList<TextSection*>::iterator it = qLowerBound<QList<TextSection*>::iterator>(d->sections.begin(), d->sections.end(), l, compareTextSection);
+#if 0
     if (it != d->sections.begin()) {
         QList<TextSection*>::iterator before = (it - 1);
         if ((*before)->position() + size > pos) {
@@ -774,6 +775,7 @@ TextSection *TextDocument::insertTextSection(int pos, int size,
         // TextSection first and then delete it but I might allow
         // overlapping soon enough
     }
+#endif
     d->sections.insert(it, l);
     emit sectionAdded(l);
     return l;

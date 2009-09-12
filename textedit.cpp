@@ -1178,10 +1178,22 @@ void TextEditPrivate::timerEvent(QTimerEvent *e)
 void TextEditPrivate::updateCursorPosition(const QPoint &pos)
 {
     lastHoverPos = pos;
-    sectionHovered = textEdit->sectionAt(pos);
-    textEdit->viewport()->setCursor((sectionHovered && sectionHovered->hasCursor())
-                                    ? sectionHovered->cursor()
-                                    : Qt::IBeamCursor);
+    const int textPos = textPositionAt(pos);
+    bool found = false;
+    if (textPos != -1) {
+        const QList<TextSection*> hovered = textEdit->sections(textPos, 1, TextSection::IncludePartial);
+        sectionHovered = hovered.value(0);
+        foreach(TextSection *section, hovered) {
+            if (section->hasCursor()) {
+                found = true;
+                textEdit->viewport()->setCursor(section->cursor());
+                break;
+            }
+        }
+    }
+    if (!found && textEdit->viewport()->testAttribute(Qt::WA_SetCursor)) {
+        textEdit->viewport()->setCursor(Qt::IBeamCursor);
+    }
 }
 
 bool TextEditPrivate::isSectionOnScreen(const TextSection *section) const
