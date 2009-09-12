@@ -140,7 +140,7 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
     r.setWidth(localWidest);
 
     contentRect |= r;
-    Q_ASSERT(contentRect.right() <= viewportWidth() + LeftMargin);
+    Q_ASSERT(!lineBreaking || contentRect.right() <= viewportWidth() + LeftMargin);
 
     if (syntaxHighlighter) {
         syntaxHighlighter->d->formatRanges.clear();
