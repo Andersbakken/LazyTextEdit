@@ -1257,6 +1257,7 @@ void TextEditPrivate::relayout()
 {
     const QSize s = textEdit->viewport()->size();
     relayoutByGeometry(s.height());
+    textEdit->horizontalScrollBar()->setPageStep(s.width());
     textEdit->horizontalScrollBar()->setMaximum(qMax(0, widest - s.width()));
 //    qDebug() << widest << s.width() << textEdit->horizontalScrollBar()->maximum();
 }
