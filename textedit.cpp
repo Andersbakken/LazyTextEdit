@@ -1181,19 +1181,28 @@ void TextEditPrivate::updateCursorPosition(const QPoint &pos)
 {
     lastHoverPos = pos;
     const int textPos = textPositionAt(pos);
-    bool found = false;
+    bool foundCursor = false;
     if (textPos != -1) {
         const QList<TextSection*> hovered = textEdit->sections(textPos, 1, TextSection::IncludePartial);
         sectionHovered = hovered.value(0);
+        int bestPriority = INT_MIN;
+        int bestPriorityCursor = INT_MIN;
         foreach(TextSection *section, hovered) {
-            if (section->hasCursor()) {
-                found = true;
+            const int priority = section->priority();
+            if (priority > bestPriority) {
+                bestPriority = priority;
+                sectionHovered = section;
+            }
+
+            if (section->hasCursor() && priority > bestPriorityCursor) {
+                bestPriorityCursor = priority;
+                foundCursor = true;
                 textEdit->viewport()->setCursor(section->cursor());
                 break;
             }
         }
     }
-    if (!found && textEdit->viewport()->testAttribute(Qt::WA_SetCursor)) {
+    if (foundCursor && textEdit->viewport()->testAttribute(Qt::WA_SetCursor)) {
         textEdit->viewport()->setCursor(Qt::IBeamCursor);
     }
 }
