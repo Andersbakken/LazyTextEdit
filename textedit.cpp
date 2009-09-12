@@ -39,6 +39,7 @@ TextEdit::TextEdit(QWidget *parent)
         { QString(), 0, QKeySequence::UnknownKey } };
     for (int i=0; shortcuts[i].member; ++i) {
         d->actions[i] = new QAction(shortcuts[i].text, this);
+        d->actions[i]->setShortcutContext(Qt::WidgetShortcut);
         d->actions[i]->setShortcut(QKeySequence(shortcuts[i].key));
         connect(d->actions[i], SIGNAL(triggered(bool)), this, shortcuts[i].member);
         addAction(d->actions[i]);
