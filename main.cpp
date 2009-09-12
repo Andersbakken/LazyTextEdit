@@ -104,6 +104,7 @@ public:
     MainWindow(QWidget *parent = 0)
         : QMainWindow(parent), doLineNumbers(false)
     {
+//        changeSelectionTimer.start(1000, this);
         QString fileName = "main.cpp";
         bool replay = false;
         bool readOnly = false;
@@ -310,6 +311,9 @@ public:
                 qDebug() << "memory used" << textEdit->document()->currentMemoryUsage()
                          << "documentSize" << textEdit->document()->documentSize();
             }
+        } else if (e->timerId() == changeSelectionTimer.timerId()) {
+            TextCursor &cursor = textEdit->textCursor();
+            cursor.setSelection(rand() % 1000, (rand() % 20) - 10);
         } else {
             QMainWindow::timerEvent(e);
         }
@@ -474,7 +478,7 @@ private:
     QLabel *lbl;
     QLinkedList<QEvent*> events;
     bool doLineNumbers;
-    QBasicTimer appendTimer;
+    QBasicTimer appendTimer, changeSelectionTimer;
 };
 
 #include "main.moc"

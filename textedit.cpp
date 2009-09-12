@@ -50,13 +50,7 @@ TextEdit::TextEdit(QWidget *parent)
     d->actions[RedoAction]->setEnabled(false);
     setContextMenuPolicy(Qt::ActionsContextMenu);
     setCursorVisible(true); // starts blinking
-    connect(this, SIGNAL(selectionChanged()), viewport(), SLOT(update()));
-    connect(this, SIGNAL(selectionChanged()), d, SLOT(updateCopyAndCutEnabled()));
-    // ### could optimize and figure out what area to update. Not sure if it's worth it
-
-    if (qApp->clipboard()->supportsSelection()) {
-        connect(this, SIGNAL(selectionChanged()), d, SLOT(onSelectionChanged()));
-    }
+    connect(this, SIGNAL(selectionChanged()), d, SLOT(onSelectionChanged()));
 }
 
 
@@ -1282,9 +1276,14 @@ void TextEditPrivate::onTextSectionCursorChanged(TextSection *section)
 
 void TextEditPrivate::onSelectionChanged()
 {
-    if (inMouseEvent && textCursor.hasSelection()) {
+    if (inMouseEvent && textCursor.hasSelection() && QApplication::clipboard()->supportsSelection()) {
         textEdit->copy(QClipboard::Selection);
     }
+
+    textEdit->viewport()->update();
+    // ### could figure out old selection rect and | it with new one
+    // ### and update that but is it worth it?
+    updateCopyAndCutEnabled();
 }
 
 bool TextEditPrivate::canInsertFromMimeData(const QMimeData *data) const

@@ -40,6 +40,7 @@ public:
     bool atBeginning() const { return viewportPosition == 0; }
     bool atEnd() const { return textEdit->verticalScrollBar()->value() == textEdit->verticalScrollBar()->maximum(); }
     bool dirtyForSection(TextSection *section);
+    void updateCopyAndCutEnabled();
     bool isSectionOnScreen(const TextSection *section) const;
     void cursorMoveKeyEvent(QKeyEvent *e);
     void relayout();
@@ -63,7 +64,6 @@ public slots:
     void onTextSectionFormatChanged(TextSection *section);
     void onTextSectionCursorChanged(TextSection *section);
     void updateScrollBar();
-    void updateCopyAndCutEnabled();
     void onDocumentDestroyed();
     void onDocumentSizeChanged(int size);
     void onDocumentCommandInserted(DocumentCommand *cmd);
