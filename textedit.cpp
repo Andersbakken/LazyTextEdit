@@ -1022,8 +1022,10 @@ TextSection *TextEdit::insertTextSection(int pos, int size, const QTextCharForma
 {
     Q_ASSERT(d->document);
     TextSection *section = d->document->insertTextSection(pos, size, format, data);
-    if (section)
+    if (section) {
         section->d.textEdit = this;
+        section->d.priority = 100;
+    }
     return section;
 }
 

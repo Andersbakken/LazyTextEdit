@@ -47,7 +47,7 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
         ++index; // for the newline
     textLayout->setText(string);
 
-    QList<QTextLayout::FormatRange> formats;
+    QMultiMap<int, QTextLayout::FormatRange> formatMap;
     if (sections) {
         do {
             Q_ASSERT(!sections->isEmpty());
@@ -62,7 +62,7 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
             range.start = qMax(0, l->position() - lineStart); // offset in QTextLayout
             range.length = qMin(l->position() + l->size(), index) - lineStart - range.start;
             range.format = l->format();
-            formats.append(range);
+            formatMap.insertMulti(l->priority(), range);
             if (l->position() + l->size() >= index) { // > ### ???
                 // means section didn't end here. It continues in the next QTextLayout
                 break;
@@ -70,6 +70,7 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
             sections->removeFirst();
         } while (!sections->isEmpty());
     }
+    QList<QTextLayout::FormatRange> formats = formatMap.values();
 
     int leftMargin = LeftMargin;
     int rightMargin = 0;

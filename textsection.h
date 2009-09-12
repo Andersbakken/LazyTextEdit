@@ -30,12 +30,14 @@ public:
     void setCursor(const QCursor &cursor);
     void resetCursor();
     bool hasCursor() const;
+    int priority() const { return d.priority; }
+    void setPriority(int priority);
 private:
     struct Data {
         Data(int p, int s, TextDocument *doc, const QTextCharFormat &f, const QVariant &d)
-            : position(p), size(s), document(doc), textEdit(0), format(f), data(d), hasCursor(false)
+            : position(p), size(s), priority(0), document(doc), textEdit(0), format(f), data(d), hasCursor(false)
         {}
-        int position, size;
+        int position, size, priority;
         TextDocument *document;
         TextEdit *textEdit;
         QTextCharFormat format;

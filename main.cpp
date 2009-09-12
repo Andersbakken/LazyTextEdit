@@ -81,6 +81,21 @@ public:
     }
 };
 
+class Yellow : public SyntaxHighlighter
+{
+public:
+    Yellow(TextEdit *edit)
+        : SyntaxHighlighter(edit)
+    {}
+    void highlightBlock(const QString &text)
+    {
+        QTextCharFormat format;
+        format.setBackground(Qt::yellow);
+        setFormat(0, text.size(), format);
+    }
+
+};
+
 bool add = false;
 class MainWindow : public QMainWindow
 {
@@ -237,12 +252,13 @@ public:
         }
 #if 0
         textEdit->document()->setText("This is a test");
+//        textEdit->setSyntaxHighlighter(new Yellow(textEdit));
         QTextCharFormat format;
-        format.setBackground(Qt::yellow);
-        textEdit->insertTextSection(0, 4, format);
+        format.setBackground(Qt::red);
+        textEdit->document()->insertTextSection(0, 4, format)->setPriority(10000);
         format = QTextCharFormat();
-        format.setFontItalic(true);
-        textEdit->insertTextSection(0, 4, format);
+        format.setBackground(Qt::blue);
+        textEdit->insertTextSection(0, 7, format);
 #endif
         otherEdit->setDocument(textEdit->document());
 

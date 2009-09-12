@@ -44,3 +44,9 @@ bool TextSection::hasCursor() const
 {
     return d.hasCursor;
 }
+
+void TextSection::setPriority(int priority)
+{
+    d.priority = priority;
+    emit d.document->d->sectionFormatChanged(this); // ### it hasn't really but I to need it dirtied
+}
