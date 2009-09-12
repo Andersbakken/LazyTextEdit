@@ -35,6 +35,41 @@
 // ### consider having extra textLayouts on each side of viewport for optimized scrolling. Could detect that condition
 // ### Undo section removal/adding. This is a mess
 
+class DiffHighlighter : public SyntaxHighlighter
+{
+public:
+    DiffHighlighter(TextEdit *edit)
+        : SyntaxHighlighter(edit)
+    {
+
+    }
+
+    virtual void highlightBlock(const QString &string)
+    {
+        bool header = false;
+        if (string.startsWith('-')) {
+            if (string.startsWith("---")) {
+                header = true;
+            } else {
+                setBackground(0, string.size(), Qt::red);
+            }
+        } else if (string.startsWith('+')) {
+            if (string.startsWith("+++")) {
+                header = true;
+            } else {
+                setBackground(0, string.size(), Qt::green);
+            }
+        } else if (string.startsWith("@@")) {
+            setBackground(0, string.size(), Qt::yellow);
+        }
+        if (header) {
+            setBackground(0, string.size(), Qt::blue);
+            setForeground(0, string.size(), Qt::white);
+
+        }
+
+    }
+};
 
 class Highlighter : public SyntaxHighlighter
 {
@@ -248,8 +283,11 @@ public:
         if (appendTimer.isActive())
             textEdit->document()->setOption(TextDocument::SwapChunks, true);
         TextDocument::DeviceMode mode = TextDocument::Sparse;
-        if (fileName == "main.cpp")
+        if (fileName == "main.cpp") {
             mode = TextDocument::LoadAll;
+        } else if (fileName.contains("diff", Qt::CaseInsensitive)) {
+            textEdit->setSyntaxHighlighter(new DiffHighlighter(textEdit));
+        }
         if (!fileName.isEmpty() && !textEdit->load(fileName, mode, codec)) {
 #ifndef QT_NO_DEBUG_STREAM
             qDebug() << "Can't load" << fileName;
