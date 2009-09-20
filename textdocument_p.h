@@ -190,6 +190,7 @@ public:
     void swapOutChunk(Chunk *c);
     QList<TextSection*> getSections(int from, int size, TextSection::TextSectionOptions opt, const TextEdit *filter) const;
     inline TextSection *sectionAt(int pos, const TextEdit *filter) const { return getSections(pos, 1, TextSection::IncludePartial, filter).value(0); }
+    void textEditDestroyed(TextEdit *edit);
 signals:
     void sectionFormatChanged(TextSection *section);
     void sectionCursorChanged(TextSection *section);

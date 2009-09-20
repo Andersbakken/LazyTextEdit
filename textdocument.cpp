@@ -34,6 +34,11 @@ TextDocument::~TextDocument()
                        // manner.
         delete tmp;
     }
+    foreach(TextSection *section, d->sections) {
+        section->d.document = 0;
+        section->d.textEdit = 0;
+        delete section;
+    }
     if (d->ownDevice)
         delete d->device;
 
@@ -154,6 +159,13 @@ bool TextDocument::load(const QString &fileName, DeviceMode mode, QTextCodec *co
 
 void TextDocument::clear()
 {
+    foreach(TextSection *section, d->sections) {
+        section->d.document = 0;
+        emit sectionRemoved(section);
+        delete section;
+    }
+    d->sections.clear();
+
     setText(QString());
 }
 
@@ -734,11 +746,12 @@ void TextDocument::takeTextSection(TextSection *section)
 {
     Q_ASSERT(section);
     Q_ASSERT(section->document() == this);
+    section->d.textEdit = 0;
+    section->d.document = 0;
     const QList<TextSection*>::iterator it = qBinaryFind(d->sections.begin(), d->sections.end(), section, compareTextSection);
     Q_ASSERT(it != d->sections.end());
     emit sectionRemoved(section);
     d->sections.erase(it);
-    remove(section->position(), section->size());
 }
 
 QList<TextSection*> TextDocument::sections(int pos, int size, TextSection::TextSectionOptions flags) const
@@ -1332,4 +1345,15 @@ QList<TextSection*> TextDocumentPrivate::getSections(int pos, int size, TextSect
     ::filter(ret, filter);
     return ret;
 }
+
+void TextDocumentPrivate::textEditDestroyed(TextEdit *edit)
+{
+    foreach(TextSection *section, sections) {
+        if (section->textEdit() == edit) {
+            section->d.document = 0;
+            delete section;
+        }
+    }
+}
+
 
