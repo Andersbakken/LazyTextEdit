@@ -347,14 +347,21 @@ QTextCodec * TextDocument::textCodec() const
 TextCursor TextDocument::find(const QRegExp &rx, int pos, FindMode flags) const
 {
     if (flags & FindWholeWords) {
-        qWarning("FindWholeWords doesn't work with regexps. Instead use RegExp for this");
+        qWarning("FindWholeWords doesn't work with regexps. Instead use an actual RegExp for this");
+    }
+
+    const bool reverse = flags & FindBackward;
+    if (pos == d->documentSize) {
+        if (!reverse)
+            return TextCursor();
+        --pos;
     }
 
     QRegExp regexp = rx;
     if ((rx.caseSensitivity() == Qt::CaseSensitive) != (flags & FindCaseSensitively))
         regexp.setCaseSensitivity(flags & FindCaseSensitively ? Qt::CaseSensitive : Qt::CaseInsensitive);
 
-    const TextDocumentIterator::Direction direction = (flags & FindBackward
+    const TextDocumentIterator::Direction direction = (reverse
                                                        ? TextDocumentIterator::Left
                                                        : TextDocumentIterator::Right);
     TextDocumentIterator it(d, pos);
@@ -388,7 +395,6 @@ TextCursor TextDocument::find(const QString &in, int pos, FindMode flags) const
     Q_ASSERT(pos >= 0 && pos <= d->documentSize);
     if (in.isEmpty())
         return TextCursor();
-
 
     const bool reverse = flags & FindBackward;
     if (pos == d->documentSize) {
@@ -458,10 +464,18 @@ TextCursor TextDocument::find(const QChar &chIn, int pos, FindMode flags) const
 
     Q_ASSERT(pos >= 0 && pos <= d->documentSize);
 
+    const bool reverse = flags & FindBackward;
+    if (pos == d->documentSize) {
+        if (!reverse)
+            return TextCursor();
+        --pos;
+    }
+
+
     const bool caseSensitive = flags & FindCaseSensitively;
     const QChar ch = (caseSensitive ? chIn : chIn.toLower());
     TextDocumentIterator it(d, pos);
-    const TextDocumentIterator::Direction dir = (flags & FindBackward
+    const TextDocumentIterator::Direction dir = (reverse
                                                  ? TextDocumentIterator::Left
                                                  : TextDocumentIterator::Right);
 
