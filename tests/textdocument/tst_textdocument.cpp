@@ -389,7 +389,7 @@ void tst_TextDocument::sections()
     doc.setText(QString::fromLatin1(text));
     TextSection *section = doc.insertTextSection(0, 4);
     QVERIFY(section);
-    QVERIFY(!doc.insertTextSection(2, 5));
+    QVERIFY(doc.insertTextSection(2, 5));
     QCOMPARE(doc.sections(0, 4).value(0), section);
     QCOMPARE(doc.sections(0, 7).value(0), section);
     QCOMPARE(doc.sections(0, 3).size(), 0);
@@ -397,7 +397,7 @@ void tst_TextDocument::sections()
     QCOMPARE(doc.sections(2, 6, TextSection::IncludePartial).value(0), section);
     TextSection *section2 = doc.insertTextSection(4, 2);
     QVERIFY(section2);
-    QCOMPARE(doc.sections(3, 2, TextSection::IncludePartial).size(), 2);
+    QCOMPARE(doc.sections(3, 2, TextSection::IncludePartial).size(), 3);
     QCOMPARE(doc.sections(3, 2).size(), 0);
     // "[abcd][e]fghijklmnopqrstuvwxyz\n";
 }
