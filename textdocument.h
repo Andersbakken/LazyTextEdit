@@ -106,7 +106,7 @@ public:
     QList<TextSection*> sections(int from = 0, int size = -1, TextSection::TextSectionOptions opt = 0) const;
     inline TextSection *sectionAt(int pos) const { return sections(pos, 1, TextSection::IncludePartial).value(0); }
     TextSection *insertTextSection(int pos, int size, const QTextCharFormat &format = QTextCharFormat(),
-                           const QVariant &data = QVariant());
+                                   const QVariant &data = QVariant());
     void takeTextSection(TextSection *section);
     int currentMemoryUsage() const;
 

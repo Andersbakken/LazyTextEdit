@@ -387,17 +387,17 @@ void tst_TextDocument::sections()
     static const char *text = "abcdefghijklmnopqrstuvwxyz\n";
     TextDocument doc;
     doc.setText(QString::fromLatin1(text));
-    Section *section = doc.insertSection(0, 4);
+    TextSection *section = doc.insertTextSection(0, 4);
     QVERIFY(section);
-    QVERIFY(!doc.insertSection(2, 5));
+    QVERIFY(!doc.insertTextSection(2, 5));
     QCOMPARE(doc.sections(0, 4).value(0), section);
     QCOMPARE(doc.sections(0, 7).value(0), section);
     QCOMPARE(doc.sections(0, 3).size(), 0);
-    QCOMPARE(doc.sections(0, 3, TextDocument::IncludePartial).value(0), section);
-    QCOMPARE(doc.sections(2, 6, TextDocument::IncludePartial).value(0), section);
-    Section *section2 = doc.insertSection(4, 2);
+    QCOMPARE(doc.sections(0, 3, TextSection::IncludePartial).value(0), section);
+    QCOMPARE(doc.sections(2, 6, TextSection::IncludePartial).value(0), section);
+    TextSection *section2 = doc.insertTextSection(4, 2);
     QVERIFY(section2);
-    QCOMPARE(doc.sections(3, 2, TextDocument::IncludePartial).size(), 2);
+    QCOMPARE(doc.sections(3, 2, TextSection::IncludePartial).size(), 2);
     QCOMPARE(doc.sections(3, 2).size(), 0);
     // "[abcd][e]fghijklmnopqrstuvwxyz\n";
 }
