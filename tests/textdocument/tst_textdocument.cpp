@@ -329,6 +329,8 @@ void tst_TextDocument::undoRedo()
     doc.undo();
     QCOMPARE(initial, doc.read(0, doc.documentSize()));
     QVERIFY(doc.isRedoAvailable());
+    doc.setUndoRedoEnabled(false);
+    QVERIFY(!doc.isRedoAvailable());
 }
 
 struct Command {
