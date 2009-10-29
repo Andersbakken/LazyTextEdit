@@ -41,6 +41,7 @@ TextEdit::TextEdit(QWidget *parent)
         d->actions[i] = new QAction(shortcuts[i].text, this);
         d->actions[i]->setShortcutContext(Qt::WidgetShortcut);
         d->actions[i]->setShortcut(QKeySequence(shortcuts[i].key));
+        d->actions[i]->setShortcutContext(Qt::WidgetShortcut);
         connect(d->actions[i], SIGNAL(triggered(bool)), this, shortcuts[i].member);
         addAction(d->actions[i]);
     }
@@ -578,6 +579,8 @@ void TextEdit::setReadOnly(bool rr)
     setCursorVisible(!rr);
     d->actions[PasteAction]->setEnabled(!rr);
     d->actions[CutAction]->setEnabled(!rr);
+    d->actions[UndoAction]->setEnabled(!rr);
+    d->actions[RedoAction]->setEnabled(!rr);
 }
 
 bool TextEdit::lineBreaking() const
