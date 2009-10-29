@@ -459,13 +459,15 @@ void tst_TextDocument::modified()
     TextDocument doc;
     QCOMPARE(doc.isModified(), false);
     doc.setText("foo bar");
+    TextCursor cursor(&doc);
     QCOMPARE(doc.isModified(), false);
-    doc.insert(0, "1");
+    cursor.insertText("1");
     QCOMPARE(doc.isModified(), true);
     doc.setModified(false);
     QCOMPARE(doc.isModified(), false);
-    doc.remove(0, 1);
+    cursor.deletePreviousChar();
     QCOMPARE(doc.isModified(), true);
+    QCOMPARE(doc.isUndoAvailable(), true);
     doc.undo();
     QCOMPARE(doc.isModified(), false);
     doc.redo();
