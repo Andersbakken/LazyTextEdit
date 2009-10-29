@@ -579,8 +579,14 @@ void TextEdit::setReadOnly(bool rr)
     setCursorVisible(!rr);
     d->actions[PasteAction]->setEnabled(!rr);
     d->actions[CutAction]->setEnabled(!rr);
+    const bool redoWasAvailable = isRedoAvailable();
+    const bool undoWasAvailable = isUndoAvailable();
     d->actions[UndoAction]->setEnabled(!rr);
     d->actions[RedoAction]->setEnabled(!rr);
+    if (undoWasAvailable != isUndoAvailable())
+        emit undoAvailableChanged(!undoWasAvailable);
+    if (redoWasAvailable != isRedoAvailable())
+        emit redoAvailableChanged(!redoWasAvailable);
 }
 
 bool TextEdit::lineBreaking() const
