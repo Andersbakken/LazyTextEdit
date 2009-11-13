@@ -1258,9 +1258,9 @@ void TextEditPrivate::cursorMoveKeyEvent(QKeyEvent *e)
         scrollLines(1);
     } else if (e == QKeySequence::MoveToPreviousLine) {
         scrollLines(-1);
-    } else if (e == QKeySequence::MoveToStartOfLine || e == QKeySequence::MoveToStartOfDocument) {
+    } else if (e == QKeySequence::MoveToStartOfDocument) {
         textEdit->verticalScrollBar()->setValue(0);
-    } else if (e == QKeySequence::MoveToEndOfLine || e == QKeySequence::MoveToEndOfDocument) {
+    } else if (e == QKeySequence::MoveToEndOfDocument) {
         textEdit->verticalScrollBar()->setValue(textEdit->verticalScrollBar()->maximum());
     } else if (e == QKeySequence::MoveToNextPage) {
         scrollLines(qMax(1, visibleLines - 1));
