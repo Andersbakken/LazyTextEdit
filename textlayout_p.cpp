@@ -344,6 +344,7 @@ QTextLine TextLayout::lineForPosition(int pos, int *offsetInLine, int *lineIndex
 
 void TextLayout::updatePosition(int pos, Direction direction)
 {
+    pos = qMin(pos, maxViewportPosition);
     if (document->documentSize() == 0) {
         viewportPosition = 0;
     } else {
@@ -366,6 +367,10 @@ void TextLayout::updatePosition(int pos, Direction direction)
         if (viewportPosition != 0 && document->read(viewportPosition - 1, 1) != QString("\n"))
             qWarning() << "viewportPosition" << viewportPosition << document->read(viewportPosition - 1, 10) << this;
         Q_ASSERT(viewportPosition == 0 || document->read(viewportPosition - 1, 1) == QString("\n"));
+    }
+    if (viewportPosition > maxViewportPosition && direction == Forward) {
+        updatePosition(viewportPosition, Backward);
+        return;
     }
     dirty(viewportWidth());
 

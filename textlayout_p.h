@@ -43,7 +43,7 @@ public:
         : document(doc), textEdit(0), bufferPosition(0),
           viewportPosition(0), layoutEnd(-1), viewport(-1),
           visibleLines(-1), lastVisibleCharacter(-1), lastBottomMargin(0),
-          widest(-1), layoutDirty(true), sectionsDirty(true), lineBreaking(true)
+          widest(-1), maxViewportPosition(0), layoutDirty(true), sectionsDirty(true), lineBreaking(true)
     {
     }
 
@@ -56,7 +56,8 @@ public:
     TextDocument *document;
     TextEdit *textEdit;
     QPointer<SyntaxHighlighter> syntaxHighlighter;
-    int bufferPosition, viewportPosition, layoutEnd, viewport, visibleLines, lastVisibleCharacter, lastBottomMargin, widest;
+    int bufferPosition, viewportPosition, layoutEnd, viewport, visibleLines, lastVisibleCharacter, lastBottomMargin, widest,
+        maxViewportPosition;
     bool layoutDirty, sectionsDirty, lineBreaking;
     QList<QTextLayout*> textLayouts, unusedTextLayouts;
     QHash<QTextLayout*, QTextBlockFormat> blockFormats;
