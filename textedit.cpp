@@ -892,6 +892,7 @@ bool TextEdit::save()
 void TextEditPrivate::onDocumentSizeChanged(int size)
 {
     textEdit->verticalScrollBar()->setRange(0, qMax(0, size));
+    qDebug() << findLastPageSize();
     maxViewportPosition = textEdit->verticalScrollBar()->maximum();
     updateScrollBarPageStepPending = true;
 }
@@ -1366,15 +1367,28 @@ QRect TextEditPrivate::cursorRect(const TextCursor &cursor, bool blockRect) cons
 
 int TextEditPrivate::findLastPageSize() const
 {
+    if (!document || document->documentSize() == 0)
+        return -1;
     TextEditPrivate p(textEdit);
+    p.viewportPosition = 0;
+    p.document = document;
     const int documentSize = document->documentSize();
-    int start = documentSize - 100;
-    int last = documentSize;
+    p.maxViewportPosition = documentSize;
+    int start = 0;
+    int i = 0;
     forever {
-        p.updatePosition(start, Forward);
-        p.relayoutByGeometry(textEdit->viewport()->width());
-//        if (p.layoutEnd <
+        p.updatePosition(start, Backward);
+        p.relayoutByPosition(documentSize);
+        qDebug() << "i" << i++ << "start" << start << "layoutEnd" << p.layoutEnd << "documentSize" << documentSize << "viewportPosition" << p.viewportPosition;
+        if (p.layoutEnd == documentSize) {
+            break;
+        }
+//        last = start;
+        start += 100;
     }
+//    qDebug() << last;
+//    return last;
+    return p.viewportPosition;
 //     const int startPos = qMax(0, document->documentSize() - ((layoutEnd - viewportPosition) * 2)); // ### estimate
 //     p.viewportPosition = startPos;
 //     p.relayoutByPosition(document->documentSize() - startPos);

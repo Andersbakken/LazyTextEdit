@@ -256,6 +256,7 @@ void TextLayout::relayoutByGeometry(int height)
     unusedTextLayouts.clear();
     Q_ASSERT(viewportPosition < layoutEnd ||
              (viewportPosition == layoutEnd && viewportPosition == document->documentSize()));
+    qDebug() << "layoutEnd" << layoutEnd << "viewportPosition" << viewportPosition;
 }
 
 void TextLayout::relayoutByPosition(int size)
