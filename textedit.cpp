@@ -331,8 +331,8 @@ void TextEdit::paintEvent(QPaintEvent *e)
 //     if (d->widest < viewport()->width()) {
 //         p.drawLine(d->widest, 0, d->widest, viewport()->height());
 //     }
-//     QRect r = d->cursorRect(d->textCursor);
-//     p.fillRect(r.adjusted(0, 0, 20, 0), QColor(0, 255, 0, 120));
+    QRect r = cursorRect(d->textCursor);
+    p.fillRect(r.adjusted(0, 0, 20, 0), QColor(0, 255, 0, 120));
 }
 
 void TextEdit::scrollContentsBy(int dx, int dy)
@@ -630,12 +630,22 @@ void TextEdit::setMaximumSizeCopy(int max)
 
 QRect TextEdit::cursorBlockRect(const TextCursor &textCursor) const
 {
-    return d->cursorRect(textCursor, true);
+    if (const QTextLayout *l = d->layoutForPosition(textCursor.position())) {
+        return l->boundingRect().toRect();
+    }
+    return QRect();
 }
 
 QRect TextEdit::cursorRect(const TextCursor &textCursor) const
 {
-    return d->cursorRect(textCursor, false);
+    int offset = -1;
+    if (d->layoutForPosition(textCursor.position(), &offset)) {
+        ASSUME(offset != -1);
+        QTextLine line = d->lineForPosition(textCursor.position());
+        qreal x = line.cursorToX(offset);
+        return QRect(x, line.y(), d->cursorWidth, line.height());
+    }
+    return QRect();
 }
 
 
@@ -1346,23 +1356,6 @@ void TextEditPrivate::onSelectionChanged()
 bool TextEditPrivate::canInsertFromMimeData(const QMimeData *data) const
 {
     return data->hasText();
-}
-
-QRect TextEditPrivate::cursorRect(const TextCursor &cursor, bool blockRect) const
-{
-    int offset = -1;
-    if (const QTextLayout *l = layoutForPosition(cursor.position(), &offset)) {
-        ASSUME(offset != -1);
-        QRect r = l->boundingRect().toRect();
-        if (!blockRect) {
-            QTextLine line = lineForPosition(cursor.position());
-            qreal x = line.cursorToX(offset);
-            r.setLeft(x);
-            r.setWidth(cursorWidth);
-        }
-        return r;
-    }
-    return QRect();
 }
 
 int TextEditPrivate::findLastPageSize() const

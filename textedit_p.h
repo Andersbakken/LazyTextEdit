@@ -49,7 +49,6 @@ public:
     void scrollLines(int lines);
     void timerEvent(QTimerEvent *e);
     void updateCursorPosition(const QPoint &pos);
-    QRect cursorRect(const TextCursor &cursor, bool blockRect) const;
     int findLastPageSize() const;
     bool atBeginning() const { return viewportPosition == 0; }
     bool atEnd() const { return textEdit->verticalScrollBar()->value() == textEdit->verticalScrollBar()->maximum(); }
