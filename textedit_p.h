@@ -34,7 +34,7 @@ class TextEditPrivate : public QObject, public TextLayout
 public:
     TextEditPrivate(TextEdit *qptr)
         : requestedScrollBarPosition(-1), lastRequestedScrollBarPosition(-1), cursorWidth(1),
-        sectionCount(0), maximumSizeCopy(50000), pendingTimeOut(-1), autoScrollLines(-1),
+        sectionCount(0), maximumSizeCopy(50000), pendingTimeOut(-1), autoScrollLines(0),
         readOnly(false), cursorVisible(false), blockScrollBarUpdate(false), updateScrollBarPageStepPending(true),
         ensureCursorVisiblePending(false), inMouseEvent(false), sectionPressed(0), sectionHovered(0),
         pendingScrollBarUpdate(false)
