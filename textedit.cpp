@@ -892,7 +892,7 @@ bool TextEdit::save()
 void TextEditPrivate::onDocumentSizeChanged(int size)
 {
     textEdit->verticalScrollBar()->setRange(0, qMax(0, size));
-    qDebug() << findLastPageSize();
+//    qDebug() << findLastPageSize();
     maxViewportPosition = textEdit->verticalScrollBar()->maximum();
     updateScrollBarPageStepPending = true;
 }
@@ -1032,7 +1032,7 @@ void TextEdit::ensureCursorVisible()
                 if (d->autoScrollLines != 0) {
                     scroll = d->autoScrollLines;
                 } else {
-                    scroll = (r.top() < crect.top() ? -1 : 1);
+                    scroll = (crect.top() < r.top() ? -1 : 1);
                 }
                 d->scrollLines(scroll);
             } else {

@@ -234,6 +234,7 @@ public:
         QVBoxLayout *l = new QVBoxLayout(w);
         setCentralWidget(w);
         l->addWidget(textEdit = new TextEdit(w));
+        textEdit->setCursorWidth(10);
         textEdit->setObjectName("primary");
         if (chunkSize != -1) {
             textEdit->document()->setChunkSize(chunkSize);
@@ -345,11 +346,7 @@ public:
     {
         activateWindow();
         raise();
-#ifndef QT_NO_DEBUG
-        extern bool doLog; // from textedit.cpp
-        if (doLog)
-#endif
-            restoreGeometry(QSettings("LazyTextEditor", "LazyTextEditor").value("geometry").toByteArray());
+        restoreGeometry(QSettings("LazyTextEditor", "LazyTextEditor").value("geometry").toByteArray());
         QMainWindow::showEvent(e);
     }
 public slots:
