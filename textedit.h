@@ -78,7 +78,8 @@ public:
     int maximumSizeCopy() const;
     void setMaximumSizeCopy(int max);
 
-    QRect cursorBlockRect() const;
+    QRect cursorBlockRect(const TextCursor &cursor) const;
+    QRect cursorRect(const TextCursor &cursor) const;
 
     bool cursorVisible() const;
     void setCursorVisible(bool cc);

@@ -331,6 +331,8 @@ void TextEdit::paintEvent(QPaintEvent *e)
 //     if (d->widest < viewport()->width()) {
 //         p.drawLine(d->widest, 0, d->widest, viewport()->height());
 //     }
+//     QRect r = d->cursorRect(d->textCursor);
+//     p.fillRect(r.adjusted(0, 0, 20, 0), QColor(0, 255, 0, 120));
 }
 
 void TextEdit::scrollContentsBy(int dx, int dy)
@@ -526,7 +528,7 @@ void TextEdit::dragEnterEvent(QDragEnterEvent *e)
 void TextEdit::dragMoveEvent(QDragMoveEvent *e)
 {
     if (d->dragOverrideCursor.isValid()) {
-        const QRect r = d->cursorRect(d->dragOverrideCursor);
+        const QRect r = cursorRect(d->dragOverrideCursor);
         if (!r.isNull())
             viewport()->update(r);
         d->dragOverrideCursor = TextCursor();
@@ -543,7 +545,7 @@ void TextEdit::dragMoveEvent(QDragMoveEvent *e)
             e->acceptProposedAction();
             d->dragOverrideCursor = TextCursor(this);
             d->dragOverrideCursor.setPosition(pos);
-            const QRect r = d->cursorRect(d->dragOverrideCursor);
+            const QRect r = cursorRect(d->dragOverrideCursor);
             if (!r.isNull())
                 viewport()->update(r);
             return;
@@ -565,7 +567,7 @@ void TextEdit::dropEvent(QDropEvent *e)
             e->acceptProposedAction();
             d->dragOverrideCursor = TextCursor(this);
             d->dragOverrideCursor.setPosition(pos);
-            const QRect r = d->cursorRect(d->dragOverrideCursor);
+            const QRect r = cursorRect(d->dragOverrideCursor);
             if (!r.isNull())
                 viewport()->update(r);
             return;
@@ -626,10 +628,16 @@ void TextEdit::setMaximumSizeCopy(int max)
     d->updateCopyAndCutEnabled();
 }
 
-QRect TextEdit::cursorBlockRect() const
+QRect TextEdit::cursorBlockRect(const TextCursor &textCursor) const
 {
-    return d->cursorRect(d->textCursor);
+    return d->cursorRect(textCursor, true);
 }
+
+QRect TextEdit::cursorRect(const TextCursor &textCursor) const
+{
+    return d->cursorRect(textCursor, false);
+}
+
 
 void TextEdit::wheelEvent(QWheelEvent *e)
 {
@@ -782,7 +790,10 @@ void TextEdit::setCursorVisible(bool cc)
     } else {
         d->cursorBlinkTimer.stop();
     }
-    viewport()->update(cursorBlockRect());
+    const QRect r = cursorRect(d->textCursor) & viewport()->rect();
+    if (!r.isNull()) {
+        viewport()->update(r);
+    }
 }
 
 void TextEdit::clearSelection()
@@ -972,8 +983,10 @@ void TextEditPrivate::onScrollBarValueChanged(int value)
 void TextEditPrivate::onScrollBarActionTriggered(int action)
 {
     switch (action) {
-    case QAbstractSlider::SliderSingleStepAdd: scrollLines(1); requestedScrollBarPosition = -1; break;
-    case QAbstractSlider::SliderSingleStepSub: scrollLines(-1); requestedScrollBarPosition = -1; break;
+    case QAbstractSlider::SliderSingleStepAdd:
+        scrollLines(1); requestedScrollBarPosition = -1; break;
+    case QAbstractSlider::SliderSingleStepSub:
+        scrollLines(-1); requestedScrollBarPosition = -1; break;
     default: break;
     }
 }
@@ -1007,9 +1020,9 @@ void TextEdit::ensureCursorVisible()
         d->updatePosition(qMax(0, d->textCursor.position() - 1), TextLayout::Backward);
     } else {
         const QRect r = viewport()->rect();
-        const QRect cursorRect = cursorBlockRect();
-        if (!r.contains(cursorRect)) {
-            if (r.intersects(cursorRect)) {
+        const QRect crect = cursorRect(d->textCursor);
+        if (!r.contains(crect)) {
+            if (r.intersects(crect)) {
                 d->scrollLines(d->autoScrollLines);
             } else {
                 d->updatePosition(d->textCursor.position(), TextLayout::Backward);
@@ -1208,7 +1221,9 @@ void TextEditPrivate::timerEvent(QTimerEvent *e)
         textEdit->setCursorPosition(pos, TextCursor::KeepAnchor);
     } else if (e->timerId() == cursorBlinkTimer.timerId()) {
         cursorVisible = !cursorVisible;
-        textEdit->viewport()->update(textEdit->cursorBlockRect());
+        const QRect r = textEdit->cursorRect(textCursor) & textEdit->viewport()->rect();
+        if (!r.isNull())
+            textEdit->viewport()->update(r);
     } else {
         Q_ASSERT(0);
     }
@@ -1322,10 +1337,19 @@ bool TextEditPrivate::canInsertFromMimeData(const QMimeData *data) const
     return data->hasText();
 }
 
-QRect TextEditPrivate::cursorRect(const TextCursor &cursor) const
+QRect TextEditPrivate::cursorRect(const TextCursor &cursor, bool blockRect) const
 {
-    if (const QTextLayout *l = layoutForPosition(cursor.position())) {
-        return l->boundingRect().toRect();
+    int offset = -1;
+    if (const QTextLayout *l = layoutForPosition(cursor.position(), &offset)) {
+        ASSUME(offset != -1);
+        QRect r = l->boundingRect().toRect();
+        if (!blockRect) {
+            QTextLine line = lineForPosition(cursor.position());
+            qreal x = line.cursorToX(offset);
+            r.setLeft(x);
+            r.setWidth(cursorWidth);
+        }
+        return r;
     }
     return QRect();
 }

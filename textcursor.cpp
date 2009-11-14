@@ -575,11 +575,9 @@ void TextCursor::cursorChanged(bool ensureVisible)
             textEdit->d->ensureCursorVisiblePending = true;
             emit textEdit->cursorPositionChanged(d->position);
         }
-        const QRect r = textEdit->cursorBlockRect();
-        if (r.isNull()) {
-            textEdit->viewport()->update();
-        } else {
-            textEdit->viewport()->update(textEdit->cursorBlockRect());
+        const QRect r = textEdit->cursorRect(*this) & textEdit->viewport()->rect();
+        if (!r.isNull()) {
+            textEdit->viewport()->update(r);
         }
     }
 }
