@@ -891,7 +891,7 @@ bool TextEdit::save()
 
 void TextEditPrivate::onDocumentSizeChanged(int size)
 {
-    textEdit->verticalScrollBar()->setRange(0, size - 1);
+    textEdit->verticalScrollBar()->setRange(0, qMax(0, size - 1));
     updateScrollBarPageStepPending = true;
 }
 
