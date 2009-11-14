@@ -379,9 +379,12 @@ public slots:
     void onCursorPositionChanged(int pos)
     {
         QString text = QString("Position: %1\n"
-                               "Word: %2\n").
+                               "Word: %2\n"
+                               "Column: %3\n").
                        arg(pos).
-                       arg(textEdit->textCursor().wordUnderCursor());
+                       arg(textEdit->textCursor().wordUnderCursor()).
+                       arg(textEdit->textCursor().columnNumber());
+
         if (doLineNumbers)
             text += QString("Line number: %0").arg(textEdit->document()->lineNumber(pos));
         lbl->setText(text);
