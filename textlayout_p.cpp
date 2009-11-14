@@ -318,9 +318,18 @@ QTextLine TextLayout::lineForPosition(int pos, int *offsetInLine, int *lineIndex
     if (pos < viewportPosition || pos >= layoutEnd || textLayouts.isEmpty() || lines.isEmpty()) {
         return QTextLine();
     }
+    int layoutIndex = 0;
+    QTextLayout *layout = textLayouts.value(layoutIndex);
+    Q_ASSERT(layout);
     for (int i=0; i<lines.size(); ++i) {
         const QPair<int, QTextLine> &line = lines.at(i);
-        const int lineEnd = line.first + line.second.textLength() + 1; // 1 is for newline characteru
+        int lineEnd = line.first + line.second.textLength();
+        if (line.second.lineNumber() + 1 == layout->lineCount()) {
+            ++lineEnd;
+            // 1 is for newline characters
+            layout = textLayouts.value(++layoutIndex);
+            Q_ASSERT(layout);
+        }
         if (pos < lineEnd) {
             if (offsetInLine) {
                 *offsetInLine = pos - line.first;
