@@ -1021,10 +1021,19 @@ void TextEdit::ensureCursorVisible()
         d->updatePosition(qMax(0, d->textCursor.position() - 1), TextLayout::Backward);
     } else {
         const QRect r = viewport()->rect();
-        const QRect crect = cursorRect(d->textCursor);
+        QRect crect = cursorRect(d->textCursor);
+        crect.setLeft(r.left());
+        crect.setRight(r.right());
+        // ### what if the cursor is out of bounds horizontally?
         if (!r.contains(crect)) {
             if (r.intersects(crect)) {
-                d->scrollLines(d->autoScrollLines);
+                int scroll;
+                if (d->autoScrollLines != 0) {
+                    scroll = d->autoScrollLines;
+                } else {
+                    scroll = (r.top() < crect.top() ? -1 : 1);
+                }
+                d->scrollLines(scroll);
             } else {
                 d->updatePosition(d->textCursor.position(), TextLayout::Backward);
             }
