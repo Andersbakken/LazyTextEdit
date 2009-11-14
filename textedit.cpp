@@ -1363,8 +1363,8 @@ int TextEditPrivate::findLastPageSize() const
     int last = documentSize;
     forever {
         p.updatePosition(start, Forward);
-        p.relayoutByGeometry(viewport()->width());
-        if (p.layoutEnd <
+        p.relayoutByGeometry(textEdit->viewport()->width());
+//        if (p.layoutEnd <
     }
 //     const int startPos = qMax(0, document->documentSize() - ((layoutEnd - viewportPosition) * 2)); // ### estimate
 //     p.viewportPosition = startPos;
