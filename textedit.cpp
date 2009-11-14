@@ -127,12 +127,12 @@ QAction *TextEdit::action(ActionType type) const
 TextEdit::~TextEdit()
 {
     if (d->document) {
+        disconnect(d->document, 0, this, 0);
         if (d->document->parent() == this) {
             delete d->document;
             d->document = 0;
         } else {
             d->document->d->textEditDestroyed(this);
-            disconnect(d->document, 0, this, 0);
         }
         // to make sure we don't do anything drastic on shutdown
     }
