@@ -948,6 +948,22 @@ int TextDocument::lineNumber(int position) const
     return c->firstLineIndex + extra;
 }
 
+int TextDocument::columnNumber(int position) const
+{
+    TextCursor cursor(this, position);
+    return cursor.isNull() ? -1 : cursor.columnNumber();
+}
+
+int TextDocument::lineNumber(const TextCursor &cursor) const
+{
+    return cursor.document() == this ? lineNumber(cursor.position()) : -1;
+}
+
+int TextDocument::columnNumber(const TextCursor &cursor) const
+{
+    return cursor.document() == this ? cursor.columnNumber() : -1;
+}
+
 void TextDocument::setOptions(Options opt)
 {
     d->options = opt;

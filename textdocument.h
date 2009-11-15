@@ -116,6 +116,9 @@ public:
     bool isModified() const;
 
     int lineNumber(int position) const;
+    int columnNumber(int position) const;
+    int lineNumber(const TextCursor &cursor) const;
+    int columnNumber(const TextCursor &cursor) const;
 public slots:
     inline bool append(const QString &ba) { return insert(documentSize(), ba); }
     void setModified(bool modified);

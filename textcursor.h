@@ -123,7 +123,7 @@ public:
     bool isCopyOf(const TextCursor &other) const;
 
     int columnNumber() const;
-
+    int lineNumber() const;
 private:
     TextLayout *textLayout(int margin) const;
     bool cursorMoveKeyEvent(QKeyEvent *e);

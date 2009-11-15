@@ -649,6 +649,28 @@ QRect TextEdit::cursorRect(const TextCursor &textCursor) const
     return QRect();
 }
 
+int TextEdit::lineNumber(int position) const
+{
+    return d->document->lineNumber(position);
+}
+
+int TextEdit::columnNumber(int position) const
+{
+    TextCursor cursor(this, position);
+    return cursor.isNull() ? -1 : cursor.columnNumber();
+}
+
+int TextEdit::lineNumber(const TextCursor &cursor) const
+{
+    return cursor.document() == d->document
+        ? d->document->lineNumber(cursor.position()) : -1;
+}
+
+int TextEdit::columnNumber(const TextCursor &cursor) const
+{
+    return cursor.document() == d->document
+        ? cursor.columnNumber() : -1;
+}
 
 void TextEdit::wheelEvent(QWheelEvent *e)
 {

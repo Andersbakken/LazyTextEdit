@@ -81,6 +81,11 @@ public:
     QRect cursorBlockRect(const TextCursor &cursor) const;
     QRect cursorRect(const TextCursor &cursor) const;
 
+    int lineNumber(int position) const;
+    int columnNumber(int position) const;
+    int lineNumber(const TextCursor &cursor) const;
+    int columnNumber(const TextCursor &cursor) const;
+
     bool cursorVisible() const;
     void setCursorVisible(bool cc);
 

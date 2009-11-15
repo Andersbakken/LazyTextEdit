@@ -528,17 +528,24 @@ bool TextCursor::isCopyOf(const TextCursor &other) const
 
 int TextCursor::columnNumber() const
 {
+    Q_ASSERT(d && d->document);
     TextLayout *textLayout = TextLayoutCacheManager::requestLayout(*this, 0);
     int col;
     textLayout->lineForPosition(d->position, &col);
     return col;
 }
 
+int TextCursor::lineNumber() const
+{
+    Q_ASSERT(d && d->document);
+    return d->document->lineNumber(position());
+}
+
 void TextCursor::detach()
 {
     Q_ASSERT(d);
     if (d->ref > 1) {
-        d->ref.deref();;
+        d->ref.deref();
         TextCursorSharedPrivate *p = new TextCursorSharedPrivate;
         p->position = d->position;
         p->overrideColumn = d->overrideColumn;
