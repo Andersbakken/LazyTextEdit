@@ -328,13 +328,12 @@ void TextEdit::paintEvent(QPaintEvent *e)
         }
         textLayoutOffset += l->text().size() + 1;
     }
-//     if (d->widest < viewport()->width()) {
-//         p.drawLine(d->widest, 0, d->widest, viewport()->height());
-//     }
+#if 0
     QRect r = cursorRect(d->textCursor);
     QTextLine line = d->lineForPosition(cursorPosition());
     p.drawRect(line.rect().adjusted(0, 0, -1, -1));
     p.fillRect(r.adjusted(0, 0, 20, 0), QColor(0, 255, 0, 120));
+#endif
 }
 
 void TextEdit::scrollContentsBy(int dx, int dy)
