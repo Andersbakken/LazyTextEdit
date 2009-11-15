@@ -107,7 +107,27 @@ public:
         format.setBackground(Qt::yellow);
         setFormat(0, text.size(), format);
     }
+};
 
+class Editor : public TextEdit
+{
+    Q_OBJECT
+public:
+    Editor(QWidget *parent = 0)
+        : TextEdit(parent)
+    {
+        setAttribute(Qt::WA_MouseTracking);
+    }
+    void mouseMoveEvent(QMouseEvent *e)
+    {
+        TextCursor cursor = cursorForPosition(e->pos());
+        if (cursor.isValid()) {
+            emit cursorCharacter(cursor.cursorCharacter());
+        }
+        TextEdit::mouseMoveEvent(e);
+    }
+signals:
+    void cursorCharacter(const QChar &ch);
 };
 
 bool add = false;
@@ -233,13 +253,17 @@ public:
         QWidget *w = new QWidget(this);
         QVBoxLayout *l = new QVBoxLayout(w);
         setCentralWidget(w);
-        l->addWidget(textEdit = new TextEdit(w));
+        l->addWidget(textEdit = new Editor(w));
         textEdit->setCursorWidth(10);
         textEdit->setObjectName("primary");
         if (chunkSize != -1) {
             textEdit->document()->setChunkSize(chunkSize);
         }
-        l->addWidget(otherEdit = new TextEdit);
+        l->addWidget(otherEdit = new Editor);
+        connect(textEdit, SIGNAL(cursorCharacter(QChar)),
+                this, SLOT(onCursorCharacterChanged(QChar)));
+        connect(otherEdit, SIGNAL(cursorCharacter(QChar)),
+                this, SLOT(onCursorCharacterChanged(QChar)));
         otherEdit->setReadOnly(true);
         otherEdit->hide();
         otherEdit->setLineBreaking(false);
@@ -487,6 +511,11 @@ public slots:
         if (!ok)
             return;
         cursor.setPosition(pos);
+    }
+
+    void onCursorCharacterChanged(const QChar &ch)
+    {
+        setWindowTitle(ch);
     }
 
 private:
