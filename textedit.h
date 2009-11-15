@@ -91,6 +91,10 @@ public:
     bool save();
     bool save(const QString &file);
 
+    void setText(const QString &text);
+    QString read(int pos, int size) const;
+    QChar readCharacter(int index) const;
+
     void insert(int pos, const QString &text);
     void remove(int from, int size);
 

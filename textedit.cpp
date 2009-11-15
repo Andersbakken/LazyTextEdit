@@ -900,6 +900,21 @@ bool TextEdit::save()
     return d->document->save();
 }
 
+void TextEdit::setText(const QString &text)
+{
+    d->document->setText(text);
+}
+
+QString TextEdit::read(int pos, int size) const
+{
+    return d->document->read(pos, size);
+}
+
+QChar TextEdit::readCharacter(int index) const
+{
+    return d->document->readCharacter(index);
+}
+
 void TextEditPrivate::onDocumentSizeChanged(int size)
 {
     textEdit->verticalScrollBar()->setRange(0, qMax(0, size));
