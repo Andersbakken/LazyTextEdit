@@ -27,6 +27,7 @@ public:
 private slots:
     void clickInReadOnlyEdit();
     void scrollReadOnly();
+    void cursorForPosition();
 };
 
 tst_TextEdit::tst_TextEdit()
@@ -80,6 +81,39 @@ void tst_TextEdit::clickInReadOnlyEdit()
     QTest::mouseClick(edit.viewport(), Qt::LeftButton, Qt::NoModifier, QPoint(20, 20));
     QVERIFY(edit.verticalScrollBar()->value() == 0);
 
+}
+
+void tst_TextEdit::cursorForPosition()
+{
+    TextEdit edit;
+    const QString string = "123456";
+    QSet<QChar> all;
+    for (int i=0; i<all.size(); ++i) {
+        all.insert(string.at(i));
+    }
+    edit.setText(string);
+    QFont font;
+    font.setPixelSize(10);
+    edit.setFont(font);
+    edit.resize(500, 500);
+    const QRect r = edit.viewport()->rect();
+    QPoint pos(0, 0);
+    for (int x=r.left(); x<r.right(); ++x) {
+        for (int y=r.top(); y<r.bottom(); ++y) {
+            TextCursor cursor = edit.cursorForPosition(pos);
+            if (!cursor.isValid())
+                continue;
+            QCOMPARE(cursor.position(), edit.textPositionAt(pos));
+            const QChar ch = cursor.cursorCharacter();
+            const QChar readChar = edit.readCharacter(cursor.position());
+            QCOMPARE(readChar, ch);
+            if (all.remove(ch) && all.isEmpty()) {
+                goto end;
+            }
+        }
+    }
+end:
+    QCOMPARE(all.size(), 0);
 }
 
 QTEST_MAIN(tst_TextEdit)
