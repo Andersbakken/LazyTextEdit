@@ -247,14 +247,18 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
     case EndOfLine:
     case StartOfLine: {
         int offset;
+        bool lastLine;
         TextLayout *textLayout = TextLayoutCacheManager::requestLayout(*this, 1);
-        QTextLine line = textLayout->lineForPosition(position(), &offset);
+        QTextLine line = textLayout->lineForPosition(position(), &offset,
+                                                     0, &lastLine);
         if (!line.isValid())
             return false;
         if (op == TextCursor::StartOfLine) {
             setPosition(position() - offset, mode);
         } else {
-            const int pos = position() - offset + line.textLength();
+            int pos = position() - offset + line.textLength();
+            if (!lastLine)
+                --pos;
             setPosition(pos, mode);
         }
         break; }

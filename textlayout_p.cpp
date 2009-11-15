@@ -308,12 +308,14 @@ QTextLayout *TextLayout::layoutForPosition(int pos, int *offset, int *index) con
     return 0;
 }
 
-QTextLine TextLayout::lineForPosition(int pos, int *offsetInLine, int *lineIndex) const
+QTextLine TextLayout::lineForPosition(int pos, int *offsetInLine, int *lineIndex, bool *lastLine) const
 {
     if (offsetInLine)
         *offsetInLine = -1;
     if (lineIndex)
         *lineIndex = -1;
+    if (lastLine)
+        *lastLine = false;
 
     if (pos < viewportPosition || pos >= layoutEnd || textLayouts.isEmpty() || lines.isEmpty()) {
         return QTextLine();
@@ -324,7 +326,8 @@ QTextLine TextLayout::lineForPosition(int pos, int *offsetInLine, int *lineIndex
     for (int i=0; i<lines.size(); ++i) {
         const QPair<int, QTextLine> &line = lines.at(i);
         int lineEnd = line.first + line.second.textLength();
-        if (line.second.lineNumber() + 1 == layout->lineCount()) {
+        const bool last = line.second.lineNumber() + 1 == layout->lineCount();
+        if (last) {
             ++lineEnd;
             // 1 is for newline characters
             layout = textLayouts.value(++layoutIndex);
@@ -339,6 +342,8 @@ QTextLine TextLayout::lineForPosition(int pos, int *offsetInLine, int *lineIndex
             if (lineIndex) {
                 *lineIndex = i;
             }
+            if (lastLine)
+                *lastLine = last;
             return line.second;
         }
     }

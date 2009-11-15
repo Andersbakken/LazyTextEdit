@@ -77,7 +77,8 @@ public:
 
     int doLayout(int index, QList<TextSection*> *sections);
 
-    QTextLine lineForPosition(int pos, int *offsetInLine = 0, int *lineIndex = 0) const;
+    QTextLine lineForPosition(int pos, int *offsetInLine = 0,
+                              int *lineIndex = 0, bool *lastLine = 0) const;
     QTextLayout *layoutForPosition(int pos, int *offset = 0, int *index = 0) const;
 
     int textPositionAt(const QPoint &pos) const;
