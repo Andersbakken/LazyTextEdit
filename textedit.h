@@ -95,10 +95,10 @@ public:
     void remove(int from, int size);
 
     TextCursor &textCursor();
-
     const TextCursor &textCursor() const;
-
     void setTextCursor(const TextCursor &textCursor);
+
+    TextCursor cursorForPosition(const QPoint &pos) const;
 
     TextSection *sectionAt(const QPoint &pos) const;
 

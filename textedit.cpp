@@ -1074,6 +1074,14 @@ void TextEdit::setTextCursor(const TextCursor &textCursor)
     }
 }
 
+TextCursor TextEdit::cursorForPosition(const QPoint &pos) const
+{
+    const int idx = textPositionAt(pos);
+    if (idx == -1)
+        return TextCursor();
+    return TextCursor(this, idx);
+}
+
 TextSection *TextEdit::sectionAt(const QPoint &pos) const
 {
     Q_ASSERT(d->document);
