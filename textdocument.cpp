@@ -133,6 +133,7 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode, QTextCodec *codec)
         d->last = current;
         break; }
     }
+    first->firstLineIndex = 0;
     emit charactersAdded(0, d->documentSize);
     emit documentSizeChanged(d->documentSize);
     setModified(false);
@@ -1209,9 +1210,28 @@ void TextDocumentPrivate::updateChunkLineNumbers(Chunk *c, int chunkPos) const
 {
     Q_ASSERT(c);
     if (c->firstLineIndex == -1) {
-        if (!c->previous) {
-            c->firstLineIndex = 0;
-        } else {
+        Q_ASSERT(c != first);
+        Chunk *chunk = c->previous;
+        Q_ASSERT(chunk);
+        int pos = chunkPos - chunk->size();
+        while (chunk->firstLineIndex == -1) {
+            chunk = chunk->previous;
+            pos -= chunk->size();
+        }
+        Q_ASSERT(chunk->firstLineIndex != -1);
+        // chunk is at first chunk that has line number information
+        // before the one that doesn't have
+            // information
+            while (chunk != c) {
+                Q_ASSERT(chunk->firstLineIndex <= 0);
+            }
+
+            Chunk *chunk = c->previous;
+            Q_ASSERT(chunk);
+            while (chunk && chunk->firstLineIndex == -1) {
+                int prevLines = countNewLines(
+
+            while (c->previous && c->previous->firstLineIndex
             const int prevSize = c->previous->size();
             updateChunkLineNumbers(c->previous, chunkPos - prevSize);
             Q_ASSERT(c->previous->firstLineIndex != -1);
@@ -1235,7 +1255,7 @@ static inline QList<int> dumpNewLines(const QString &string, int from, int size)
 
 int TextDocumentPrivate::countNewLines(Chunk *c, int chunkPos, int size) const
 {
-    updateChunkLineNumbers(c, chunkPos);
+//    updateChunkLineNumbers(c, chunkPos);
     int ret = c->previous ? c->previous->firstLineIndex : 0;
 #ifndef TEXTDOCUMENT_LINENUMBER_CACHE
     ret += ::count(chunkData(c, chunkPos), 0, size, QLatin1Char('\n'));

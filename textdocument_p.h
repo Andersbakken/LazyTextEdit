@@ -66,7 +66,8 @@ struct Chunk {
 #ifdef QT_DEBUG
     int pos() const { int p = 0; Chunk *c = previous; while (c) { p += c->size(); c = c->previous; }; return p; }
 #endif
-    mutable int from, length, firstLineIndex; // Not used when all is loaded
+    mutable int from, length; // Not used when all is loaded
+    mutable int firstLineIndex;
 #ifdef TEXTDOCUMENT_LINENUMBER_CACHE
     mutable QVector<int> lineNumbers;
     // format is how many endlines in the area from (n *
