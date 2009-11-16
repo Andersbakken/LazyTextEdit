@@ -46,6 +46,7 @@ private slots:
     void iterator();
     void modified();
     void unicode();
+    void lineNumbers();
 };
 
 tst_TextDocument::tst_TextDocument()
@@ -484,6 +485,23 @@ void tst_TextDocument::unicode()
 {
 
 
+}
+
+void tst_TextDocument::lineNumbers()
+{
+    TextDocument doc;
+    doc.setChunkSize(16);
+    QString line = "f\n";
+    for (int i=0; i<1024; ++i) {
+        doc.append(line);
+    }
+    QCOMPARE(8, doc.read(0, 16).count(QLatin1Char('\n')));
+    for (int i=0; i<1024; ++i) {
+        qDebug() << (i * 2) << i;
+        QCOMPARE(doc.lineNumber(i * 2), i);
+    }
+
+    qDebug() << doc.chunkCount();
 }
 
 

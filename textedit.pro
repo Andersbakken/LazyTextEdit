@@ -3,10 +3,10 @@
 ######################################################################
 
 TEMPLATE = app
-SOURCES += main.cpp 
+SOURCES += main.cpp
 include($$PWD/textedit.pri)
 CONFIG -= app_bundle
-DEFINES += TEXTDOCUMENT_LINENUMBER_CACHE TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL=10
+#DEFINES += TEXTDOCUMENT_LINENUMBER_CACHE TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL=10
 release {
     QMAKE_CXXFLAGS += -g
 }

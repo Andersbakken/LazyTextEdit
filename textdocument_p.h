@@ -57,7 +57,8 @@ static inline bool matchSection(const TextSection *section, const TextEdit *text
 
 
 struct Chunk {
-    Chunk() : previous(0), next(0), from(-1), length(0), firstLineIndex(-1), swap(0) {}
+    Chunk() : previous(0), next(0), from(-1), length(0),
+              firstLineIndex(-1), lines(-1), swap(0) {}
     ~Chunk() { delete swap; }
 
     mutable QString data;
@@ -66,7 +67,8 @@ struct Chunk {
 #ifdef QT_DEBUG
     int pos() const { int p = 0; Chunk *c = previous; while (c) { p += c->size(); c = c->previous; }; return p; }
 #endif
-    mutable int from, length, firstLineIndex; // Not used when all is loaded
+    mutable int from, length; // Not used when all is loaded
+    mutable int firstLineIndex, lines;
 #ifdef TEXTDOCUMENT_LINENUMBER_CACHE
     mutable QVector<int> lineNumbers;
     // format is how many endlines in the area from (n *

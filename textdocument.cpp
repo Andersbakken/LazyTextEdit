@@ -133,6 +133,8 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode, QTextCodec *codec)
         d->last = current;
         break; }
     }
+    if (d->first)
+        d->first->firstLineIndex = 0;
     emit charactersAdded(0, d->documentSize);
     emit documentSizeChanged(d->documentSize);
     setModified(false);
@@ -608,14 +610,15 @@ bool TextDocument::insert(int pos, const QString &string)
             section->d.position += string.size();
         }
 
-        if (d->hasChunksWithLineNumbers) {
+        if (d->hasChunksWithLineNumbers && c->firstLineIndex != -1) {
             const int extraLines = string.count(QLatin1Char('\n'));
-#ifdef TEXTDOCUMENT_LINENUMBER_CACHE
-            c->lineNumbers.clear();
-            // ### could be optimized
-#endif
-
             if (extraLines != 0) {
+#ifdef TEXTDOCUMENT_LINENUMBER_CACHE
+                c->lineNumbers.clear();
+                // ### could be optimized
+#endif
+                Q_ASSERT(c->lines != -1);
+                c->lines += extraLines;
                 c = c->next;
                 while (c) {
                     if (c->firstLineIndex != -1) {
@@ -641,20 +644,19 @@ bool TextDocument::insert(int pos, const QString &string)
     return true;
 }
 
-static inline int count(const QString &string, int from, int size, QChar ch)
+static inline int count(const QString &string, int from, int size, const QChar &ch)
 {
     Q_ASSERT(from + size <= string.size());
-    ushort c = ch.unicode();
+    const ushort needle = ch.unicode();
+    const ushort *haystack = string.utf16() + from;
     int num = 0;
-    const ushort *b = string.utf16() + from;
-    const ushort *i = b + size;
-    while (i != b) {
-        if (*--i == c)
+    for (int i=0; i<size; ++i) {
+        if (*haystack++ == needle)
             ++num;
     }
+//    Q_ASSERT(string.mid(from, size).count(ch) == num);
     return num;
 }
-
 
 void TextDocument::remove(int pos, int size)
 {
@@ -969,6 +971,9 @@ int TextDocument::lineNumber(int position) const
     d->hasChunksWithLineNumbers = true;
     int offset;
     Chunk *c = d->chunkAt(position, &offset);
+    d->updateChunkLineNumbers(c, position + offset);
+    Q_ASSERT(c->firstLineIndex != -1);
+    Q_ASSERT(d->first->firstLineIndex != -1);
     const int extra = (offset == 0 ? 0 : d->countNewLines(c, position - offset, offset));
     return c->firstLineIndex + extra;
 }
@@ -1234,17 +1239,31 @@ void TextDocumentPrivate::updateChunkLineNumbers(Chunk *c, int chunkPos) const
 {
     Q_ASSERT(c);
     if (c->firstLineIndex == -1) {
-        if (!c->previous) {
-            c->firstLineIndex = 0;
-        } else {
-            const int prevSize = c->previous->size();
-            updateChunkLineNumbers(c->previous, chunkPos - prevSize);
-            Q_ASSERT(c->previous->firstLineIndex != -1);
-            const int previousChunkLineCount = countNewLines(c->previous,
-                                                             chunkPos - prevSize, prevSize);
-            c->firstLineIndex = c->previous->firstLineIndex + previousChunkLineCount;
+        Chunk *cc = c;
+        int pos = chunkPos;
+        while (cc->previous && cc->previous->firstLineIndex != -1) {
+            pos -= cc->size();
+            cc = cc->previous;
         }
+        // cc is at the first chunk that has firstLineIndex != -1
+        Q_ASSERT(!cc->previous || cc->previous->firstLineIndex != -1);
+        Q_ASSERT(cc->firstLineIndex <= 0);
+        // special case for first chunk
+        do {
+            const int size = cc->size();
+            if (!cc->previous) {
+                cc->firstLineIndex = 0;
+            } else {
+                const int prevSize = cc->previous->size();
+                const int lineCount = countNewLines(cc->previous, pos - prevSize, prevSize);
+                Q_ASSERT(cc->previous->firstLineIndex != -1);
+                cc->firstLineIndex = cc->previous->firstLineIndex + lineCount;
+            }
+            pos += size;
+            cc = cc->next;
+        } while (cc && cc != c->next);
     }
+    Q_ASSERT(c->firstLineIndex != -1);
 }
 
 static inline QList<int> dumpNewLines(const QString &string, int from, int size)
@@ -1260,10 +1279,21 @@ static inline QList<int> dumpNewLines(const QString &string, int from, int size)
 
 int TextDocumentPrivate::countNewLines(Chunk *c, int chunkPos, int size) const
 {
-    updateChunkLineNumbers(c, chunkPos);
-    int ret = c->previous ? c->previous->firstLineIndex : 0;
+//    qDebug() << "CALLING countNewLines on" << chunkIndex(c) << chunkPos << size;
+//     qDebug() << (c == first) << c->firstLineIndex << chunkPos << size
+//              << c->size();
+    int ret;
 #ifndef TEXTDOCUMENT_LINENUMBER_CACHE
-    ret += ::count(chunkData(c, chunkPos), 0, size, QLatin1Char('\n'));
+    if (size == c->size()) {
+        if (c->lines == -1) {
+            c->lines = ::count(chunkData(c, chunkPos), 0, size, QLatin1Char('\n'));
+//             qDebug() << "counting" << c->lines << "in" << chunkIndex(c)
+//                      << "Size" << size << "chunkPos" << chunkPos;
+        }
+        ret = c->lines;
+    } else {
+        ret = ::count(chunkData(c, chunkPos), 0, size, QLatin1Char('\n'));
+    }
 #else
 //     qDebug() << size << ret << c->lineNumbers << chunkPos
 //              << dumpNewLines(chunkData(c, chunkPos), 0, c->size());
