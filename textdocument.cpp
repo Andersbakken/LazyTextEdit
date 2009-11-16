@@ -334,6 +334,17 @@ int TextDocument::documentSize() const
     return d->documentSize;
 }
 
+int TextDocument::chunkCount() const
+{
+    Chunk *c = d->first;
+    int count = 0;
+    while (c) {
+        ++count;
+        c = c->next;
+    }
+    return count;
+}
+
 TextDocument::DeviceMode TextDocument::deviceMode() const
 {
     return d->deviceMode;

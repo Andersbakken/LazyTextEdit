@@ -35,6 +35,7 @@ class TextDocument : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(int documentSize READ documentSize)
+    Q_PROPERTY(int chunkCount READ chunkCount)
     Q_PROPERTY(int chunkSize READ chunkSize WRITE setChunkSize)
     Q_PROPERTY(bool undoRedoEnabled READ isUndoRedoEnabled WRITE setUndoRedoEnabled)
     Q_PROPERTY(bool modified READ isModified WRITE setModified DESIGNABLE false)
@@ -81,6 +82,7 @@ public:
     bool save(QIODevice *device);
     bool save();
     int documentSize() const;
+    int chunkCount() const;
 
     enum FindModeFlag {
         FindBackward        = 0x00001,
