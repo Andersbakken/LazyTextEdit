@@ -47,6 +47,8 @@ private slots:
     void modified();
     void unicode();
     void lineNumbers();
+    void lineNumbersGenerated();
+    void lineNumbersGenerated_data();
 };
 
 tst_TextDocument::tst_TextDocument()
@@ -497,12 +499,72 @@ void tst_TextDocument::lineNumbers()
     }
     QCOMPARE(8, doc.read(0, 16).count(QLatin1Char('\n')));
     for (int i=0; i<1024; ++i) {
-        qDebug() << (i * 2) << i;
-        QCOMPARE(doc.lineNumber(i * 2), i);
+        QCOMPARE(doc.lineNumber(i * 2), i + 1); // 1-indexed
     }
-
-    qDebug() << doc.chunkCount();
 }
+
+static inline int count(const QString &string, int from, int size, const QChar &ch)
+{
+    Q_ASSERT(from + size <= string.size());
+    const ushort needle = ch.unicode();
+    const ushort *haystack = string.utf16() + from;
+    int num = 0;
+    for (int i=0; i<size; ++i) {
+        if (*haystack++ == needle)
+            ++num;
+    }
+//    Q_ASSERT(string.mid(from, size).count(ch) == num);
+    return num;
+}
+
+void tst_TextDocument::lineNumbersGenerated_data()
+{
+    QTest::addColumn<int>("chunkSize");
+    QTest::addColumn<int>("seed");
+    QTest::addColumn<int>("size");
+    QTest::addColumn<int>("tests");
+    QTest::newRow("a1") << 1 << 100 << 1000 << 100;
+    QTest::newRow("a10") << 10 << 100 << 1000 << 100;
+    QTest::newRow("a100") << 100 << 100 << 1000 << 100;
+    QTest::newRow("a1000") << 1000 << 100 << 1000 << 100;
+}
+
+void tst_TextDocument::lineNumbersGenerated()
+{
+    QFETCH(int, chunkSize);
+    QFETCH(int, seed);
+    QFETCH(int, size);
+    QFETCH(int, tests);
+    QVERIFY(true);
+    return;
+
+    TextDocument doc;
+    doc.setChunkSize(chunkSize);
+    srand(seed);
+    QString string;
+    string.fill('x', size);
+    for (int i=0; i<size; ++i) {
+        switch (rand() % 20) {
+        case 0: string[i] = QLatin1Char('\n'); break;
+        case 1:
+        case 2:
+        case 3: string[i] = QLatin1Char(' '); break;
+        default:
+            continue;
+        }
+    }
+    doc.setText(string);
+    for (int i=0; i<tests; ++i) {
+        const int idx = rand() % size;
+        const int real = ::count(string, 0, idx, QLatin1Char('\n'));
+        const int count = doc.lineNumber(idx);
+        if (count != real) {
+            qDebug("expected: %d got: %d", real, count);
+        }
+        QCOMPARE(real, count);
+    }
+}
+
 
 
 QTEST_MAIN(tst_TextDocument)

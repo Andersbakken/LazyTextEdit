@@ -133,8 +133,8 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode, QTextCodec *codec)
         d->last = current;
         break; }
     }
-    if (d->first)
-        d->first->firstLineIndex = 0;
+//     if (d->first)
+//         d->first->firstLineIndex = 0;
     emit charactersAdded(0, d->documentSize);
     emit documentSizeChanged(d->documentSize);
     setModified(false);
@@ -977,7 +977,7 @@ int TextDocument::lineNumber(int position) const
     Q_ASSERT(c->firstLineIndex != -1);
     Q_ASSERT(d->first->firstLineIndex != -1);
     const int extra = (offset == 0 ? 0 : d->countNewLines(c, position - offset, offset));
-    return c->firstLineIndex + extra;
+    return c->firstLineIndex + extra; //
 }
 
 int TextDocument::columnNumber(int position) const
@@ -1249,12 +1249,12 @@ void TextDocumentPrivate::updateChunkLineNumbers(Chunk *c, int chunkPos) const
         }
         // cc is at the first chunk that has firstLineIndex != -1
         Q_ASSERT(!cc->previous || cc->previous->firstLineIndex != -1);
-        Q_ASSERT(cc->firstLineIndex <= 0);
+        Q_ASSERT(cc->firstLineIndex == 1 || cc->firstLineIndex == -1);
         // special case for first chunk
         do {
             const int size = cc->size();
             if (!cc->previous) {
-                cc->firstLineIndex = 0;
+                cc->firstLineIndex = 1;
             } else {
                 const int prevSize = cc->previous->size();
                 const int lineCount = countNewLines(cc->previous, pos - prevSize, prevSize);
