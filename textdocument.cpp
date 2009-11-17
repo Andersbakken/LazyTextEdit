@@ -872,6 +872,8 @@ QChar TextDocument::readCharacter(int pos) const
 
 void TextDocument::setText(const QString &text)
 {
+    // ### could optimize this to avoid detach and copy if text.size() <= chunkSize
+    // ### but is it worth it?
     QBuffer buffer;
     buffer.open(QIODevice::WriteOnly);
     QTextStream ts(&buffer);
