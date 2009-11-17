@@ -977,7 +977,20 @@ int TextDocument::lineNumber(int position) const
     Q_ASSERT(c->firstLineIndex != -1);
     Q_ASSERT(d->first->firstLineIndex != -1);
     const int extra = (offset == 0 ? 0 : d->countNewLines(c, position - offset, offset));
-    return c->firstLineIndex + extra; //
+#ifdef QT_DEBUG
+    if (position <= 16000) {
+        const QString data = read(0, position);
+        // if we're on a newline it shouldn't count so we do read(0, position)
+        // not read(0, position + 1);
+        const int count = data.count(QLatin1Char('\n'));
+        if (count + 1 != c->firstLineIndex + extra) {
+            qDebug() << __FUNCTION__ << "returns" << (c->firstLineIndex + extra)
+                     << "should have returned" << (count + 1)
+                     << "for index" << position;
+        }
+    }
+#endif
+    return c->firstLineIndex + extra;
 }
 
 int TextDocument::columnNumber(int position) const
@@ -1243,7 +1256,7 @@ void TextDocumentPrivate::updateChunkLineNumbers(Chunk *c, int chunkPos) const
     if (c->firstLineIndex == -1) {
         Chunk *cc = c;
         int pos = chunkPos;
-        while (cc->previous && cc->previous->firstLineIndex != -1) {
+        while (cc->previous && cc->previous->firstLineIndex == -1) {
             pos -= cc->size();
             cc = cc->previous;
         }
