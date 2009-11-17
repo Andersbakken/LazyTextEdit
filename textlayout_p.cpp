@@ -331,7 +331,7 @@ QTextLine TextLayout::lineForPosition(int pos, int *offsetInLine, int *lineIndex
             ++lineEnd;
             // 1 is for newline characters
             layout = textLayouts.value(++layoutIndex);
-            Q_ASSERT(layout);
+            // could be 0
         }
         if (pos < lineEnd) {
             if (offsetInLine) {
@@ -345,6 +345,8 @@ QTextLine TextLayout::lineForPosition(int pos, int *offsetInLine, int *lineIndex
             if (lastLine)
                 *lastLine = last;
             return line.second;
+        } else if (!layout) {
+            break;
         }
     }
     qWarning() << "Couldn't find a line for" << pos << "viewportPosition" << viewportPosition
