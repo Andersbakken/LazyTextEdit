@@ -711,7 +711,7 @@ void TextDocument::remove(int pos, int size)
 #ifdef TEXTDOCUMENT_LINENUMBER_CACHE
                 if (tmp > 0)
                     c->lineNumbers.clear();
-                    // Could clear only the parts that need to be cleared really
+                    // ### Could clear only the parts that need to be cleared really
 #endif
             }
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
@@ -1312,7 +1312,7 @@ int TextDocumentPrivate::countNewLines(Chunk *c, int chunkPos, int size) const
 #else
 //     qDebug() << size << ret << c->lineNumbers << chunkPos
 //              << dumpNewLines(chunkData(c, chunkPos), 0, c->size());
-    static const int lineNumberCacheInterval = Chunk::lineNumberCacheInterval();
+    static const int lineNumberCacheInterval = TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL;
     if (c->lineNumbers.isEmpty()) {
         const QString data = chunkData(c, chunkPos);
         Q_ASSERT(!data.isEmpty());

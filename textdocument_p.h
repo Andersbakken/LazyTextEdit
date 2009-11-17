@@ -74,7 +74,6 @@ struct Chunk {
     // format is how many endlines in the area from (n *
     // TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL) to
     // ((n + 1) * TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL)
-    static int lineNumberCacheInterval() { return TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL; }
 #endif
     QTemporaryFile *swap;
 };
