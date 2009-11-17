@@ -571,6 +571,8 @@ bool TextDocument::insert(int pos, const QString &string)
         }
 #endif
 
+        if (c == d->cachedChunk)
+            d->cachedChunkData.clear(); // avoid detach when inserting
         c->data.insert(offset, string);
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
         if (c == d->cachedChunk) {
