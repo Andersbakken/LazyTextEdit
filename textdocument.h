@@ -77,6 +77,7 @@ public:
 
     void setText(const QString &text);
     QString read(int pos, int size) const;
+    QStringRef readRef(int pos, int size) const;
     QChar readCharacter(int index) const;
     bool save(const QString &file);
     bool save(QIODevice *device);

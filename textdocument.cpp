@@ -221,6 +221,18 @@ QString TextDocument::read(int pos, int size) const
     return ret;
 }
 
+QStringRef TextDocument::readRef(int pos, int size) const
+{
+    int offset;
+    Chunk *c = d->chunkAt(pos, &offset);
+    if (c && pos + offset + size <= c->size()) {
+        const QString string = d->chunkData(c, pos - offset);
+        return string.midRef(offset, size);
+    }
+    return QStringRef();
+}
+
+
 bool TextDocument::save(const QString &file)
 {
     QFile from(file);
