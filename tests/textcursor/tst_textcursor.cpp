@@ -155,7 +155,6 @@ void tst_TextCursor::movePosition()
     QCOMPARE(cursor.selectedText(), selectedText);
 }
 
-
 Q_DECLARE_METATYPE(TextCursor::MoveOperation);
 Q_DECLARE_METATYPE(TextCursor::MoveMode);
 

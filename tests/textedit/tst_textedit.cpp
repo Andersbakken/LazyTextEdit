@@ -28,6 +28,7 @@ private slots:
     void clickInReadOnlyEdit();
     void scrollReadOnly();
     void cursorForPosition();
+    void columnNumberIssue();
 };
 
 tst_TextEdit::tst_TextEdit()
@@ -53,7 +54,7 @@ void tst_TextEdit::scrollReadOnly()
     QTest::qWaitForWindowShown(&edit);
 //     edit.setCursorPosition(0);
 //     edit.verticalScrollBar()->setValue(0);
-    qDebug() << edit.cursorPosition() << edit.verticalScrollBar()->value();
+//    qDebug() << edit.cursorPosition() << edit.verticalScrollBar()->value();
 //     QEventLoop loop;
 //     loop.exec();
     QTest::keyClick(&edit, Qt::Key_Down);
@@ -75,7 +76,7 @@ void tst_TextEdit::clickInReadOnlyEdit()
     QTest::qWaitForWindowShown(&edit);
 //     edit.setCursorPosition(0);
 //     edit.verticalScrollBar()->setValue(0);
-    qDebug() << edit.cursorPosition() << edit.verticalScrollBar()->value();
+//    qDebug() << edit.cursorPosition() << edit.verticalScrollBar()->value();
 //     QEventLoop loop;
 //     loop.exec();
     QTest::mouseClick(edit.viewport(), Qt::LeftButton, Qt::NoModifier, QPoint(20, 20));
@@ -114,6 +115,34 @@ void tst_TextEdit::cursorForPosition()
     }
 end:
     QCOMPARE(all.size(), 0);
+}
+
+void tst_TextEdit::columnNumberIssue()
+{
+    TextEdit edit;
+    edit.resize(400, 400);
+    edit.show();
+    const QString line = "This is a very very very long line and it should most certainly wrap around at least once.\n";
+
+    QString text;
+    enum { Lines = 500 };
+    text.reserve(line.size() * Lines);
+    for (int i=0; i<Lines; ++i) {
+        text.append(line);
+    }
+    edit.setText(text);
+    while (edit.cursorPosition() < edit.document()->documentSize() - line.size()) {
+//         qDebug() << edit.cursorPosition()
+//                  << edit.document()->documentSize();
+        QTest::keyClick(&edit, Qt::Key_Down);
+    }
+    while (edit.cursorPosition() > text.size()) {
+//        qDebug() << edit.cursorPosition();
+        QTest::keyClick(&edit, Qt::Key_Down);
+        QCOMPARE(0, edit.textCursor().columnNumber());
+    }
+//     QEventLoop loop;
+//     loop.exec();
 }
 
 QTEST_MAIN(tst_TextEdit)
