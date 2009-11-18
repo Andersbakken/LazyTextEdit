@@ -27,8 +27,8 @@ public:
 private slots:
     void setPosition();
     void setPosition_data();
-//     void movePosition_data();
-//     void movePosition();
+    void movePosition_data();
+    void movePosition();
 };
 
 tst_TextCursor::tst_TextCursor()
@@ -78,27 +78,44 @@ void tst_TextCursor::setPosition()
     QCOMPARE(selectedText, cursor.selectedText());
 }
 
-// void tst_TextCursor::movePosition_data()
-// {
-//     QTest::addColumn<int>("position");
-//     QTest::addColumn<int>("anchor");
-//     QTest::addColumn<int>("moveOperation");
-//     QTest::addColumn<int>("expectedPosition");
+void tst_TextCursor::movePosition_data()
+{
+    QTest::addColumn<int>("initialPosition");
+    QTest::addColumn<int>("initialAnchor");
+    QTest::addColumn<TextCursor::MoveOperation>("moveOperation");
+    QTest::addColumn<TextCursor::MoveMode>("moveMode");
+    QTest::addColumn<int>("expectedPosition");
+    QTest::addColumn<int>("expectedAnchor");
+    QTest::addColumn<QString>("selectedText");
 
-//     QTest::newRow("Start") << 20 << 20 << TextCursor::Start << TextCursor::MoveAnchor << 0;
-//     QTest::newRow("Up") << 25 << 25 << TextCursor::Up << TextCursor::MoveAnchor << 1;
-//     QTest::newRow("StartOfLine") << 25 << 25 << TextCursor::StartOfLine << TextCursor::MoveAnchor << 25;
-//     QTest::newRow("StartOfLine2") << 35 << 35 << TextCursor::StartOfLine << TextCursor::MoveAnchor << 25;
-//     QTest::newRow("StartOfBlock") << 85 << 85 << TextCursor::StartOfBlock << TextCursor::MoveAnchor << 24;
-//     QTest::newRow("StartOfWord") << 28 << 28 << TextCursor::StartOfWord << TextCursor::MoveAnchor << 24;
-//     QTest::newRow("PreviousBlock") << 89 << 89 << TextCursor::PreviousBlock << TextCursor::MoveAnchor << 24;
-//     QTest::newRow("PreviousCharacter") << 0 << 0 << TextCursor::PreviousCharacter << TextCursor::MoveAnchor << 0;
-//     QTest::newRow("PreviousWord") << 0 << 0 << TextCursor::PreviousWord << TextCursor::MoveAnchor << 0;
-//     QTest::newRow("Left") << 0 << 0 << TextCursor::Left << TextCursor::MoveAnchor << 0;
-//     QTest::newRow("WordLeft") << 0 << 0 << TextCursor::WordLeft << TextCursor::MoveAnchor << 0;
-//     QTest::newRow("End") << 0 << 0 << TextCursor::End << TextCursor::MoveAnchor << 0 << 0;
-//     QTest::newRow("Down") << 0 << 0 << TextCursor::Down << TextCursor::MoveAnchor << 0 << 0;
-//     QTest::newRow("EndOfLine") << 0 << 0 << TextCursor::EndOfLine << TextCursor::MoveAnchor << 0 << 0;
+    QTest::newRow("Start") << 20 << 20 << TextCursor::Start << TextCursor::MoveAnchor
+                           << 0 << 0 << QString();
+    QTest::newRow("Up") << 25 << 25 << TextCursor::Up
+                        << TextCursor::MoveAnchor << 1 << 1 << QString();
+    QTest::newRow("StartOfLine") << 24 << 25 << TextCursor::StartOfLine
+                                 << TextCursor::MoveAnchor << 24 << 24 << QString();
+    QTest::newRow("StartOfLine2") << 35 << 35 << TextCursor::StartOfLine
+                                  << TextCursor::MoveAnchor << 24 << 24 << QString();
+    QTest::newRow("StartOfBlock") << 85 << 85 << TextCursor::StartOfBlock
+                                  << TextCursor::MoveAnchor << 24 << 24 << QString();
+    QTest::newRow("StartOfWord") << 28 << 28 << TextCursor::StartOfWord
+                                 << TextCursor::MoveAnchor << 24 << 24 << QString();
+    QTest::newRow("PreviousBlock") << 89 << 89 << TextCursor::PreviousBlock
+                                   << TextCursor::MoveAnchor << 24 << 24 << QString();
+    QTest::newRow("PreviousCharacter") << 0 << 0 << TextCursor::PreviousCharacter
+                                       << TextCursor::MoveAnchor << 0 << 0 << QString();
+    QTest::newRow("PreviousWord") << 0 << 0 << TextCursor::PreviousWord
+                                  << TextCursor::MoveAnchor << 0 << 0 << QString();
+    QTest::newRow("Left") << 0 << 0 << TextCursor::Left
+                          << TextCursor::MoveAnchor << 0 << 0 << QString();
+    QTest::newRow("WordLeft") << 0 << 0 << TextCursor::WordLeft
+                              << TextCursor::MoveAnchor << 0 << 0 << QString();
+//     QTest::newRow("End") << 0 << 0 << TextCursor::End
+//                          << TextCursor::MoveAnchor << 0 << 0 << QString();
+//     QTest::newRow("Down") << 0 << 0 << TextCursor::Down
+//                           << TextCursor::MoveAnchor << 0 << 0 << QString();
+//     QTest::newRow("EndOfLine") << 0 << 0 << TextCursor::EndOfLine
+//                                << TextCursor::MoveAnchor << 0 << 0 << QString();
 //     QTest::newRow("EndOfWord") << 0 << 0 << TextCursor::EndOfWord << TextCursor::MoveAnchor << 0 << 0;
 //     QTest::newRow("EndOfBlock") << 0 << 0 << TextCursor::EndOfBlock << TextCursor::MoveAnchor << 0 << 0;
 //     QTest::newRow("NextBlock") << 0 << 0 << TextCursor::NextBlock << TextCursor::MoveAnchor << 0 << 0;
@@ -106,31 +123,37 @@ void tst_TextCursor::setPosition()
 //     QTest::newRow("NextWord") << 0 << 0 << TextCursor::NextWord << TextCursor::MoveAnchor << 0 << 0;
 //     QTest::newRow("Right") << 0 << 0 << TextCursor::Right << TextCursor::MoveAnchor << 0 << 0;
 //     QTest::newRow("WordRight") << 0 << 0 << TextCursor::WordRight << TextCursor::MoveAnchor << 0 << 0;
-// }
+}
 
-// void tst_TextCursor::movePosition()
-// {
-//     static const char *trueToLife = "I can only sing it loud\n" // 0 - 23
-//                                     "always try to sing it clear what the hell are we all doing here\n" // 24 - 87
-//                                     "making too much of nothing\n" // 88 - 114
-//                                     "or creating one unholy mess an unfair study in survival, I guess\n"; // 115 - 179
-//     TextDocument document;
-//     document.setText(QString::fromLatin1(trueToLife));
+void tst_TextCursor::movePosition()
+{
+    static const char *trueToLife = "I can only sing it loud\n" // 0 - 23
+                                    "always try to sing it clear what the hell are we all doing here\n" // 24 - 87
+                                    "making too much of nothing\n" // 88 - 114
+                                    "or creating one unholy mess an unfair study in survival, I guess\n"; // 115 - 179
+    TextDocument document;
+    document.setText(QString::fromLatin1(trueToLife));
 
-//     TextCursor cursor(&document);
-//     QFETCH(int, one);
-//     QFETCH(int, two);
-//     QFETCH(TextCursor::MoveMode, moveMode);
-//     QFETCH(int, expectedPos);
-//     QFETCH(int, expectedAnchor);
-//     QFETCH(QString, selectedText);
+    TextCursor cursor(&document);
+    QFETCH(int, initialPosition);
+    QFETCH(int, initialAnchor);
+    QFETCH(TextCursor::MoveOperation, moveOperation);
+    QFETCH(TextCursor::MoveMode, moveMode);
+    QFETCH(int, expectedPosition);
+    QFETCH(int, expectedAnchor);
+    QFETCH(QString, selectedText);
 
-//     cursor.setPosition(one);
-//     cursor.setPosition(two, moveMode);
-//     QCOMPARE(expectedPos, cursor.position());
-//     QCOMPARE(expectedAnchor, cursor.anchor());
-//     QCOMPARE(selectedText, cursor.selectedText());
-// }
+    cursor.setPosition(initialAnchor);
+    if (initialPosition != initialAnchor) {
+        cursor.setPosition(initialPosition, TextCursor::KeepAnchor);
+    }
+    Q_ASSERT(cursor.position() == initialPosition);
+    Q_ASSERT(cursor.anchor() == initialAnchor);
+    cursor.movePosition(moveOperation, moveMode);
+    QCOMPARE(cursor.position(), expectedPosition);
+    QCOMPARE(cursor.anchor(), expectedAnchor);
+    QCOMPARE(cursor.selectedText(), selectedText);
+}
 
 
 Q_DECLARE_METATYPE(TextCursor::MoveOperation);
