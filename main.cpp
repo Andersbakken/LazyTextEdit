@@ -109,6 +109,21 @@ public:
     }
 };
 
+class BlockLight : public SyntaxHighlighter
+{
+public:
+    BlockLight(TextEdit *edit)
+        : SyntaxHighlighter(edit)
+    {}
+    void highlightBlock(const QString &text)
+    {
+        QTextCharFormat format;
+        format.setBackground(Qt::yellow);
+        setFormat(0, qMin(4, text.size()), format);
+    }
+};
+
+
 class Editor : public TextEdit
 {
     Q_OBJECT
@@ -279,6 +294,7 @@ public:
         }
 
 //        textEdit->setSyntaxHighlighter(new Highlighter(textEdit));
+        textEdit->setSyntaxHighlighter(new BlockLight(textEdit));
 #ifndef QT_NO_DEBUG_STREAM
         if (codec) {
             qDebug() << "using codec" << codec->name();
