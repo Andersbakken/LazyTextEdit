@@ -43,7 +43,12 @@ protected:
     QString currentBlock() const { return d->currentBlock; }
     void setFormat(int start, int count, const QTextCharFormat &format);
     void setFormat(int start, int count, const QColor &color);
+    inline void setColor(int start, int count, const QColor &color)
+    { setFormat(start, count, color); }
     void setFormat(int start, int count, const QFont &font);
+    inline void setFont(int start, int count, const QFont &font)
+    { setFormat(start, count, font); }
+
     void setBlockFormat(const QTextBlockFormat &format);
     QTextCharFormat format(int pos) const;
     int previousBlockState() const;
