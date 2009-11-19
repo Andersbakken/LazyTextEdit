@@ -136,7 +136,7 @@ public:
         cachePos(-1),
 #endif
         documentSize(0),
-        saveState(NotSaving), device(0), ownDevice(false), modified(false),
+        saveState(NotSaving), ownDevice(false), modified(false),
         deviceMode(TextDocument::Sparse), chunkSize(16384),
         undoRedoStackCurrent(0), modifiedIndex(-1), undoRedoEnabled(true), ignoreUndoRedo(false),
         hasChunksWithLineNumbers(false), textCodec(0), options(0), cursorCommand(false)
@@ -161,7 +161,7 @@ public:
     int documentSize;
     enum SaveState { NotSaving, Saving, AbortSave } saveState;
     QList<TextSection*> sections;
-    QPointer<QIODevice> device;
+    QWeakPointer<QIODevice> device;
     bool ownDevice, modified;
     TextDocument::DeviceMode deviceMode;
     int chunkSize;

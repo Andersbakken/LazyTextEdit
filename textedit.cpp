@@ -954,29 +954,29 @@ void TextEditPrivate::updateCopyAndCutEnabled()
 
 void TextEdit::setSyntaxHighlighter(SyntaxHighlighter *highlighter)
 {
-    if (d->syntaxHighlighter == highlighter)
+    if (d->syntaxHighlighter.data() == highlighter)
         return;
 
     if (d->syntaxHighlighter) {
-        if (d->syntaxHighlighter->parent() == this) {
-            delete d->syntaxHighlighter;
+        if (d->syntaxHighlighter.data()->parent() == this) {
+            delete d->syntaxHighlighter.data();
         } else {
-            d->syntaxHighlighter->d->textEdit = 0;
-            d->syntaxHighlighter->d->textLayout = 0;
+            d->syntaxHighlighter.data()->d->textEdit = 0;
+            d->syntaxHighlighter.data()->d->textLayout = 0;
         }
     }
 
     d->syntaxHighlighter = highlighter;
     if (d->syntaxHighlighter) {
-        d->syntaxHighlighter->d->textEdit = this;
-        d->syntaxHighlighter->d->textLayout = d;
+        d->syntaxHighlighter.data()->d->textEdit = this;
+        d->syntaxHighlighter.data()->d->textLayout = d;
     }
     d->dirty(viewport()->width());
 }
 
 SyntaxHighlighter * TextEdit::syntaxHighlighter() const
 {
-    return d->syntaxHighlighter;
+    return d->syntaxHighlighter.data();
 }
 
 static inline bool compareExtraSelection(const TextEdit::ExtraSelection &left, const TextEdit::ExtraSelection &right)

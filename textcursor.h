@@ -16,7 +16,7 @@
 #define TEXTCURSOR_H
 
 #include <QString>
-#include <QPointer>
+#include <QWeakPointer>
 #include <QKeyEvent>
 #include <QSize>
 #include <QTextLine>

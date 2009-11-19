@@ -40,7 +40,7 @@ TextDocument::~TextDocument()
         delete section;
     }
     if (d->ownDevice)
-        delete d->device;
+        delete d->device.data();
 
     delete d;
 }
@@ -72,8 +72,8 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode, QTextCodec *codec)
     d->first = d->last = 0;
 
     if (d->device) {
-        if (d->ownDevice && d->device != device) // this is done when saving to the same file
-            delete d->device;
+        if (d->ownDevice && d->device.data() != device) // this is done when saving to the same file
+            delete d->device.data();
     }
 
     d->ownDevice = false;
@@ -243,7 +243,7 @@ bool TextDocument::save(const QString &file)
 
 bool TextDocument::save()
 {
-    return d->device && save(d->device);
+    return d->device && save(d->device.data());
 }
 
 
@@ -262,15 +262,15 @@ static bool isSameFile(const QIODevice *left, const QIODevice *right)
 bool TextDocument::save(QIODevice *device)
 {
     Q_ASSERT(device);
-    if (::isSameFile(d->device, device)) {
+    if (::isSameFile(d->device.data(), device)) {
         QTemporaryFile tmp(0);
         if (!tmp.open())
             return false;
         if (save(&tmp)) {
             Q_ASSERT(qobject_cast<QFile*>(device));
             Q_ASSERT(qobject_cast<QFile*>(d->device));
-            d->device->close();
-            d->device->open(QIODevice::WriteOnly);
+            d->device.data()->close();
+            d->device.data()->open(QIODevice::WriteOnly);
             tmp.seek(0);
             const int chunkSize = 128; //1024 * 16;
             char chunk[chunkSize];
@@ -280,14 +280,14 @@ bool TextDocument::save(QIODevice *device)
                 case -1: return false;
                 case 0: return true;
                 default:
-                    if (d->device->write(chunk, read) != read) {
+                    if (d->device.data()->write(chunk, read) != read) {
                         return false;
                     }
                     break;
                 }
             }
-            d->device->close();
-            d->device->open(QIODevice::ReadOnly);
+            d->device.data()->close();
+            d->device.data()->open(QIODevice::ReadOnly);
             if (d->deviceMode == Sparse) {
                 qDeleteAll(d->undoRedoStack);
                 d->undoRedoStack.clear();

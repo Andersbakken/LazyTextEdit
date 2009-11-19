@@ -15,7 +15,7 @@
 #ifndef TEXTLAYOUT_P_H
 #define TEXTLAYOUT_P_H
 
-#include <QPointer>
+#include <QWeakPointer>
 #include <QList>
 #include <QTextLayout>
 #include <QRect>
@@ -55,7 +55,7 @@ public:
 
     TextDocument *document;
     TextEdit *textEdit;
-    QPointer<SyntaxHighlighter> syntaxHighlighter;
+    QWeakPointer<SyntaxHighlighter> syntaxHighlighter;
     int bufferPosition, viewportPosition, layoutEnd, viewport, visibleLines, lastVisibleCharacter, lastBottomMargin, widest,
         maxViewportPosition;
     bool layoutDirty, sectionsDirty, lineBreaking;
