@@ -120,25 +120,32 @@ end:
 void tst_TextEdit::columnNumberIssue()
 {
     TextEdit edit;
-    edit.resize(400, 400);
+    edit.resize(200, 200);
+    edit.setText("This is a very very very long line and it should most certainly wrap around at least once.\n"
+                 "This is a shorter line\n"
+                 "1\n"
+                 "2\n"
+                 "3\n"
+                 "4\n"
+                 "5\n"
+                 "6\n"
+                 "7\n"
+                 "8\n"
+                 "9\n"
+                 "10\n"
+                 "11\n"
+                 "12\n");
     edit.show();
-    const QString line = "This is a very very very long line and it should most certainly wrap around at least once.\n";
-
-    QString text;
-    enum { Lines = 500 };
-    text.reserve(line.size() * Lines);
-    for (int i=0; i<Lines; ++i) {
-        text.append(line);
-    }
-    edit.setText(text);
-    while (edit.cursorPosition() < edit.document()->documentSize() - line.size()) {
-//         qDebug() << edit.cursorPosition()
-//                  << edit.document()->documentSize();
+    QTest::qWaitForWindowShown(&edit);
+    QVERIFY(edit.verticalScrollBar()->maximum() != 0);
+    while (edit.cursorPosition() < edit.document()->documentSize()) {
+        QCOMPARE(0, edit.textCursor().columnNumber());
         QTest::keyClick(&edit, Qt::Key_Down);
     }
-    while (edit.cursorPosition() > text.size()) {
+    QVERIFY(edit.verticalScrollBar()->value() != 0);
+    while (edit.cursorPosition() > 0) {
 //        qDebug() << edit.cursorPosition();
-        QTest::keyClick(&edit, Qt::Key_Down);
+        QTest::keyClick(&edit, Qt::Key_Up);
         QCOMPARE(0, edit.textCursor().columnNumber());
     }
 //     QEventLoop loop;

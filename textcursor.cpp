@@ -70,7 +70,6 @@ TextCursor::TextCursor(const TextEdit *edit, int pos, int anc)
 {
     if (edit) {
         d->document = edit->document();
-        d->viewportWidth = edit->viewport()->width();
         d->document->d->textCursors.insert(d);
         d->position = pos;
         d->anchor = anc == -1 ? pos : anc;
@@ -214,33 +213,64 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
     case Up:
     case Down: {
         TextLayout *textLayout = TextLayoutCacheManager::requestLayout(*this, 1); // should I use 1?
+        Q_ASSERT(textLayout);
         int index;
-        const QTextLine curLine = textLayout->lineForPosition(d->position, 0, &index);
-        Q_ASSERT(textLayout->lines.size() <= 1 || (index != -1 && curLine.isValid()));
-        if (!curLine.isValid())
+        bool currentIsLast;
+        const QTextLine currentLine = textLayout->lineForPosition(d->position, 0,
+                                                                  &index,
+                                                                  &currentIsLast);
+        Q_ASSERT(textLayout->lines.size() <= 1 || (index != -1 && currentLine.isValid()));
+        if (!currentLine.isValid())
             return false;
-        // ### must have a real textLine for current pos, what about if at documentSize?
-        if (op == Down && index + 1 >= textLayout->lines.size()) {
-#ifndef QT_NO_DEBUG_STREAM
-            if (d->position + curLine.textLength() + 1 < d->document->documentSize()) {
-                qDebug() << d->position << curLine.textLength() << d->document->documentSize()
-                         << "lets see here" << (textLayout == textEdit->d);
-            }
-#endif
-            Q_ASSERT(d->position + curLine.textLength() + 1 >= d->document->documentSize());
-            return true;
-        } else if (op == Up && index == 0) {
-            Q_ASSERT(d->position <= curLine.textLength());
-            return true;
+        const int col = columnNumber();
+        int targetLinePos;
+        if (op == Up) {
+            targetLinePos = d->position - col - 1;
+//             qDebug() << "I was at column" << col << "and position"
+//                      << d->position << "so naturally I can find the previous line around"
+//                      << (d->position - col - 1);
+        } else {
+            targetLinePos = d->position + currentLine.textLength() - col
+                            + (currentIsLast ? 1 : 0);
+//             qDebug() << "currentLine.textLength" << currentLine.textLength() << "col" << col
+//                      << "currentIsLast" << currentIsLast;
+            // ### probably need to add only if last line in layout
         }
-        const QPair<int, QTextLine> &line = textLayout->lines.at(index + (op == Up ? -1 : 1));
-        int gotoCol = qMax(d->overrideColumn, columnNumber());
-        if (gotoCol > line.second.textLength()) {
-            d->overrideColumn = gotoCol;
-            gotoCol = line.second.textLength();
+        if (targetLinePos < 0) {
+            if (d->position == 0) {
+                return false;
+            } else {
+                setPosition(0, mode);
+                return true;
+            }
+        } else if (targetLinePos >= d->document->documentSize()) {
+            if (d->position == d->document->documentSize()) {
+                return false;
+            } else {
+                setPosition(d->document->documentSize(), mode);
+                return true;
+            }
+        }
+        int offsetInLine;
+
+        const QTextLine targetLine = textLayout->lineForPosition(targetLinePos, &offsetInLine);
+        if (!targetLine.isValid())
+            return false;
+        targetLinePos -= offsetInLine; // targetLinePos should now be at col 0
+
+//         qDebug() << "finding targetLine at" << targetLinePos
+//                  << d->document->read(targetLinePos, 7)
+//                  << "d->position" << d->position
+//                  << "col" << col
+//                  << "offsetInLine" << offsetInLine;
+
+        int gotoCol = qMax(d->overrideColumn, col);
+        if (gotoCol > targetLine.textLength()) {
+            d->overrideColumn = qMax(d->overrideColumn, gotoCol);
+            gotoCol = targetLine.textLength();
         }
         const int overrideColumn = d->overrideColumn;
-        setPosition(line.first + gotoCol, mode);
+        setPosition(targetLinePos + gotoCol, mode);
         d->overrideColumn = overrideColumn;
         break; }
 

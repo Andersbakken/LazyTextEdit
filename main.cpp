@@ -1,3 +1,4 @@
+// abcde fghij klmno pqrst uvwxy z1234 56789 0!@#$ abcde fghij klmno pqrst uvwxy z1234 56789 0!@#$
 // Copyright 2009 Anders Bakken
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -120,6 +121,9 @@ public:
         QTextCharFormat format;
         format.setBackground(Qt::yellow);
         setFormat(0, qMin(4, text.size()), format);
+        QFont f;
+        f.setPixelSize(30);
+        setFormat(0, qMin(4, text.size()), f);
     }
 };
 

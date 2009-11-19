@@ -43,7 +43,8 @@ public:
         : document(doc), textEdit(0), bufferPosition(0),
           viewportPosition(0), layoutEnd(-1), viewport(-1),
           visibleLines(-1), lastVisibleCharacter(-1), lastBottomMargin(0),
-          widest(-1), maxViewportPosition(0), layoutDirty(true), sectionsDirty(true), lineBreaking(true)
+          widest(-1), maxViewportPosition(0), layoutDirty(true), sectionsDirty(true),
+          lineBreaking(true), suppressTextEditUpdates(false)
     {
     }
 
@@ -58,7 +59,7 @@ public:
     QWeakPointer<SyntaxHighlighter> syntaxHighlighter;
     int bufferPosition, viewportPosition, layoutEnd, viewport, visibleLines, lastVisibleCharacter, lastBottomMargin, widest,
         maxViewportPosition;
-    bool layoutDirty, sectionsDirty, lineBreaking;
+    bool layoutDirty, sectionsDirty, lineBreaking, suppressTextEditUpdates;
     QList<QTextLayout*> textLayouts, unusedTextLayouts;
     QHash<QTextLayout*, QTextBlockFormat> blockFormats;
     QList<TextEdit::ExtraSelection> extraSelections;

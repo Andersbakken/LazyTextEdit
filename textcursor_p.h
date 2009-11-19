@@ -29,9 +29,17 @@
 static inline bool match(const TextCursor &cursor, const TextLayout *layout, int lines)
 {
     Q_ASSERT(cursor.document() == layout->document);
+    if (cursor.viewportWidth() != -1 && cursor.viewportWidth() != layout->viewport) {
+        return false;
+    }
+    if (layout->viewportPosition > cursor.position()
+        || layout->layoutEnd < cursor.position()) {
+        return false;
+    }
     int index = -1;
     if (!layout->layoutForPosition(cursor.position(), 0, &index)) {
-        // ### need an interface for this if I am going to have a mode that doesn't break lines
+        // ### need an interface for this if I am going to have a mode
+        // ### that doesn't break lines
         return false;
     }
 
@@ -68,8 +76,9 @@ public:
         QList<TextLayout*> &layouts = instance()->cache[doc];
         Q_ASSERT(cursor.document());
         foreach(TextLayout *l, layouts) {
-            if (match(cursor, l, margin))
+            if (match(cursor, l, margin)) {
                 return l;
+            }
         }
         if (layouts.size() < instance()->maxLayouts) {
             if (layouts.isEmpty()) {
@@ -79,12 +88,21 @@ public:
                         instance(), SLOT(onCharactersAddedOrRemoved(int)));
                 connect(cursor.document(), SIGNAL(destroyed(QObject*)),
                         instance(), SLOT(onDocumentDestroyed(QObject*)));
-
             }
             layouts.append(new TextLayout(doc));
         }
         TextLayout *l = layouts.last();
         l->viewport = cursor.viewportWidth();
+        if (l->viewport == -1)
+            l->viewport = INT_MAX;
+        if (cursor.textEdit) {
+            l->textEdit = cursor.textEdit;
+            l->suppressTextEditUpdates = true;
+            l->lineBreaking = cursor.textEdit->lineBreaking();
+            l->sections = cursor.textEdit->d->sections;
+            l->font = cursor.textEdit->font();
+            l->syntaxHighlighter = cursor.textEdit->syntaxHighlighter();
+        }
         int startPos = (cursor.position() == 0
                         ? 0
                         : qMax(0, doc->find(QLatin1Char('\n'), cursor.position() - 1, TextDocument::FindBackward).position()));
@@ -122,7 +140,7 @@ public:
         if (startPos > 0)
             ++startPos; // in this case startPos points to the newline before it
         l->viewportPosition = startPos;
-        l->dirty(cursor.viewportWidth());
+        l->dirty(l->viewport);
         ASSUME(l->viewportPosition == 0 || doc->readCharacter(l->viewportPosition - 1) == QLatin1Char('\n'));
         l->relayoutByPosition(endPos - startPos + 100); // ### fudged a couple of lines likely
         ASSUME(l->viewportPosition < l->layoutEnd
@@ -168,7 +186,7 @@ struct TextCursorSharedPrivate
 {
 public:
     TextCursorSharedPrivate() : ref(1), position(-1), anchor(-1),
-        overrideColumn(-1), viewportWidth(5000), // ### is this wise? essentially makes for no line breaks
+        overrideColumn(-1), viewportWidth(-1),
         document(0)
     {}
 

@@ -21,7 +21,7 @@ void TextLayout::dirty(int width)
 {
     viewport = width;
     layoutDirty = true;
-    if (textEdit)
+    if (textEdit && !suppressTextEditUpdates)
         textEdit->viewport()->update();
 }
 
@@ -391,7 +391,7 @@ void TextLayout::updatePosition(int pos, Direction direction)
     }
     dirty(viewportWidth());
 
-    if (textEdit) {
+    if (textEdit && !suppressTextEditUpdates) {
         TextEditPrivate *p = static_cast<TextEditPrivate*>(this);
         p->pendingScrollBarUpdate = true;
         p->updateCursorPosition(p->lastHoverPos);
