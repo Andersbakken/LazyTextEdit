@@ -82,6 +82,7 @@ public:
     QTextLayout *layoutForPosition(int pos, int *offset = 0, int *index = 0) const;
 
     int textPositionAt(const QPoint &pos) const;
+    QString dump() const;
 
     enum Direction {
         Forward = 0,

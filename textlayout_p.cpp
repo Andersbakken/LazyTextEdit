@@ -415,4 +415,26 @@ QDebug &operator<<(QDebug &str, const QTextLine &line)
     return str;
 }
 
+QString TextLayout::dump() const
+{
+    QString out;
+    QTextStream ts(&out, QIODevice::WriteOnly);
+    ts << "viewportPosition " << viewportPosition
+       << " layoutEnd " << layoutEnd
+       << " viewportWidth " << viewportWidth() << '\n';
+    for (int i=0; i<textLayouts.size(); ++i) {
+        QTextLayout *layout = textLayouts.at(i);
+        for (int j=0; j<layout->lineCount(); ++j) {
+            QTextLine line = layout->lineAt(j);
+            ts << layout->text().mid(line.textStart(), line.textLength());
+            if (j + 1 < layout->lineCount()) {
+                ts << "<linebreak>\n";
+            } else {
+                ts << "\n";
+            }
+        }
+    }
+    return out;
+}
+
 #endif
