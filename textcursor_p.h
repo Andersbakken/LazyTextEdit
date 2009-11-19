@@ -94,7 +94,7 @@ public:
         TextLayout *l = layouts.last();
         l->viewport = cursor.viewportWidth();
         if (l->viewport == -1)
-            l->viewport = INT_MAX;
+            l->viewport = INT_MAX - 1024; // prevent overflow in comparisons.
         if (cursor.textEdit) {
             l->textEdit = cursor.textEdit;
             l->suppressTextEditUpdates = true;

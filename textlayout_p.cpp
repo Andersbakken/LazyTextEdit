@@ -28,7 +28,7 @@ void TextLayout::dirty(int width)
 int TextLayout::viewportWidth() const
 {
     if (!lineBreaking)
-        return INT_MAX;
+        return INT_MAX - 1024;
     return textEdit ? textEdit->viewport()->width() : viewport;
 }
 
@@ -154,7 +154,8 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
     r.setWidth(localWidest);
 
     contentRect |= r;
-    Q_ASSERT(!lineBreaking || contentRect.right() <= viewportWidth() + LeftMargin);
+    Q_ASSERT(!lineBreaking || contentRect.right() <= qint64(viewportWidth()) + LeftMargin
+             || viewportWidth() == -1);
 
     if (syntaxHighlighter) {
         syntaxHighlighter.data()->d->formatRanges.clear();
