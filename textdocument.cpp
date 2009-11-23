@@ -464,9 +464,10 @@ TextCursor TextDocument::find(const QString &in, int pos, FindMode flags) const
         // the iterator reads one past the last matched character so we have to account for that here
 
         if (wholeWords &&
-            ((pos != 0 && isWordCharacter(readCharacter(pos - 1)))
+            ((pos != 0 && isWordCharacter(readCharacter(pos - 1), pos - 1))
              || (pos + word.size() < d->documentSize
-                 && isWordCharacter(readCharacter(pos + word.size()))))) {
+                 && isWordCharacter(readCharacter(pos + word.size()),
+                                                  pos + word.size())))) {
             // checking if the characters before and after are word characters
             pos += reverse ? -1 : 1;
             if (pos < 0 || pos >= d->documentSize)
@@ -1019,7 +1020,7 @@ TextDocument::Options TextDocument::options() const
     return d->options;
 }
 
-bool TextDocument::isWordCharacter(const QChar &ch) const
+bool TextDocument::isWordCharacter(const QChar &ch, int /*index*/) const
 {
     // from qregexp.
     return ch.isLetterOrNumber() || ch.isMark() || ch == QLatin1Char('_');
@@ -1215,20 +1216,26 @@ void TextDocumentPrivate::undoRedo(bool undo)
 QString TextDocumentPrivate::wordAt(int position, int *start) const
 {
     TextDocumentIterator from(this, position);
-    if (!q->isWordCharacter(from.current())) {
+    if (!q->isWordCharacter(from.current(), position)) {
         if (start)
             *start = -1;
         return QString();
     }
 
     while (from.hasPrevious()) {
-        if (!q->isWordCharacter(from.previous())) {
+        const QChar ch = from.previous();
+        if (!q->isWordCharacter(ch, from.position())) {
+            // ### could just peek rather than going one too far
             from.next();
             break;
         }
     }
     TextDocumentIterator to(this, position);
-    while (to.hasNext() && q->isWordCharacter(to.next())) ;
+    while (to.hasNext()) {
+        const QChar ch = to.next();
+        if (!q->isWordCharacter(ch, to.position()))
+            break;
+    }
 
     if (start)
         *start = from.position();

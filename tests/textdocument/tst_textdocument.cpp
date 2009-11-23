@@ -569,7 +569,7 @@ void tst_TextDocument::lineNumbersGenerated()
 class DocumentSubClass : public TextDocument
 {
 public:
-    bool isWordCharacter(const QChar &ch) const
+    bool isWordCharacter(const QChar &ch, int) const
     {
         return !ch.isSpace();
     }

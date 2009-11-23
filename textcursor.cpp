@@ -312,8 +312,17 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
     case PreviousWord:
     case WordLeft: {
         TextDocumentIterator it(d->document->d, d->position);
-        while (it.hasPrevious() && !d->document->isWordCharacter(it.previous())) ;
-        while (it.hasPrevious() && d->document->isWordCharacter(it.previous())) ;
+
+        while (it.hasPrevious()) {
+            const QChar ch = it.previous();
+            if (d->document->isWordCharacter(ch, it.position()))
+                break;
+        }
+        while (it.hasPrevious()) {
+            const QChar ch = it.previous();
+            if (!d->document->isWordCharacter(ch, it.position()))
+                break;
+        }
         if (it.hasPrevious())
             it.next();
         setPosition(it.position(), mode);
@@ -324,8 +333,16 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
     case WordRight:
     case EndOfWord: {
         TextDocumentIterator it(d->document->d, d->position);
-        while (it.hasNext() && !d->document->isWordCharacter(it.next())) ;
-        while (it.hasNext() && d->document->isWordCharacter(it.next())) ;
+        while (it.hasNext()) {
+            const QChar ch = it.next();
+            if (d->document->isWordCharacter(ch, it.position()))
+                break;
+        }
+        while (it.hasNext()) {
+            const QChar ch = it.next();
+            if (!d->document->isWordCharacter(ch, it.position()))
+                break;
+        }
         setPosition(it.position(), mode);
         d->overrideColumn = -1;
         break; }
