@@ -110,6 +110,16 @@ void tst_TextCursor::movePosition_data()
                           << TextCursor::MoveAnchor << 0 << 0 << QString();
     QTest::newRow("WordLeft") << 0 << 0 << TextCursor::WordLeft
                               << TextCursor::MoveAnchor << 0 << 0 << QString();
+    QTest::newRow("FirstCharacter") << 0 << 0 << TextCursor::NextCharacter
+                                    << TextCursor::KeepAnchor << 1 << 0 << "I";
+
+    QTest::newRow("FirstCharacterReverse") << 1 << 1 << TextCursor::PreviousCharacter
+                                           << TextCursor::KeepAnchor << 0 << 1 << "I";
+    QTest::newRow("LastCharacter") << 179 << 179 << TextCursor::NextCharacter
+                                   << TextCursor::KeepAnchor << 180 << 179 << "\n";
+    QTest::newRow("LastCharacterReverse") << 180 << 180 << TextCursor::PreviousCharacter
+                                          << TextCursor::KeepAnchor << 179 << 180 << "\n";
+
 //     QTest::newRow("End") << 0 << 0 << TextCursor::End
 //                          << TextCursor::MoveAnchor << 0 << 0 << QString();
 //     QTest::newRow("Down") << 0 << 0 << TextCursor::Down
