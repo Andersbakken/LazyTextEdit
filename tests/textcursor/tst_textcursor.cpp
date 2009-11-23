@@ -43,14 +43,14 @@ void tst_TextCursor::setPosition_data()
 {
     QTest::addColumn<int>("one");
     QTest::addColumn<int>("two");
-    QTest::addColumn<int>("moveMode");
+    QTest::addColumn<TextCursor::MoveMode>("moveMode");
     QTest::addColumn<int>("expectedPos");
     QTest::addColumn<int>("expectedAnchor");
     QTest::addColumn<QString>("selectedText");
 
-    QTest::newRow("1") << 0 << 1 << int(TextCursor::MoveAnchor) << 1 << 1 << QString();
-    QTest::newRow("2") << 0 << 2 << int(TextCursor::KeepAnchor) << 2 << 0 << QString("Fi");
-    QTest::newRow("3") << 5 << 0 << int(TextCursor::KeepAnchor) << 0 << 5 << QString("First");
+    QTest::newRow("1") << 0 << 1 << TextCursor::MoveAnchor << 1 << 1 << QString();
+    QTest::newRow("2") << 0 << 2 << TextCursor::KeepAnchor << 2 << 0 << QString("Fi");
+    QTest::newRow("3") << 5 << 0 << TextCursor::KeepAnchor << 0 << 5 << QString("First");
 }
 
 void tst_TextCursor::setPosition()
@@ -66,13 +66,13 @@ void tst_TextCursor::setPosition()
     TextCursor cursor(&document);
     QFETCH(int, one);
     QFETCH(int, two);
-    QFETCH(int, moveMode);
+    QFETCH(TextCursor::MoveMode, moveMode);
     QFETCH(int, expectedPos);
     QFETCH(int, expectedAnchor);
     QFETCH(QString, selectedText);
 
     cursor.setPosition(one);
-    cursor.setPosition(two, static_cast<TextCursor::MoveMode>(moveMode));
+    cursor.setPosition(two, moveMode);
     QCOMPARE(expectedPos, cursor.position());
     QCOMPARE(expectedAnchor, cursor.anchor());
     QCOMPARE(selectedText, cursor.selectedText());
