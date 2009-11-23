@@ -1108,6 +1108,7 @@ void TextEdit::setTextCursor(const TextCursor &textCursor)
     d->textCursor = textCursor;
     d->textCursor.textEdit = this;
     if (doEmit) {
+        ensureCursorVisible();
         viewport()->update();
         emit cursorPositionChanged(textCursor.position());
     }
