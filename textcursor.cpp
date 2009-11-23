@@ -312,8 +312,8 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
     case PreviousWord:
     case WordLeft: {
         TextDocumentIterator it(d->document->d, d->position);
-        while (it.hasPrevious() && !TextDocumentPrivate::isWord(it.previous())) ;
-        while (it.hasPrevious() && TextDocumentPrivate::isWord(it.previous())) ;
+        while (it.hasPrevious() && !d->document->isWordCharacter(it.previous())) ;
+        while (it.hasPrevious() && d->document->isWordCharacter(it.previous())) ;
         if (it.hasPrevious())
             it.next();
         setPosition(it.position(), mode);
@@ -324,8 +324,8 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
     case WordRight:
     case EndOfWord: {
         TextDocumentIterator it(d->document->d, d->position);
-        while (it.hasNext() && !TextDocumentPrivate::isWord(it.next())) ;
-        while (it.hasNext() && TextDocumentPrivate::isWord(it.next())) ;
+        while (it.hasNext() && !d->document->isWordCharacter(it.next())) ;
+        while (it.hasNext() && d->document->isWordCharacter(it.next())) ;
         setPosition(it.position(), mode);
         d->overrideColumn = -1;
         break; }

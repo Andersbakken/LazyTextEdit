@@ -122,6 +122,7 @@ public:
     int columnNumber(int position) const;
     int lineNumber(const TextCursor &cursor) const;
     int columnNumber(const TextCursor &cursor) const;
+    virtual bool isWordCharacter(const QChar &ch) const;
 public slots:
     inline bool append(const QString &ba) { return insert(documentSize(), ba); }
     void setModified(bool modified);

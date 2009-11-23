@@ -198,10 +198,6 @@ public:
     QString paragraphAt(int position, int *start = 0) const;
 
     friend class TextDocument;
-    static inline bool isWord(const QChar &ch) // from qregexp.cpp
-    {
-        return ch.isLetterOrNumber() || ch.isMark() || ch == QLatin1Char('_');
-    }
     void swapOutChunk(Chunk *c);
     QList<TextSection*> getSections(int from, int size, TextSection::TextSectionOptions opt, const TextEdit *filter) const;
     inline TextSection *sectionAt(int pos, const TextEdit *filter) const { return getSections(pos, 1, TextSection::IncludePartial, filter).value(0); }

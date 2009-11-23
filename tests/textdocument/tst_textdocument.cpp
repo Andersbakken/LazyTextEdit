@@ -49,6 +49,7 @@ private slots:
     void lineNumbers();
     void lineNumbersGenerated();
     void lineNumbersGenerated_data();
+    void isWordOverride();
 };
 
 tst_TextDocument::tst_TextDocument()
@@ -565,6 +566,40 @@ void tst_TextDocument::lineNumbersGenerated()
     }
 }
 
+class DocumentSubClass : public TextDocument
+{
+public:
+    bool isWordCharacter(const QChar &ch) const
+    {
+        return !ch.isSpace();
+    }
+
+};
+
+void tst_TextDocument::isWordOverride()
+{
+    QString text = "|This| |is| |a| |test|";
+    {
+        TextDocument doc;
+        doc.setText(text);
+        TextCursor cursor(&doc);
+        QCOMPARE(cursor.wordUnderCursor(), QString());
+        cursor.movePosition(TextCursor::NextWord, TextCursor::KeepAnchor);
+        QCOMPARE(cursor.selectedText(), QString("|This"));
+        cursor.movePosition(TextCursor::NextWord, TextCursor::KeepAnchor);
+        QCOMPARE(cursor.selectedText(), QString("|This| |is"));
+    }
+    {
+        DocumentSubClass doc;
+        doc.setText(text);
+        TextCursor cursor(&doc);
+        QCOMPARE(cursor.wordUnderCursor(), QString("|This|"));
+        cursor.movePosition(TextCursor::NextWord, TextCursor::KeepAnchor);
+        QCOMPARE(cursor.selectedText(), QString("|This|"));
+        cursor.movePosition(TextCursor::NextWord, TextCursor::KeepAnchor);
+        QCOMPARE(cursor.selectedText(), QString("|This| |is|"));
+    }
+}
 
 
 QTEST_MAIN(tst_TextDocument)
