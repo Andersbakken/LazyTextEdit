@@ -1020,7 +1020,6 @@ static inline bool compareExtraSelection(const TextEdit::ExtraSelection &left, c
 
 void TextEdit::setExtraSelections(const QList<ExtraSelection> &selections)
 {
-    qWarning() << __FUNCTION__ << "This is currently not used";
     d->extraSelections = selections;
     qSort(d->extraSelections.begin(), d->extraSelections.end(), compareExtraSelection);
     d->dirty(viewport()->width());
@@ -1028,7 +1027,6 @@ void TextEdit::setExtraSelections(const QList<ExtraSelection> &selections)
 
 QList<TextEdit::ExtraSelection> TextEdit::extraSelections() const
 {
-    qWarning() << __FUNCTION__ << "This is currently not used";
     return d->extraSelections;
 }
 
