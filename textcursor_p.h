@@ -201,6 +201,7 @@ public:
 
     void flipSelection(TextCursor::MoveOperation op)
     {
+        // ### what is this function good for?
         ASSUME(ref == 1);
         const int min = qMin(anchor, position);
         const int max = qMax(anchor, position);

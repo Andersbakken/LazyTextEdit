@@ -194,7 +194,7 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
         return n == 0;
     }
     detach();
-    d->flipSelection(op);
+//    d->flipSelection(op);
 
     switch (op) {
     case NoMove:
