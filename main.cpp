@@ -50,6 +50,21 @@
 // ### consider having extra textLayouts on each side of viewport for optimized scrolling. Could detect that condition
 // ### Undo section removal/adding. This is a mess
 
+class SpellCheck : public SyntaxHighlighter
+{
+public:
+    SpellCheck(QObject *parent) : SyntaxHighlighter(parent) {}
+    virtual void highlightBlock(const QString &string)
+    {
+        if (string.contains(QRegExp("[0-9]"))) {
+            QTextCharFormat format;
+            format.setUnderlineStyle(QTextCharFormat::WaveUnderline);
+//           SpellCheckUnderline
+            setFormat(0, string.size(), format);
+        }
+    }
+
+};
 
 class Highlighter : public SyntaxHighlighter
 {
@@ -298,7 +313,8 @@ public:
         }
 
 //        textEdit->setSyntaxHighlighter(new Highlighter(textEdit));
-        textEdit->setSyntaxHighlighter(new BlockLight(textEdit));
+//        textEdit->setSyntaxHighlighter(new BlockLight(textEdit));
+        textEdit->setSyntaxHighlighter(new SpellCheck(textEdit));
 #ifndef QT_NO_DEBUG_STREAM
         if (codec) {
             qDebug() << "using codec" << codec->name();
