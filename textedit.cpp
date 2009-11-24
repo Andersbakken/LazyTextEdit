@@ -749,6 +749,7 @@ void TextEdit::keyPressEvent(QKeyEvent *e)
         d->cursorMoveKeyEventReadOnly(e);
         return;
     } else if (d->textCursor.cursorMoveKeyEvent(e)) {
+        ensureCursorVisible();
         e->accept();
         return;
     }
@@ -777,6 +778,8 @@ void TextEdit::keyPressEvent(QKeyEvent *e)
         }
     }
     if (operation != TextCursor::NoMove) {
+        ensureCursorVisible();
+        d->relayout();
         if (hasSelection()) {
             const int old = qMin(d->textCursor.anchor(), d->textCursor.position());
             removeSelectedText();
@@ -792,9 +795,11 @@ void TextEdit::keyPressEvent(QKeyEvent *e)
         }
     } else if (e->key() == Qt::Key_Enter || e->key() == Qt::Key_Return) {
         ensureCursorVisible();
+        d->relayout();
         d->textCursor.insertText(QLatin1String("\n"));
     } else if (!e->text().isEmpty() && !(e->modifiers() & ~Qt::ShiftModifier)) {
         ensureCursorVisible();
+        d->relayout();
         d->textCursor.insertText(e->text().toLocal8Bit());
     } else {
         e->ignore();
