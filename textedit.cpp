@@ -800,7 +800,7 @@ void TextEdit::keyPressEvent(QKeyEvent *e)
     } else if (!e->text().isEmpty() && !(e->modifiers() & ~Qt::ShiftModifier)) {
         ensureCursorVisible();
         d->relayout();
-        d->textCursor.insertText(e->text().toLocal8Bit());
+        d->textCursor.insertText(e->text());
     } else {
         e->ignore();
 //        QAbstractScrollArea::keyPressEvent(e); // this causes some
