@@ -322,6 +322,8 @@ void TextEdit::paintEvent(QPaintEvent *e)
 
     const QTextLayout *cursorLayout = d->cursorVisible ? d->layoutForPosition(d->textCursor.position()) : 0;
     int extraSelectionIndex = 0;
+    QTextLayout::FormatRange selectionRange;
+    selectionRange.start = -1;
     foreach(QTextLayout *l, d->textLayouts) {
         const int textSize = l->text().size();
         const QRect r = l->boundingRect().toRect();
@@ -330,13 +332,12 @@ void TextEdit::paintEvent(QPaintEvent *e)
             if (background.style() != Qt::NoBrush) {
                 p.fillRect(r, background);
             }
-            QTextLayout::FormatRange range;
-            if (::addSelection(textLayoutOffset, textSize, d->textCursor, &range) == Success) {
-                range.format.setBackground(palette().highlight());
-                range.format.setForeground(palette().highlightedText());
-                selections.append(range);
+            if (::addSelection(textLayoutOffset, textSize, d->textCursor, &selectionRange) == Success) {
+                selectionRange.format.setBackground(palette().highlight());
+                selectionRange.format.setForeground(palette().highlightedText());
             }
             while (extraSelectionIndex < d->extraSelections.size()) {
+                QTextLayout::FormatRange range;
                 const SelectionAddStatus s = ::addSelection(textLayoutOffset, textSize,
                                                             d->extraSelections.at(extraSelectionIndex).
                                                             cursor, &range);
@@ -347,6 +348,12 @@ void TextEdit::paintEvent(QPaintEvent *e)
                     break;
                 }
                 ++extraSelectionIndex;
+            }
+            if (selectionRange.start != -1) {
+                // The last range in the vector has priority, that
+                // should probably be the real selection
+                selections.append(selectionRange);
+                selectionRange.start = -1;
             }
             l->draw(&p, QPoint(0, 0), selections);
             if (!selections.isEmpty())
