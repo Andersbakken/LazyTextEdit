@@ -29,6 +29,7 @@ private slots:
     void scrollReadOnly();
     void cursorForPosition();
     void columnNumberIssue();
+    void selectionTest();
 };
 
 tst_TextEdit::tst_TextEdit()
@@ -64,7 +65,7 @@ void tst_TextEdit::scrollReadOnly()
 void tst_TextEdit::clickInReadOnlyEdit()
 {
     TextEdit edit;
-    QString line = "12434567890\n";
+    QString line = "1234567890\n";
     QString text;
     for (int i=0; i<1000; ++i) {
         text.append(line);
@@ -152,6 +153,56 @@ void tst_TextEdit::columnNumberIssue()
     }
 //     QEventLoop loop;
 //     loop.exec();
+}
+
+void tst_TextEdit::selectionTest()
+{
+    TextEdit edit;
+    QString line = "1234567890\n";
+    edit.document()->setText(line);
+//    edit.setReadOnly(true);
+    edit.resize(400, 400);
+    edit.show();
+    QTest::qWaitForWindowShown(&edit);
+
+    QCOMPARE(edit.selectedText(), QString());
+    QVERIFY(!edit.textCursor().hasSelection());
+
+    QTest::keyClick(&edit, Qt::Key_Right, Qt::ShiftModifier);
+    QVERIFY(edit.textCursor().hasSelection());
+    QCOMPARE(edit.selectedText(), QString("1"));
+    QCOMPARE(edit.textCursor().anchor(), 0);
+    QCOMPARE(edit.textCursor().position(), 1);
+
+    QTest::keyClick(&edit, Qt::Key_Right, Qt::ShiftModifier);
+    QVERIFY(edit.textCursor().hasSelection());
+    QCOMPARE(edit.selectedText(), QString("12"));
+    QCOMPARE(edit.textCursor().anchor(), 0);
+    QCOMPARE(edit.textCursor().position(), 2);
+
+    QTest::keyClick(&edit, Qt::Key_Right, Qt::ShiftModifier);
+    QVERIFY(edit.textCursor().hasSelection());
+    QCOMPARE(edit.textCursor().selectedText(), QString("123"));
+    QCOMPARE(edit.textCursor().anchor(), 0);
+    QCOMPARE(edit.textCursor().position(), 3);
+
+    QTest::keyClick(&edit, Qt::Key_Left, Qt::ShiftModifier);
+    QVERIFY(edit.textCursor().hasSelection());
+    QCOMPARE(edit.textCursor().selectedText(), QString("12"));
+    QCOMPARE(edit.textCursor().anchor(), 0);
+    QCOMPARE(edit.textCursor().position(), 2);
+
+    QTest::keyClick(&edit, Qt::Key_Left, Qt::ShiftModifier);
+    QVERIFY(edit.textCursor().hasSelection());
+    QCOMPARE(edit.textCursor().selectedText(), QString("1"));
+    QCOMPARE(edit.textCursor().anchor(), 0);
+    QCOMPARE(edit.textCursor().position(), 1);
+
+    QTest::keyClick(&edit, Qt::Key_Left, Qt::ShiftModifier);
+    QVERIFY(!edit.textCursor().hasSelection());
+    QCOMPARE(edit.textCursor().selectedText(), QString());
+    QCOMPARE(edit.textCursor().anchor(), 0);
+    QCOMPARE(edit.textCursor().position(), 0);
 }
 
 QTEST_MAIN(tst_TextEdit)
