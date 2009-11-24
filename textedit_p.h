@@ -55,7 +55,7 @@ public:
     bool dirtyForSection(TextSection *section);
     void updateCopyAndCutEnabled();
     bool isSectionOnScreen(const TextSection *section) const;
-    void cursorMoveKeyEvent(QKeyEvent *e);
+    void cursorMoveKeyEventReadOnly(QKeyEvent *e);
     void relayout();
 
     int requestedScrollBarPosition, lastRequestedScrollBarPosition, cursorWidth, sectionCount,

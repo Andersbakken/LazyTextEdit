@@ -739,7 +739,7 @@ void TextEdit::keyPressEvent(QKeyEvent *e)
 
     Q_ASSERT(d->textCursor.textEdit == this);
     if (d->readOnly) {
-        d->cursorMoveKeyEvent(e);
+        d->cursorMoveKeyEventReadOnly(e);
         return;
     } else if (d->textCursor.cursorMoveKeyEvent(e)) {
         e->accept();
@@ -1369,7 +1369,7 @@ bool TextEditPrivate::isSectionOnScreen(const TextSection *section) const
             && section->position() + section->size() >= viewportPosition);
 }
 
-void TextEditPrivate::cursorMoveKeyEvent(QKeyEvent *e)
+void TextEditPrivate::cursorMoveKeyEventReadOnly(QKeyEvent *e)
 {
     if (e == QKeySequence::MoveToNextLine) {
         scrollLines(1);
