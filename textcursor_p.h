@@ -238,6 +238,7 @@ public:
         case TextCursor::WordRight:
             anchor = min;
             position = max;
+            break;
         };
     }
 
