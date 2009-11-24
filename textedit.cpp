@@ -276,6 +276,29 @@ bool TextEdit::load(const QString &file, TextDocument::DeviceMode mode, QTextCod
     return d->document->load(file, mode, codec);
 }
 
+enum SelectionAddStatus {
+    Invalid,
+    Before,
+    After,
+    Success
+};
+static inline SelectionAddStatus addSelection(int layoutStart, int layoutLength,
+                                              const TextCursor &cursor, QTextLayout::FormatRange *format)
+{
+    Q_ASSERT(format);
+    if (!cursor.hasSelection())
+        return Invalid;
+    if (cursor.selectionEnd() < layoutStart)
+        return Before;
+    if (cursor.selectionStart() > layoutStart + layoutLength)
+        return After;
+
+    format->start = qMax(0, cursor.selectionStart() - layoutStart);
+    format->length = qMin(layoutLength - format->start,
+                          cursor.selectionSize());
+    return Success;
+}
+
 void TextEdit::paintEvent(QPaintEvent *e)
 {
     if (d->ensureCursorVisiblePending) {
@@ -293,32 +316,41 @@ void TextEdit::paintEvent(QPaintEvent *e)
     const QRect er = e->rect();
     p.translate(-horizontalScrollBar()->value(), 0);
     p.setFont(font());
-    QVector<QTextLayout::FormatRange> selection;
+    QVector<QTextLayout::FormatRange> selections;
+    selections.reserve(d->extraSelections.size() + 1);
     int textLayoutOffset = d->viewportPosition;
-    const int min = qMin(d->textCursor.anchor(), d->textCursor.position());
-    const int max = qMax(d->textCursor.anchor(), d->textCursor.position());
 
     const QTextLayout *cursorLayout = d->cursorVisible ? d->layoutForPosition(d->textCursor.position()) : 0;
+    int extraSelectionIndex = 0;
     foreach(QTextLayout *l, d->textLayouts) {
+        const int textSize = l->text().size();
         const QRect r = l->boundingRect().toRect();
         if (r.intersects(er)) {
             const QBrush background = d->blockFormats.value(l).background();
             if (background.style() != Qt::NoBrush) {
                 p.fillRect(r, background);
             }
-            if (d->textCursor.hasSelection()
-                && (!(min > textLayoutOffset + l->text().size() || max < textLayoutOffset))) {
-                selection.append(QTextLayout::FormatRange());
-                const int localMin = min - textLayoutOffset;
-                const int localMax = max - textLayoutOffset;
-                selection.last().start = qMax<int>(0, localMin);
-                selection.last().length = qMin<int>(l->text().size(), localMax - selection.last().start);
-                selection.last().format.setBackground(palette().highlight());
-                selection.last().format.setForeground(palette().highlightedText());
+            QTextLayout::FormatRange range;
+            if (::addSelection(textLayoutOffset, textSize, d->textCursor, &range) == Success) {
+                range.format.setBackground(palette().highlight());
+                range.format.setForeground(palette().highlightedText());
+                selections.append(range);
             }
-            l->draw(&p, QPoint(0, 0), selection);
-            if (!selection.isEmpty())
-                selection.clear();
+            while (extraSelectionIndex < d->extraSelections.size()) {
+                const SelectionAddStatus s = ::addSelection(textLayoutOffset, textSize,
+                                                            d->extraSelections.at(extraSelectionIndex).
+                                                            cursor, &range);
+                if (s == Success) {
+                    range.format = d->extraSelections.at(extraSelectionIndex).format;
+                    selections.append(range);
+                } else if (s == After) {
+                    break;
+                }
+                ++extraSelectionIndex;
+            }
+            l->draw(&p, QPoint(0, 0), selections);
+            if (!selections.isEmpty())
+                selections.clear();
             if (cursorLayout == l) {
                 cursorLayout->drawCursor(&p, QPoint(0, 0), d->textCursor.position() - textLayoutOffset,
                                          d->cursorWidth);

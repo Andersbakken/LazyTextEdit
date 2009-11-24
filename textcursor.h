@@ -105,6 +105,7 @@ public:
     int selectionStart() const;
     int selectionEnd() const;
     int selectionSize() const;
+    inline int selectionLength() const { return selectionSize(); }
 
     QString selectedText() const;
 

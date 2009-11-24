@@ -102,6 +102,10 @@ public:
             l->sections = cursor.textEdit->d->sections;
             l->font = cursor.textEdit->font();
             l->syntaxHighlighter = cursor.textEdit->syntaxHighlighter();
+//            l->extraSelections = cursor.textEdit->extraSelections();
+            // ### can the extra selections impact layout? If so they
+            // ### need to be in the actual textLayout shouldn't need
+            // ### to care about the actual selection
         }
         int startPos = (cursor.position() == 0
                         ? 0
