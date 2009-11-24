@@ -35,9 +35,9 @@ public:
     TextEditPrivate(TextEdit *qptr)
         : requestedScrollBarPosition(-1), lastRequestedScrollBarPosition(-1), cursorWidth(1),
         sectionCount(0), maximumSizeCopy(50000), pendingTimeOut(-1), autoScrollLines(0),
-        readOnly(false), cursorVisible(false), blockScrollBarUpdate(false), updateScrollBarPageStepPending(true),
-        inMouseEvent(false), sectionPressed(0), sectionHovered(0),
-        pendingScrollBarUpdate(false)
+        readOnly(false), cursorVisible(false), blockScrollBarUpdate(false),
+        updateScrollBarPageStepPending(true), inMouseEvent(false), sectionPressed(0),
+        pendingScrollBarUpdate(false), sectionCursor(0)
     {
         textEdit = qptr;
     }
@@ -63,10 +63,11 @@ public:
     bool readOnly, cursorVisible, blockScrollBarUpdate, updateScrollBarPageStepPending, inMouseEvent;
     QBasicTimer autoScrollTimer, cursorBlinkTimer;
     QAction *actions[TextEdit::SelectAllAction];
-    TextSection *sectionPressed, *sectionHovered;
+    TextSection *sectionPressed;
     TextCursor textCursor, dragOverrideCursor;
     QBasicTimer tripleClickTimer;
     bool pendingScrollBarUpdate;
+    QCursor *sectionCursor;
     QPoint lastHoverPos, lastMouseMove;
     QHash<DocumentCommand *, QPair<CursorData, CursorData> > undoRedoCommands;
 public slots:

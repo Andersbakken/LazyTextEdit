@@ -176,7 +176,7 @@ void TextEdit::setDocument(TextDocument *doc)
     d->sections.clear();
     d->sectionsDirty = true;
     d->document = doc;
-    d->sectionHovered = d->sectionPressed = 0;
+    d->sectionPressed = 0;
     viewport()->setCursor(Qt::IBeamCursor);
     viewport()->setMouseTracking(true);
     d->sectionCount = 0;
@@ -1044,10 +1044,8 @@ void TextEditPrivate::onTextSectionRemoved(TextSection *section)
     if (section == sectionPressed) {
         sectionPressed = 0;
     }
-    if (section == sectionHovered) {
-        if (sectionHovered->hasCursor())
-            textEdit->viewport()->setCursor(Qt::IBeamCursor);
-        sectionHovered = 0;
+    if (section->hasCursor()) {
+        updateCursorPosition(lastHoverPos);
     }
 }
 
@@ -1332,33 +1330,32 @@ void TextEditPrivate::timerEvent(QTimerEvent *e)
     }
 }
 
+static inline bool compareTextSectionByPriority(const TextSection *left, const TextSection *right)
+{
+    return left->priority() > right->priority();
+}
+
 void TextEditPrivate::updateCursorPosition(const QPoint &pos)
 {
     lastHoverPos = pos;
     const int textPos = textPositionAt(pos);
-    bool foundCursor = false;
     if (textPos != -1) {
-        const QList<TextSection*> hovered = textEdit->sections(textPos, 1, TextSection::IncludePartial);
-        sectionHovered = hovered.value(0);
-        int bestPriority = INT_MIN;
-        int bestPriorityCursor = INT_MIN;
+        QList<TextSection*> hovered = textEdit->sections(textPos, 1, TextSection::IncludePartial);
+        qSort(hovered.begin(), hovered.end(), compareTextSectionByPriority);
         foreach(TextSection *section, hovered) {
-            const int priority = section->priority();
-            if (priority > bestPriority) {
-                bestPriority = priority;
-                sectionHovered = section;
-            }
-
-            if (section->hasCursor() && priority > bestPriorityCursor) {
-                bestPriorityCursor = priority;
-                foundCursor = true;
-                textEdit->viewport()->setCursor(section->cursor());
-                break;
+            if (section->hasCursor()) {
+                delete sectionCursor;
+                sectionCursor = new QCursor(section->cursor());
+                textEdit->viewport()->setCursor(*sectionCursor);
+                return;
             }
         }
     }
-    if (foundCursor && textEdit->viewport()->testAttribute(Qt::WA_SetCursor)) {
+    // no cursor
+    if (sectionCursor) {
         textEdit->viewport()->setCursor(Qt::IBeamCursor);
+        delete sectionCursor;
+        sectionCursor = 0;
     }
 }
 

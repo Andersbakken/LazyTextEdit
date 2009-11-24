@@ -304,9 +304,10 @@ public:
         otherEdit->setObjectName("otherEdit");
         textEdit->setReadOnly(readOnly);
         QFontDatabase fdb;
-        foreach(QString family, fdb.families()) {
+        foreach(const QString &family, fdb.families()) {
             if (fdb.isFixedPitch(family)) {
                 QFont f(family);
+                f.setPointSize(20);
                 textEdit->setFont(f);
                 break;
             }
