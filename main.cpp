@@ -33,7 +33,7 @@
 // ### I still have some weird debris when scrolling in large documents
 // ### use tests from Qt. E.g. for QTextCursor
 // ### need to protect against undo with huge amounts of text in it. E.g. select all and delete. MsgBox asking?
-// ### maybe refactor updatePosition so it can handle the margins usecase that textcursor needs.
+// ### maybe refactor updateViewportPosition so it can handle the margins usecase that textcursor needs.
 // ### could keep undo/redo history in the textcursor and have an api on the cursor.
 // ### block state in SyntaxHighlighter doesn't remember between
 // ### highlights. In regular QText.* it does. Could store this info.

@@ -89,7 +89,7 @@ public:
         Forward = 0,
         Backward = TextDocument::FindBackward
     };
-    void updatePosition(int pos, Direction direction);
+    void updateViewportPosition(int pos, Direction direction);
 
     inline int bufferOffset() const { return viewportPosition - bufferPosition; }
     QString bufferRead(int from, int size) const

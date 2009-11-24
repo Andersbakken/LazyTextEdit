@@ -360,7 +360,7 @@ QTextLine TextLayout::lineForPosition(int pos, int *offsetInLine, int *lineIndex
 // right direction and sets viewportPosition to that. Updates
 // scrollbars if this is a TextEditPrivate
 
-void TextLayout::updatePosition(int pos, Direction direction)
+void TextLayout::updateViewportPosition(int pos, Direction direction)
 {
     pos = qMin(pos, maxViewportPosition);
     if (document->documentSize() == 0) {
@@ -387,7 +387,7 @@ void TextLayout::updatePosition(int pos, Direction direction)
         Q_ASSERT(viewportPosition == 0 || document->read(viewportPosition - 1, 1) == QString("\n"));
     }
     if (viewportPosition > maxViewportPosition && direction == Forward) {
-        updatePosition(viewportPosition, Backward);
+        updateViewportPosition(viewportPosition, Backward);
         return;
     }
     dirty(viewportWidth());

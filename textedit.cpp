@@ -93,7 +93,7 @@ void TextEdit::ensureCursorVisible(const TextCursor &cursor, int linesMargin)
             break;
     }
     if (above.position() < d->viewportPosition) {
-        d->updatePosition(above.position(), TextLayout::Backward);
+        d->updateViewportPosition(above.position(), TextLayout::Backward);
         return;
     }
 
@@ -106,7 +106,7 @@ void TextEdit::ensureCursorVisible(const TextCursor &cursor, int linesMargin)
     if (below.position() > d->lastVisibleCharacter) {
         for (int i=0; i<d->visibleLines; ++i) {
             below.movePosition(TextCursor::Up);
-            d->updatePosition(below.position(), TextLayout::Forward);
+            d->updateViewportPosition(below.position(), TextLayout::Forward);
         }
     }
 }
@@ -1111,7 +1111,7 @@ void TextEditPrivate::onCharactersAddedOrRemoved(int from, int count)
 void TextEdit::ensureCursorVisible()
 {
     if (d->textCursor.position() < d->viewportPosition) {
-        d->updatePosition(qMax(0, d->textCursor.position() - 1), TextLayout::Backward);
+        d->updateViewportPosition(qMax(0, d->textCursor.position() - 1), TextLayout::Backward);
     } else {
         const QRect r = viewport()->rect();
         QRect crect = cursorRect(d->textCursor);
@@ -1128,7 +1128,7 @@ void TextEdit::ensureCursorVisible()
                 }
                 d->scrollLines(scroll);
             } else {
-                d->updatePosition(d->textCursor.position(), TextLayout::Backward);
+                d->updateViewportPosition(d->textCursor.position(), TextLayout::Backward);
             }
         }
     }
@@ -1225,7 +1225,7 @@ void TextEditPrivate::updateScrollBarPosition()
 
     lastRequestedScrollBarPosition = req;
 
-    updatePosition(req, direction);
+    updateViewportPosition(req, direction);
 }
 
 void TextEditPrivate::updateScrollBarPageStep()
@@ -1295,7 +1295,7 @@ void TextEditPrivate::scrollLines(int lines)
             }
         }
     }
-    updatePosition(pos, d);
+    updateViewportPosition(pos, d);
 }
 
 void TextEditPrivate::timerEvent(QTimerEvent *e)
@@ -1461,7 +1461,7 @@ int TextEditPrivate::findLastPageSize() const
     int start = 0;
     int i = 0;
     forever {
-        p.updatePosition(start, Backward);
+        p.updateViewportPosition(start, Backward);
         p.relayoutByPosition(documentSize);
         qDebug() << "i" << i++ << "start" << start << "layoutEnd" << p.layoutEnd << "documentSize" << documentSize << "viewportPosition" << p.viewportPosition;
         if (p.layoutEnd == documentSize) {
