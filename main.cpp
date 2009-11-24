@@ -333,6 +333,7 @@ public:
 
         new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_E), textEdit, SLOT(ensureCursorVisible()));
         new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_L), this, SLOT(createTextSection()));
+        new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_M), this, SLOT(markLine()));
         new QShortcut(QKeySequence(QKeySequence::Close), this, SLOT(close()));
         new QShortcut(QKeySequence(Qt::Key_F2), this, SLOT(changeTextSectionFormat()));
 
@@ -394,6 +395,16 @@ public:
         QMainWindow::showEvent(e);
     }
 public slots:
+    void markLine()
+    {
+        TextCursor cursor = textEdit->textCursor();
+        cursor.movePosition(TextCursor::StartOfLine);
+        cursor.movePosition(TextCursor::EndOfLine, TextCursor::KeepAnchor);
+        QTextCharFormat format;
+        format.setBackground(Qt::red);
+        TextEdit::ExtraSelection selection = { cursor, format };
+        textEdit->setExtraSelections(QList<TextEdit::ExtraSelection>() << selection);
+    }
     void onModificationChanged(bool on)
     {
         QPalette pal = textEdit->viewport()->palette();
