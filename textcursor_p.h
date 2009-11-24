@@ -144,7 +144,7 @@ public:
         if (startPos > 0)
             ++startPos; // in this case startPos points to the newline before it
         l->viewportPosition = startPos;
-        l->dirty(l->viewport);
+        l->layoutDirty = true;
         ASSUME(l->viewportPosition == 0 || doc->readCharacter(l->viewportPosition - 1) == QLatin1Char('\n'));
         l->relayoutByPosition(endPos - startPos + 100); // ### fudged a couple of lines likely
         ASSUME(l->viewportPosition < l->layoutEnd

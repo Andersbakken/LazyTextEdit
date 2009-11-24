@@ -97,7 +97,6 @@ public:
     QList<TextSection*> sections; // these are all the sections in the buffer. Some might be before the current viewport
     QFont font;
 
-    void dirty(int width);
     QList<TextSection*> relayoutCommon(); // should maybe be smarter about MinimumScreenSize. Detect it based on font and viewport size
     void relayoutByPosition(int size);
     void relayoutByGeometry(int height);

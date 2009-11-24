@@ -17,14 +17,6 @@
 #include "textdocument.h"
 #include "textedit.h"
 
-void TextLayout::dirty(int width)
-{
-    viewport = width;
-    layoutDirty = true;
-    if (textEdit && !suppressTextEditUpdates)
-        textEdit->viewport()->update();
-}
-
 int TextLayout::viewportWidth() const
 {
     if (!lineBreaking)
@@ -378,8 +370,9 @@ void TextLayout::updateViewportPosition(int pos, Direction direction)
             if (direction == Backward) {
                 index = 0;
             } else {
-                index = document->find('\n', document->documentSize() - 1, TextDocument::FindBackward).position() + 1;
+                index = qMax(0, document->find('\n', document->documentSize() - 1, TextDocument::FindBackward).position() + 1);
                 // position after last newline in document
+                // if there is no newline put it at 0
             }
         } else {
             ++index;
@@ -389,15 +382,16 @@ void TextLayout::updateViewportPosition(int pos, Direction direction)
 
         if (viewportPosition != 0 && document->read(viewportPosition - 1, 1) != QString("\n"))
             qWarning() << "viewportPosition" << viewportPosition << document->read(viewportPosition - 1, 10) << this;
-        Q_ASSERT(viewportPosition == 0 || document->read(viewportPosition - 1, 1) == QString("\n"));
+        ASSUME(viewportPosition == 0 || document->read(viewportPosition - 1, 1) == QString("\n"));
     }
     if (viewportPosition > maxViewportPosition && direction == Forward) {
         updateViewportPosition(viewportPosition, Backward);
         return;
     }
-    dirty(viewportWidth());
+    layoutDirty = true;
 
     if (textEdit && !suppressTextEditUpdates) {
+        textEdit->viewport()->update();
         TextEditPrivate *p = static_cast<TextEditPrivate*>(this);
         p->pendingScrollBarUpdate = true;
         p->updateCursorPosition(p->lastHoverPos);

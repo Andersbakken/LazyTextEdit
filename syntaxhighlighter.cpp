@@ -58,7 +58,8 @@ void SyntaxHighlighter::rehighlight()
 {
     if (d->textEdit) {
         Q_ASSERT(d->textLayout);
-        d->textLayout->dirty(d->textEdit->viewport()->width());
+        d->textLayout->layoutDirty = true;
+        d->textEdit->viewport()->update();
     }
 }
 

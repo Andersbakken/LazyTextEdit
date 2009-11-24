@@ -211,7 +211,8 @@ void TextEdit::setDocument(TextDocument *doc)
             d, SLOT(onTextSectionCursorChanged(TextSection *)));
 
     d->onDocumentSizeChanged(d->document->documentSize());
-    d->dirty(viewport()->width());
+    d->layoutDirty = true;
+    viewport()->update();
 }
 
 /*!
@@ -550,7 +551,7 @@ void TextEdit::resizeEvent(QResizeEvent *e)
 #endif
     QAbstractScrollArea::resizeEvent(e);
     d->updateScrollBarPageStepPending = true;
-    d->dirty(viewport()->width());
+    d->layoutDirty = true;
 }
 
 #if 0
@@ -648,10 +649,13 @@ bool TextEdit::lineBreaking() const
     return d->lineBreaking;
 }
 
-void TextEdit::setLineBreaking(bool lb)
+void TextEdit::setLineBreaking(bool lineBreaking)
 {
-    d->lineBreaking = lb;
-    d->dirty(viewport()->width());
+    if (d->lineBreaking != lineBreaking) {
+        d->lineBreaking = lineBreaking;
+        d->layoutDirty = true;
+        viewport()->update();
+    }
 }
 
 
@@ -722,10 +726,15 @@ void TextEdit::changeEvent(QEvent *e)
 {
     if (e->type() == QEvent::FontChange) {
         d->font = font();
-        foreach(QTextLayout *l, (d->textLayouts + d->unusedTextLayouts)) {
+        foreach(QTextLayout *l, d->textLayouts) {
             l->setFont(d->font);
         }
-        d->dirty(viewport()->width());
+        foreach(QTextLayout *l, d->unusedTextLayouts) {
+            l->setFont(d->font);
+        }
+
+        d->layoutDirty = true;
+        viewport()->update();
     }
 }
 
@@ -1009,7 +1018,8 @@ void TextEdit::setSyntaxHighlighter(SyntaxHighlighter *highlighter)
         d->syntaxHighlighter.data()->d->textEdit = this;
         d->syntaxHighlighter.data()->d->textLayout = d;
     }
-    d->dirty(viewport()->width());
+    d->layoutDirty = true;
+    viewport()->update();
 }
 
 SyntaxHighlighter * TextEdit::syntaxHighlighter() const
@@ -1026,7 +1036,8 @@ void TextEdit::setExtraSelections(const QList<ExtraSelection> &selections)
 {
     d->extraSelections = selections;
     qSort(d->extraSelections.begin(), d->extraSelections.end(), compareExtraSelection);
-    d->dirty(viewport()->width());
+    d->layoutDirty = true;
+    viewport()->update();
 }
 
 QList<TextEdit::ExtraSelection> TextEdit::extraSelections() const
@@ -1061,7 +1072,8 @@ void TextEditPrivate::onScrollBarValueChanged(int value)
     if (blockScrollBarUpdate || value == requestedScrollBarPosition || value == viewportPosition)
         return;
     requestedScrollBarPosition = value;
-    dirty(textEdit->viewport()->width());
+    layoutDirty = true;
+    textEdit->viewport()->update();
 }
 
 void TextEditPrivate::onScrollBarActionTriggered(int action)
@@ -1091,11 +1103,12 @@ void TextEditPrivate::onCharactersAddedOrRemoved(int from, int count)
 {
     Q_ASSERT(count >= 0);
     Q_UNUSED(count);
-    if (from > layoutEnd) {
+    if (from > qMin(bufferPosition + buffer.size(), layoutEnd)) {
         return;
     }
-    buffer.clear();
-    dirty(textEdit->viewport()->width());
+    buffer.clear(); // isn't it better to just add them here?
+    layoutDirty = true;
+    textEdit->viewport()->update();
 }
 
 void TextEdit::ensureCursorVisible()
@@ -1401,7 +1414,8 @@ void TextEditPrivate::relayout()
 bool TextEditPrivate::dirtyForSection(TextSection *section)
 {
     if (isSectionOnScreen(section)) {
-        dirty(textEdit->viewport()->width());
+        layoutDirty = true;
+        textEdit->viewport()->update();
         return true;
     } else {
         return false;
