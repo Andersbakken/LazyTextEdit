@@ -36,7 +36,7 @@ public:
         : requestedScrollBarPosition(-1), lastRequestedScrollBarPosition(-1), cursorWidth(1),
         sectionCount(0), maximumSizeCopy(50000), pendingTimeOut(-1), autoScrollLines(0),
         readOnly(false), cursorVisible(false), blockScrollBarUpdate(false), updateScrollBarPageStepPending(true),
-        ensureCursorVisiblePending(false), inMouseEvent(false), sectionPressed(0), sectionHovered(0),
+        inMouseEvent(false), sectionPressed(0), sectionHovered(0),
         pendingScrollBarUpdate(false)
     {
         textEdit = qptr;
@@ -56,12 +56,11 @@ public:
     void updateCopyAndCutEnabled();
     bool isSectionOnScreen(const TextSection *section) const;
     void cursorMoveKeyEventReadOnly(QKeyEvent *e);
-    void relayout();
+    virtual void relayout(); // from TextLayout
 
     int requestedScrollBarPosition, lastRequestedScrollBarPosition, cursorWidth, sectionCount,
         maximumSizeCopy, pendingTimeOut, autoScrollLines;
-    bool readOnly, cursorVisible, blockScrollBarUpdate, updateScrollBarPageStepPending,
-        ensureCursorVisiblePending, inMouseEvent;
+    bool readOnly, cursorVisible, blockScrollBarUpdate, updateScrollBarPageStepPending, inMouseEvent;
     QBasicTimer autoScrollTimer, cursorBlinkTimer;
     QAction *actions[TextEdit::SelectAllAction];
     TextSection *sectionPressed, *sectionHovered;

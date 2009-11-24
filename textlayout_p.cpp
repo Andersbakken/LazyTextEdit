@@ -281,6 +281,11 @@ void TextLayout::relayoutByPosition(int size)
              (viewportPosition == layoutEnd && viewportPosition == document->documentSize()));
 }
 
+void TextLayout::relayout()
+{
+    relayoutByPosition(2000); // ### totally arbitrary number
+}
+
 QTextLayout *TextLayout::layoutForPosition(int pos, int *offset, int *index) const
 {
     if (offset)
@@ -400,6 +405,7 @@ void TextLayout::updateViewportPosition(int pos, Direction direction)
             p->updateScrollBar();
         } // sliderReleased is connected to updateScrollBar()
     }
+    relayout();
 }
 
 #ifndef QT_NO_DEBUG_STREAM

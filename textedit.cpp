@@ -301,10 +301,6 @@ static inline SelectionAddStatus addSelection(int layoutStart, int layoutLength,
 
 void TextEdit::paintEvent(QPaintEvent *e)
 {
-    if (d->ensureCursorVisiblePending) {
-        d->ensureCursorVisiblePending = false;
-        ensureCursorVisible();
-    }
     d->updateScrollBarPosition();
     d->relayout();
     if (d->updateScrollBarPageStepPending) {
@@ -748,8 +744,10 @@ void TextEdit::keyPressEvent(QKeyEvent *e)
     if (d->readOnly) {
         d->cursorMoveKeyEventReadOnly(e);
         return;
-    } else if (d->textCursor.cursorMoveKeyEvent(e)) {
-        ensureCursorVisible();
+    }
+
+    ensureCursorVisible();
+    if (d->textCursor.cursorMoveKeyEvent(e)) {
         e->accept();
         return;
     }
@@ -778,8 +776,6 @@ void TextEdit::keyPressEvent(QKeyEvent *e)
         }
     }
     if (operation != TextCursor::NoMove) {
-        ensureCursorVisible();
-        d->relayout();
         if (hasSelection()) {
             const int old = qMin(d->textCursor.anchor(), d->textCursor.position());
             removeSelectedText();
@@ -794,12 +790,8 @@ void TextEdit::keyPressEvent(QKeyEvent *e)
             }
         }
     } else if (e->key() == Qt::Key_Enter || e->key() == Qt::Key_Return) {
-        ensureCursorVisible();
-        d->relayout();
         d->textCursor.insertText(QLatin1String("\n"));
     } else if (!e->text().isEmpty() && !(e->modifiers() & ~Qt::ShiftModifier)) {
-        ensureCursorVisible();
-        d->relayout();
         d->textCursor.insertText(e->text());
     } else {
         e->ignore();
@@ -1112,6 +1104,9 @@ void TextEdit::ensureCursorVisible()
 {
     if (d->textCursor.position() < d->viewportPosition) {
         d->updateViewportPosition(qMax(0, d->textCursor.position() - 1), TextLayout::Backward);
+    } else if (d->textCursor.position() > d->layoutEnd) {
+        d->updateViewportPosition(d->textCursor.position(), TextLayout::Backward);
+        viewport()->update();
     } else {
         const QRect r = viewport()->rect();
         QRect crect = cursorRect(d->textCursor);
@@ -1130,6 +1125,7 @@ void TextEdit::ensureCursorVisible()
             } else {
                 d->updateViewportPosition(d->textCursor.position(), TextLayout::Backward);
             }
+            viewport()->update();
         }
     }
 }
@@ -1312,19 +1308,14 @@ void TextEditPrivate::timerEvent(QTimerEvent *e)
         enum { LineCount = 1 };
         if (lastMouseMove.y() < r.top()) {
             scrollLines(-LineCount);
-            relayout();
             if (atBeginning())
                 autoScrollTimer.stop();
         } else {
             Q_ASSERT(lastMouseMove.y() > r.bottom());
             scrollLines(LineCount);
-            relayout();
             if (atEnd())
                 autoScrollTimer.stop();
         }
-        // called relayout to force the relayout to happen
-        // immediately to make sure textPositionAt returns a valid
-        // position
         const QPoint p(qBound(0, lastMouseMove.x(), r.right()),
                        qBound(0, lastMouseMove.y(), r.bottom()));
         int pos = textPositionAt(p);

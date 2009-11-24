@@ -48,7 +48,7 @@ public:
     {
     }
 
-    ~TextLayout()
+    virtual ~TextLayout()
     {
         qDeleteAll(textLayouts);
         qDeleteAll(unusedTextLayouts);
@@ -57,8 +57,8 @@ public:
     TextDocument *document;
     TextEdit *textEdit;
     QWeakPointer<SyntaxHighlighter> syntaxHighlighter;
-    int bufferPosition, viewportPosition, layoutEnd, viewport, visibleLines, lastVisibleCharacter, lastBottomMargin, widest,
-        maxViewportPosition;
+    int bufferPosition, viewportPosition, layoutEnd, viewport, visibleLines,
+        lastVisibleCharacter, lastBottomMargin, widest, maxViewportPosition;
     bool layoutDirty, sectionsDirty, lineBreaking, suppressTextEditUpdates;
     QList<QTextLayout*> textLayouts, unusedTextLayouts;
     QHash<QTextLayout*, QTextBlockFormat> blockFormats;
@@ -73,6 +73,7 @@ public:
     QList<TextSection*> relayoutCommon(); // should maybe be smarter about MinimumScreenSize. Detect it based on font and viewport size
     void relayoutByPosition(int size);
     void relayoutByGeometry(int height);
+    virtual void relayout();
 
     int viewportWidth() const;
 
