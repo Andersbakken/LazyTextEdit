@@ -15,7 +15,6 @@
 #ifndef TEXTLAYOUT_P_H
 #define TEXTLAYOUT_P_H
 
-#include <QWeakPointer>
 #include <QList>
 #include <QTextLayout>
 #include <QRect>
@@ -29,6 +28,7 @@
 #include "textdocument.h"
 #include "textedit.h"
 #include "syntaxhighlighter.h"
+#include "weakpointer.h"
 
 #ifndef QT_NO_DEBUG_STREAM
 QDebug &operator<<(QDebug &str, const QTextLine &line);
@@ -85,7 +85,7 @@ public:
     }
 
     TextEdit *textEdit;
-    QWeakPointer<SyntaxHighlighter> syntaxHighlighter;
+    WeakPointer<SyntaxHighlighter> syntaxHighlighter;
     int viewportPosition, layoutEnd, viewport, visibleLines,
         lastVisibleCharacter, lastBottomMargin, widest, maxViewportPosition;
     bool layoutDirty, sectionsDirty, lineBreaking, suppressTextEditUpdates;

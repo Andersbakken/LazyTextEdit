@@ -15,7 +15,6 @@
 #ifndef TEXTCURSOR_P_H
 #define TEXTCURSOR_P_H
 
-#include <QWeakPointer>
 #include <QSize>
 #include <QList>
 #include <QObject>

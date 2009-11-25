@@ -25,13 +25,18 @@
 #include <QSet>
 #include <QTemporaryFile>
 #include <QDebug>
+#include "weakpointer.h"
 
 #ifndef ASSUME
-#ifdef FATAL_ASSUMES
-#define ASSUME(cond) Q_ASSERT(cond)
-#else
-#define ASSUME(cond) if (!(cond)) qWarning("Failed assumption %s:%d (%s) %s", __FILE__, __LINE__, __FUNCTION__, #cond);
-#endif
+  #ifdef FATAL_ASSUMES
+    #define ASSUME(cond) Q_ASSERT(cond)
+  #else
+    #if defined(__GNUC__) || defined(_AIX)
+      #define ASSUME(cond) if (!(cond)) qWarning("Failed assumption %s:%d (%s) %s", __FILE__, __LINE__, __FUNCTION__, #cond);
+    #else
+      #define ASSUME(cond) if (!(cond)) qWarning("Failed assumption %s:%d %s", __FILE__, __LINE__, #cond);
+    #endif
+  #endif
 #endif
 
 #include "textdocument.h"
@@ -161,7 +166,7 @@ public:
     int documentSize;
     enum SaveState { NotSaving, Saving, AbortSave } saveState;
     QList<TextSection*> sections;
-    QWeakPointer<QIODevice> device;
+    WeakPointer<QIODevice> device;
     bool ownDevice, modified;
     TextDocument::DeviceMode deviceMode;
     int chunkSize;
