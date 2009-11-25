@@ -1311,7 +1311,7 @@ int TextDocumentPrivate::countNewLines(Chunk *c, int chunkPos, int size) const
 //    qDebug() << "CALLING countNewLines on" << chunkIndex(c) << chunkPos << size;
 //     qDebug() << (c == first) << c->firstLineIndex << chunkPos << size
 //              << c->size();
-    int ret;
+    int ret = 0;
 #ifndef TEXTDOCUMENT_LINENUMBER_CACHE
     if (size == c->size()) {
         if (c->lines == -1) {
