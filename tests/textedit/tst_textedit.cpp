@@ -16,6 +16,36 @@ QT_FORWARD_DECLARE_CLASS(TextEdit)
 //TESTED_CLASS=
 //TESTED_FILES=
 
+// Need Qt 4.6.0> for qWaitForWindowShown
+#if (QT_VERSION < QT_VERSION_CHECK(4, 6, 0))
+
+#ifdef Q_WS_X11
+extern void qt_x11_wait_for_window_manager(QWidget *w);
+#endif
+
+namespace QTest
+{
+    inline static bool qWaitForWindowShown(QWidget *window)
+    {
+#if defined(Q_WS_X11)
+        qt_x11_wait_for_window_manager(window);
+        QCoreApplication::processEvents();
+#elif defined(Q_WS_QWS)
+        Q_UNUSED(window);
+        qWait(100);
+#else
+        Q_UNUSED(window);
+        qWait(50);
+#endif
+        return true;
+    }
+
+}
+
+QT_END_NAMESPACE
+
+#endif // Qt < 4.6.0
+
 class tst_TextEdit : public QObject
 {
     Q_OBJECT
