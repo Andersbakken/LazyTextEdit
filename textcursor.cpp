@@ -365,7 +365,7 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
             setPosition(position(), MoveAnchor);
         } else {
             setPosition(qBound<int>(0, position() + (op == TextCursor::Left ? -1 : 1),
-                                    d->document->documentSize() - 1), mode);
+                                    d->document->documentSize()), mode);
         }
         break;
     };
