@@ -24,11 +24,9 @@ class SelectionChangedEmitter
 {
 public:
     SelectionChangedEmitter(TextEdit *t)
-        : selectionStart(-1), selectionEnd(-1)
+        : selectionStart(-1), selectionEnd(-1), textEdit(t)
     {
-        if (t && !instances.contains(t)) {
-            textEdit = t;
-            instances.insert(t);
+        if (textEdit) {
             selectionStart = textEdit->textCursor().selectionStart();
             selectionEnd = textEdit->textCursor().selectionEnd();
         }
@@ -44,16 +42,12 @@ public:
                         || selectionEnd != cursor.selectionEnd()))) {
                 QMetaObject::invokeMethod(textEdit, "selectionChanged");
             }
-            instances.remove(textEdit);
         }
     }
 private:
-    static QSet<TextEdit*> instances;
     int selectionStart, selectionEnd;
     TextEdit *textEdit;
 };
-
-QSet<TextEdit*> SelectionChangedEmitter::instances;
 
 TextCursor::TextCursor()
     : d(0), textEdit(0)
