@@ -177,6 +177,9 @@ int TextLayout::textPositionAt(const QPoint &p) const
         }
         textLayoutOffset += l->text().size() + 1; // + 1 for newlines which aren't in the QTextLayout
     }
+    if (layoutEnd == document->documentSize()) {
+        return document->documentSize();
+    }
     return -1;
 }
 
