@@ -28,15 +28,13 @@
 #include "weakpointer.h"
 
 #ifndef ASSUME
-  #ifdef FATAL_ASSUMES
-    #define ASSUME(cond) Q_ASSERT(cond)
-  #else
-    #if defined(__GNUC__) || defined(_AIX)
-      #define ASSUME(cond) if (!(cond)) qWarning("Failed assumption %s:%d (%s) %s", __FILE__, __LINE__, __FUNCTION__, #cond);
-    #else
-      #define ASSUME(cond) if (!(cond)) qWarning("Failed assumption %s:%d %s", __FILE__, __LINE__, #cond);
-    #endif
-  #endif
+#ifdef FATAL_ASSUMES
+#define ASSUME(cond) Q_ASSERT(cond)
+#elif defined Q_OS_SOLARIS
+#define ASSUME(cond) if (!(cond)) qWarning("Failed assumption %s:%d %s", __FILE__, __LINE__, #cond);
+#else
+#define ASSUME(cond) if (!(cond)) qWarning("Failed assumption %s:%d (%s) %s", __FILE__, __LINE__, __FUNCTION__, #cond);
+#endif
 #endif
 
 #include "textdocument.h"
