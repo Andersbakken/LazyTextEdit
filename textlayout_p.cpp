@@ -223,7 +223,7 @@ void TextLayout::relayoutByGeometry(int height)
     QList<TextSection*> l = relayoutCommon();
 
     const int max = viewportPosition + buffer.size() - bufferOffset(); // in document coordinates
-    Q_ASSERT(viewportPosition == 0 || bufferReadCharacter(viewportPosition - 1) == '\n');
+    ASSUME(viewportPosition == 0 || bufferReadCharacter(viewportPosition - 1) == '\n');
 
     static const int extraLines = qMax(2, qgetenv("LAZYTEXTEDIT_EXTRA_LINES").toInt());
     int index = viewportPosition;
