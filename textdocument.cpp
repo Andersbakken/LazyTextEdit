@@ -985,7 +985,7 @@ int TextDocument::lineNumber(int position) const
         // not read(0, position + 1);
         const int count = data.count(QLatin1Char('\n'));
         if (count + 1 != c->firstLineIndex + extra) {
-            qDebug() << __FUNCTION__ << "returns" << (c->firstLineIndex + extra)
+            qDebug() << "TextDocument::lineNumber returns" << (c->firstLineIndex + extra)
                      << "should have returned" << (count + 1)
                      << "for index" << position;
         }
