@@ -788,12 +788,24 @@ void TextDocument::takeTextSection(TextSection *section)
 {
     Q_ASSERT(section);
     Q_ASSERT(section->document() == this);
+
+    QList<TextSection*>::iterator first = qLowerBound(d->sections.begin(), d->sections.end(), section, compareTextSection);
+    Q_ASSERT(first != d->sections.end());
+    const QList<TextSection*>::iterator last = qUpperBound(d->sections.begin(), d->sections.end(), section, compareTextSection);
+
+    while (first != last) {
+        if (*first == section) {
+            emit sectionRemoved(section);
+            d->sections.erase(first);
+            break;
+        }
+        ++first;
+    }
+
+    // Moved this to the end as the slots called by sectionRemoved (presently) rely
+    // on section->d.document to be valid.
     section->d.textEdit = 0;
     section->d.document = 0;
-    const QList<TextSection*>::iterator it = qBinaryFind(d->sections.begin(), d->sections.end(), section, compareTextSection);
-    Q_ASSERT(it != d->sections.end());
-    emit sectionRemoved(section);
-    d->sections.erase(it);
 }
 
 QList<TextSection*> TextDocument::sections(int pos, int size, TextSection::TextSectionOptions flags) const
