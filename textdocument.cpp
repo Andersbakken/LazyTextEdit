@@ -51,6 +51,13 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode, QTextCodec *codec)
     if (!device->isReadable())
         return false;
 
+    foreach(TextSection *section, d->sections) {
+        emit sectionRemoved(section);
+        section->d.document = 0;
+        delete section;
+    }
+    d->sections.clear();
+
     if (d->documentSize > 0) {
         emit charactersRemoved(0, d->documentSize);
     }
@@ -161,13 +168,6 @@ bool TextDocument::load(const QString &fileName, DeviceMode mode, QTextCodec *co
 
 void TextDocument::clear()
 {
-    foreach(TextSection *section, d->sections) {
-        section->d.document = 0;
-        emit sectionRemoved(section);
-        delete section;
-    }
-    d->sections.clear();
-
     setText(QString());
 }
 
