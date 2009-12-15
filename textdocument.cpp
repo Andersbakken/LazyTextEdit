@@ -813,6 +813,15 @@ QList<TextSection*> TextDocument::sections(int pos, int size, TextSection::TextS
     return d->getSections(pos, size, flags, 0);
 }
 
+void TextDocument::insertTextSection(TextSection *section)
+{
+    Q_ASSERT(!d->sections.contains(section));
+    QList<TextSection*>::iterator it = qLowerBound<QList<TextSection*>::iterator>(d->sections.begin(), d->sections.end(),
+                                                                                  section, compareTextSection);
+    d->sections.insert(it, section);
+    emit sectionAdded(section);
+}
+
 TextSection *TextDocument::insertTextSection(int pos, int size,
                                              const QTextCharFormat &format, const QVariant &data)
 {
@@ -822,27 +831,6 @@ TextSection *TextDocument::insertTextSection(int pos, int size,
 
     TextSection *l = new TextSection(pos, size, this, format, data);
     QList<TextSection*>::iterator it = qLowerBound<QList<TextSection*>::iterator>(d->sections.begin(), d->sections.end(), l, compareTextSection);
-#if 0
-    if (it != d->sections.begin()) {
-        QList<TextSection*>::iterator before = (it - 1);
-        if ((*before)->position() + size > pos) {
-            l->d.document = 0; // don't want it to call takeTextSection since it isn't in the list yet
-            delete l;
-            return 0;
-            // no overlapping. Not all that awesome to construct the
-            // TextSection first and then delete it but I might allow
-            // overlapping soon enough
-        }
-    }
-    if (it != d->sections.end() && pos + size > (*it)->position()) {
-        l->d.document = 0; // don't want it to call takeTextSection since it isn't in the list yet
-        delete l;
-        return 0;
-        // no overlapping. Not all that awesome to construct the
-        // TextSection first and then delete it but I might allow
-        // overlapping soon enough
-    }
-#endif
     d->sections.insert(it, l);
     emit sectionAdded(l);
     return l;
@@ -1481,5 +1469,4 @@ void TextDocumentPrivate::textEditDestroyed(TextEdit *edit)
         }
     }
 }
-
 
