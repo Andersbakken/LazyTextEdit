@@ -405,6 +405,12 @@ void tst_TextDocument::sections()
     QVERIFY(section2);
     QCOMPARE(doc.sections(3, 2, TextSection::IncludePartial).size(), 3);
     QCOMPARE(doc.sections(3, 2).size(), 0);
+
+    // Insert identical sections, make sure we pull out the right one
+    TextSection *section3 = doc.insertTextSection(5, 5);
+    TextSection *section4 = doc.insertTextSection(5, 5);
+    doc.takeTextSection(section4);
+    QVERIFY(doc.sections().contains(section3));
     // "[abcd][e]fghijklmnopqrstuvwxyz\n";
 }
 
