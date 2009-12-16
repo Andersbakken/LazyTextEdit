@@ -141,6 +141,7 @@ public slots:
     void selectAll();
     void clearSelection();
 signals:
+    void copyAvailable(bool on);
     void textChagned();
     void selectionChanged();
     void cursorPositionChanged(int pos);

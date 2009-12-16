@@ -994,9 +994,13 @@ void TextEditPrivate::onDocumentSizeChanged(int size)
 
 void TextEditPrivate::updateCopyAndCutEnabled()
 {
+    const bool wasEnabled = actions[TextEdit::CopyAction]->isEnabled();
     const bool enable = qAbs(textCursor.position() - textCursor.anchor()) <= maximumSizeCopy;
     actions[TextEdit::CopyAction]->setEnabled(enable);
     actions[TextEdit::CutAction]->setEnabled(enable);
+    if (wasEnabled != enable) {
+        emit textEdit->copyAvailable(enable);
+    }
 }
 
 void TextEdit::setSyntaxHighlighter(SyntaxHighlighter *highlighter)
