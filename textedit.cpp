@@ -197,7 +197,7 @@ void TextEdit::setDocument(TextDocument *doc)
             d, SLOT(onCharactersAddedOrRemoved(int, int)));
     connect(d->document, SIGNAL(charactersRemoved(int, int)),
             d, SLOT(onCharactersAddedOrRemoved(int, int)));
-
+    connect(d->document, SIGNAL(textChanged()), this, SIGNAL(textChanged()));
     connect(d->document, SIGNAL(undoAvailableChanged(bool)),
             this, SIGNAL(undoAvailableChanged(bool)));
     connect(d->document, SIGNAL(redoAvailableChanged(bool)),

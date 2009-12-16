@@ -144,6 +144,7 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode, QTextCodec *codec)
 //         d->first->firstLineIndex = 0;
     emit charactersAdded(0, d->documentSize);
     emit documentSizeChanged(d->documentSize);
+    emit textChanged();
     setModified(false);
     return true;
 }
@@ -642,6 +643,7 @@ bool TextDocument::insert(int pos, const QString &string)
     if (cmd)
         emit d->undoRedoCommandFinished(cmd);
 
+    emit textChanged();
     return true;
 }
 
@@ -782,6 +784,7 @@ void TextDocument::remove(int pos, int size)
     }
     if (cmd)
         emit d->undoRedoCommandFinished(cmd);
+    emit textChanged();
 }
 
 void TextDocument::takeTextSection(TextSection *section)

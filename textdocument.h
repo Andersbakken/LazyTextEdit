@@ -131,6 +131,7 @@ public slots:
     void redo();
     bool abortSave();
 signals:
+    void textChanged();
     void sectionAdded(TextSection *section);
     void sectionRemoved(TextSection *removed);
     void charactersAdded(int from, int count);

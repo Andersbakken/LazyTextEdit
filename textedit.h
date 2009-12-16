@@ -141,6 +141,7 @@ public slots:
     void selectAll();
     void clearSelection();
 signals:
+    void textChagned();
     void selectionChanged();
     void cursorPositionChanged(int pos);
     void sectionClicked(TextSection *section, const QPoint &pos);
