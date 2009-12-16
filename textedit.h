@@ -29,8 +29,8 @@ class TextEdit : public QAbstractScrollArea
     Q_PROPERTY(bool readOnly READ readOnly WRITE setReadOnly)
     Q_PROPERTY(bool cursorVisible READ cursorVisible WRITE setCursorVisible)
     Q_PROPERTY(QString selectedText READ selectedText)
-    Q_PROPERTY(bool undoAvailable READ isUndoAvailable)
-    Q_PROPERTY(bool redoAvailable READ isRedoAvailable)
+    Q_PROPERTY(bool undoAvailable READ isUndoAvailable NOTIFY undoAvailableChanged)
+    Q_PROPERTY(bool redoAvailable READ isRedoAvailable NOTIFY redoAvailableChanged)
     Q_PROPERTY(int maximumSizeCopy READ maximumSizeCopy WRITE setMaximumSizeCopy)
     Q_PROPERTY(bool lineBreaking READ lineBreaking WRITE setLineBreaking)
 

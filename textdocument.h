@@ -39,6 +39,8 @@ class TextDocument : public QObject
     Q_PROPERTY(int chunkSize READ chunkSize WRITE setChunkSize)
     Q_PROPERTY(bool undoRedoEnabled READ isUndoRedoEnabled WRITE setUndoRedoEnabled)
     Q_PROPERTY(bool modified READ isModified WRITE setModified DESIGNABLE false)
+    Q_PROPERTY(bool undoAvailable READ isUndoAvailable NOTIFY undoAvailableChanged)
+    Q_PROPERTY(bool redoAvailable READ isRedoAvailable NOTIFY redoAvailableChanged)
     Q_ENUMS(DeviceMode)
     Q_FLAGS(Options)
     Q_FLAGS(FindMode)
