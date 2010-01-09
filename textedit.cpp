@@ -174,6 +174,7 @@ void TextEdit::setDocument(TextDocument *doc)
         doc = new TextDocument(this);
 
     d->sections.clear();
+    d->buffer.clear();
     d->sectionsDirty = true;
     d->document = doc;
     d->sectionPressed = 0;
