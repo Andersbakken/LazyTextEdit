@@ -124,6 +124,11 @@ int SyntaxHighlighter::currentBlockPosition() const
     return d->currentBlockPosition;
 }
 
+QTextBlockFormat SyntaxHighlighter::blockFormat() const
+{
+    return d->blockFormat;
+}
+
 void SyntaxHighlighter::setBlockFormat(const QTextBlockFormat &format)
 {
     d->blockFormat = format;

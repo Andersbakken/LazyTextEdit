@@ -49,6 +49,7 @@ protected:
     inline void setFont(int start, int count, const QFont &font)
     { setFormat(start, count, font); }
 
+    QTextBlockFormat blockFormat() const;
     void setBlockFormat(const QTextBlockFormat &format);
     QTextCharFormat format(int pos) const;
     int previousBlockState() const;
