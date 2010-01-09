@@ -1465,9 +1465,14 @@ QList<TextSection*> TextDocumentPrivate::getSections(int pos, int size, TextSect
 
 void TextDocumentPrivate::textEditDestroyed(TextEdit *edit)
 {
-    foreach(TextSection *section, sections) {
+    QMutableListIterator<TextSection*> i(sections);
+    while (i.hasNext()) {
+        TextSection *section = i.next();
         if (section->textEdit() == edit) {
             section->d.document = 0;
+            // Make sure we also remove it from the list of sections so it
+            // isn't deleted in the TextDocument destructor too.
+            i.remove();
             delete section;
         }
     }
