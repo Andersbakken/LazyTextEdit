@@ -13,7 +13,7 @@
 #include <QVariant>
 #include <qalgorithms.h>
 
-//#define DEBUG_CACHE_HITS
+// #define DEBUG_CACHE_HITS
 
 TextDocument::TextDocument(QObject *parent)
     : QObject(parent), d(new TextDocumentPrivate(this))
@@ -293,10 +293,11 @@ bool TextDocument::save(QIODevice *device)
                 qDeleteAll(d->undoRedoStack);
                 d->undoRedoStack.clear();
                 d->undoRedoStackCurrent = 0;
+#ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
                 d->cachedChunkPos = -1;
                 d->cachedChunk = 0;
                 d->cachedChunkData.clear();
-
+#endif
                 Chunk *c = d->first;
                 int pos = 0;
                 while (c) {
@@ -570,13 +571,9 @@ bool TextDocument::insert(int pos, const QString &string)
         d->instantiateChunk(c);
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
         if (c == d->cachedChunk) {
-            d->cachedChunkData.clear();
-            // avoid detach
+            d->cachedChunkData.clear(); // avoid detach when inserting
         }
 #endif
-
-        if (c == d->cachedChunk)
-            d->cachedChunkData.clear(); // avoid detach when inserting
         c->data.insert(offset, string);
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
         if (c == d->cachedChunk) {
