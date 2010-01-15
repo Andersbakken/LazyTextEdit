@@ -178,7 +178,12 @@ public:
         bool readOnly = false;
         int chunkSize = -1;
         QTextCodec *codec = 0;
+        QString fontFamily;
+        int fontSize = 20;
         const QStringList list = QApplication::arguments().mid(1);
+        QRegExp fontFamilyRegexp("--font=(.+)");
+        QRegExp fontSizeRegexp("--font-size=([0-9]+)");
+        TextDocument::DeviceMode mode = TextDocument::Sparse;
         for (int i=0; i<list.size(); ++i) {
             const QString &arg = list.at(i);
             if (arg == "--replay") {
@@ -188,6 +193,12 @@ public:
                 replay = true;
                 add = true;
                 fileName.clear();
+            } else if (arg == "--loadAll") {
+                mode = TextDocument::LoadAll;
+            } else if (fontFamilyRegexp.exactMatch(arg)) {
+                fontFamily = fontFamilyRegexp.cap(1);
+            } else if (fontSizeRegexp.exactMatch(arg)) {
+                fontSize = fontSizeRegexp.cap(1).toInt();
             } else if (arg == "--log") {
                 fileName.clear();
                 appendTimer.start(10, this);
@@ -303,16 +314,17 @@ public:
         otherEdit->setLineBreaking(false);
         otherEdit->setObjectName("otherEdit");
         textEdit->setReadOnly(readOnly);
-        QFontDatabase fdb;
-        foreach(const QString &family, fdb.families()) {
-            if (fdb.isFixedPitch(family)) {
-                QFont f(family);
-                f.setPointSize(20);
-                textEdit->setFont(f);
-                break;
+        if (!fontFamily.isEmpty()) {
+            QFontDatabase fdb;
+            foreach(const QString &family, fdb.families()) {
+                if (fdb.isFixedPitch(family)) {
+                    fontFamily = family;
+                    break;
+                }
             }
         }
-
+        QFont f(fontFamily, fontSize);
+        textEdit->setFont(f);
 //        textEdit->setSyntaxHighlighter(new Highlighter(textEdit));
 //        textEdit->setSyntaxHighlighter(new BlockLight(textEdit));
         textEdit->setSyntaxHighlighter(new SpellCheck(textEdit));
@@ -323,9 +335,6 @@ public:
 #endif
         if (appendTimer.isActive())
             textEdit->document()->setOption(TextDocument::SwapChunks, true);
-        TextDocument::DeviceMode mode = TextDocument::Sparse;
-        if (fileName == "main.cpp")
-            mode = TextDocument::LoadAll;
         if (!fileName.isEmpty() && !textEdit->load(fileName, mode, codec)) {
 #ifndef QT_NO_DEBUG_STREAM
             qDebug() << "Can't load" << fileName;
