@@ -51,6 +51,14 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode, QTextCodec *codec)
     if (!device->isReadable())
         return false;
 
+    Options options = d->options;
+    if (options & ConvertCarriageReturns && mode == Sparse) {
+        qWarning("TextDocument::load() ConvertCarriageReturns is incompatible with Sparse");
+        options &= ~ConvertCarriageReturns;
+    }
+    if ((options & (AutoDetectCarriageReturns|ConvertCarriageReturns)) == (AutoDetectCarriageReturns|ConvertCarriageReturns))
+        options &= ~AutoDetectCarriageReturns;
+
     foreach(TextSection *section, d->sections) {
         emit sectionRemoved(section);
         section->d.document = 0;
@@ -107,6 +115,14 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode, QTextCodec *codec)
         do {
             Chunk *c = new Chunk;
             c->data = ts.read(d->chunkSize);
+            if (options & AutoDetectCarriageReturns) {
+                if (c->data.contains(QLatin1Char('\n'))) {
+                    options |= ConvertCarriageReturns;
+                }
+                options &= ~AutoDetectCarriageReturns;
+            }
+            if (options & ConvertCarriageReturns)
+                c->data.remove(QLatin1Char('\r'));
             d->documentSize += c->data.size();
             if (current) {
                 current->next = c;

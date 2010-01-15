@@ -58,8 +58,10 @@ public:
         NoOptions = 0x0000,
         SwapChunks = 0x0001,
         KeepTemporaryFiles = 0x0002,
+        ConvertCarriageReturns = 0x0004, // incompatible with Sparse and must be set before loading
+        AutoDetectCarriageReturns = 0x0010,
         NoImplicitLoadAll = 0x0020,
-        DefaultOptions = NoOptions
+        DefaultOptions = AutoDetectCarriageReturns
     };
     Q_DECLARE_FLAGS(Options, Option);
 
