@@ -55,9 +55,11 @@ public:
     };
 
     enum Option {
-        NoOptions = 0x00,
-        SwapChunks = 0x01,
-        KeepTemporaryFiles = 0x02
+        NoOptions = 0x0000,
+        SwapChunks = 0x0001,
+        KeepTemporaryFiles = 0x0002,
+        NoImplicitLoadAll = 0x0020,
+        DefaultOptions = NoOptions
     };
     Q_DECLARE_FLAGS(Options, Option);
 

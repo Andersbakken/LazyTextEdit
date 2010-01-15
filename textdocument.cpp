@@ -71,7 +71,7 @@ bool TextDocument::load(QIODevice *device, DeviceMode mode, QTextCodec *codec)
 
     d->textCodec = codec;
     d->documentSize = device->size();
-    if (d->documentSize <= d->chunkSize && mode == Sparse)
+    if (d->documentSize <= d->chunkSize && mode == Sparse && !(options & NoImplicitLoadAll))
         mode = LoadAll;
     if (codec && mode == Sparse) {
         qWarning("Sparse mode doesn't really work with unicode data yet. I am working on it.\n--\nAnders");

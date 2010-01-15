@@ -142,7 +142,8 @@ public:
         saveState(NotSaving), ownDevice(false), modified(false),
         deviceMode(TextDocument::Sparse), chunkSize(16384),
         undoRedoStackCurrent(0), modifiedIndex(-1), undoRedoEnabled(true), ignoreUndoRedo(false),
-        hasChunksWithLineNumbers(false), textCodec(0), options(0), cursorCommand(false)
+        hasChunksWithLineNumbers(false), textCodec(0), options(TextDocument::DefaultOptions),
+        cursorCommand(false)
     {
         first = last = new Chunk;
     }
