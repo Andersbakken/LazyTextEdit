@@ -23,6 +23,9 @@ QT_FORWARD_DECLARE_CLASS(TextDocument)
 //TESTED_CLASS=
 //TESTED_FILES=
 
+Q_DECLARE_METATYPE(TextDocument::Options);
+Q_DECLARE_METATYPE(TextDocument::DeviceMode);
+
 class tst_TextDocument : public QObject
 {
     Q_OBJECT
@@ -54,6 +57,8 @@ private slots:
     void lineNumbers();
     void lineNumbersGenerated();
     void lineNumbersGenerated_data();
+    void carriageReturns_data();
+    void carriageReturns();
     void isWordOverride();
 };
 
@@ -513,6 +518,41 @@ void tst_TextDocument::lineNumbers()
     for (int i=0; i<1024; ++i) {
         QCOMPARE(doc.lineNumber(i * 2), i + 1); // 1-indexed
     }
+}
+
+
+void tst_TextDocument::carriageReturns_data()
+{
+    QTest::addColumn<TextDocument::Options>("options");
+    QTest::addColumn<TextDocument::DeviceMode>("deviceMode");
+    QTest::addColumn<QByteArray>("text");
+    QTest::addColumn<bool>("containsCarriageReturns");
+
+    QTest::newRow("1") << TextDocument::Options(TextDocument::NoOptions) << TextDocument::Sparse << QByteArray("foo\nbar") << false;
+    QTest::newRow("2") << TextDocument::Options(TextDocument::NoOptions) << TextDocument::LoadAll << QByteArray("foo\nbar") << false;
+    QTest::newRow("3") << TextDocument::Options(TextDocument::NoOptions) << TextDocument::Sparse << QByteArray("foo\r\nbar") << true;
+    QTest::newRow("4") << TextDocument::Options(TextDocument::NoOptions) << TextDocument::LoadAll << QByteArray("foo\r\nbar") << true;
+    QTest::newRow("5") << TextDocument::Options(TextDocument::NoOptions) << TextDocument::Sparse << QByteArray("foo\r\nbar") << true;
+    QTest::newRow("6") << TextDocument::Options(TextDocument::NoOptions) << TextDocument::LoadAll << QByteArray("foo\r\nbar") << true;
+    QTest::newRow("7") << TextDocument::Options(TextDocument::DefaultOptions) << TextDocument::Sparse << QByteArray("foo\r\nbar") << true;
+    QTest::newRow("8") << TextDocument::Options(TextDocument::DefaultOptions) << TextDocument::LoadAll << QByteArray("foo\r\nbar") << false;
+    QTest::newRow("9") << TextDocument::Options(TextDocument::ConvertCarriageReturns) << TextDocument::LoadAll << QByteArray("foo\r\nbar") << false;
+}
+
+void tst_TextDocument::carriageReturns()
+{
+    QFETCH(TextDocument::Options, options);
+    QFETCH(TextDocument::DeviceMode, deviceMode);
+    QFETCH(QByteArray, text);
+    QFETCH(bool, containsCarriageReturns);
+
+    TextDocument doc;
+    doc.setOptions(options|TextDocument::NoImplicitLoadAll);
+    QBuffer buffer;
+    buffer.setData(text);
+    buffer.open(QIODevice::ReadOnly);
+    doc.load(&buffer, deviceMode);
+    QCOMPARE(doc.find(QLatin1Char('\r')).isValid(), containsCarriageReturns);
 }
 
 static inline int count(const QString &string, int from, int size, const QChar &ch)
