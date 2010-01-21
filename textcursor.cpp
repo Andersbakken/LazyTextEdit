@@ -207,7 +207,7 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
 
     case End:
     case Start:
-        setPosition(op == TextCursor::Start ? 0 : d->document->documentSize() - 1, mode);
+        setPosition(op == TextCursor::Start ? 0 : d->document->documentSize(), mode);
         break;
 
     case Up:
