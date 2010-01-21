@@ -569,6 +569,7 @@ bool TextDocument::insert(int pos, const QString &string)
     Chunk *c;
     int offset;
     c = d->chunkAt(pos, &offset);
+//    qDebug() << c << (c == d->last) << (c == d->first) <<  offset << c->size() << d->chunkSize;
     if (c == d->last && offset == c->size() && c->size() >= d->chunkSize) {
         Chunk *chunk = new Chunk;
         c->next = chunk;
@@ -1307,6 +1308,7 @@ void TextDocumentPrivate::updateChunkLineNumbers(Chunk *c, int chunkPos) const
             pos += size;
             cc = cc->next;
         } while (cc && cc != c->next);
+        countNewLines(c, chunkPos, c->size());
     }
     Q_ASSERT(c->firstLineIndex != -1);
 }
@@ -1324,7 +1326,7 @@ static inline QList<int> dumpNewLines(const QString &string, int from, int size)
 
 int TextDocumentPrivate::countNewLines(Chunk *c, int chunkPos, int size) const
 {
-//    qDebug() << "CALLING countNewLines on" << chunkIndex(c) << chunkPos << size;
+//     qDebug() << "CALLING countNewLines on" << chunkIndex(c) << chunkPos << size;
 //     qDebug() << (c == first) << c->firstLineIndex << chunkPos << size
 //              << c->size();
     int ret = 0;
