@@ -425,6 +425,7 @@ public slots:
     {
         TextCursor cursor = textEdit->textCursor();
         cursor.movePosition(TextCursor::StartOfLine);
+        cursor.movePosition(TextCursor::Down, TextCursor::KeepAnchor);
         cursor.movePosition(TextCursor::EndOfLine, TextCursor::KeepAnchor);
         QTextCharFormat format;
         format.setBackground(Qt::red);
