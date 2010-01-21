@@ -334,6 +334,7 @@ void TextEdit::paintEvent(QPaintEvent *e)
                 selectionRange.format.setBackground(palette().highlight());
                 selectionRange.format.setForeground(palette().highlightedText());
             }
+            int lowestIncompleteSelection = -1;
             while (extraSelectionIndex < d->extraSelections.size()) {
                 QTextLayout::FormatRange range;
                 const SelectionAddStatus s = ::addSelection(textLayoutOffset, textSize,
@@ -342,11 +343,21 @@ void TextEdit::paintEvent(QPaintEvent *e)
                 if (s == Success) {
                     range.format = d->extraSelections.at(extraSelectionIndex).format;
                     selections.append(range);
+
+                    const TextCursor &cursor = d->extraSelections.at(extraSelectionIndex).cursor;
+                    int lastPos = cursor.position() + cursor.selectionSize();
+                    if (lastPos > textLayoutOffset+textSize && lowestIncompleteSelection < 0) {
+                        lowestIncompleteSelection = extraSelectionIndex;
+                    }
                 } else if (s == After) {
                     break;
                 }
                 ++extraSelectionIndex;
             }
+            if (lowestIncompleteSelection > -1) {
+                extraSelectionIndex = lowestIncompleteSelection;
+            }
+
             if (selectionRange.start != -1) {
                 // The last range in the vector has priority, that
                 // should probably be the real selection
