@@ -60,6 +60,7 @@ private slots:
     void carriageReturns_data();
     void carriageReturns();
     void isWordOverride();
+    void insertText();
 };
 
 tst_TextDocument::tst_TextDocument()
@@ -652,6 +653,43 @@ void tst_TextDocument::isWordOverride()
     }
 }
 
+void tst_TextDocument::insertText()
+{
+    TextDocument d;
+    d.setText("This is a short\nlittle\ndocument\nwith\nline\nnumbers\n");
+    // Calling 'lineNumber' initializes TextDocumentPrivate::hasChunksWithLineNumbers
+    // and Chunk::firstLineIndex, but not Chunk::lines, leading to an abort
+    // in TextDocument::insert.  It asserts that 'lines' has been set just before
+    // it attempts to increment Chunk::lines by the number of newlines in the text
+    // being added.
+    d.lineNumber(4);
+    TextCursor c = TextCursor(&d);
+    c.setPosition(20);
+    c.insertText("text\nwith\nnewlines\n");
+
+    d.clear();
+    const int blockSize = 3;
+    QString firstBlock  = QString(blockSize, '1');
+    QString secondBlock = QString(blockSize, '_');
+    QString thirdBlock  = QString(blockSize, '^');
+    c = TextCursor(&d);
+    c.insertText(firstBlock);
+    c.movePosition( TextCursor::End );
+    QCOMPARE(c.position(), blockSize);
+    c.insertText( secondBlock);
+    c.movePosition( TextCursor::End );
+    QCOMPARE(c.position(), blockSize*2);
+    c.insertText( thirdBlock);
+
+    QString out = d.read(0, blockSize*3);
+    QString expected = firstBlock + secondBlock + thirdBlock;
+    QCOMPARE(out, expected);
+    if (out != expected) {
+        printf("Generated output string was: %s\n"      \
+               "Expected result was        : %s\n",
+               qPrintable(out), qPrintable(expected));
+    }
+}
 
 QTEST_MAIN(tst_TextDocument)
 #include "tst_textdocument.moc"
