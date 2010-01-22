@@ -64,7 +64,6 @@ static inline bool matchSection(const TextSection *section, const TextEdit *text
 struct Chunk {
     Chunk() : previous(0), next(0), from(-1), length(0),
               firstLineIndex(-1), lines(-1), swap(0) {}
-    ~Chunk() { delete swap; }
 
     mutable QString data;
     Chunk *previous, *next;
@@ -80,7 +79,7 @@ struct Chunk {
     // TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL) to
     // ((n + 1) * TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL)
 #endif
-    QTemporaryFile *swap;
+    QString swap;
 };
 
 

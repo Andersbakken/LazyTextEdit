@@ -368,6 +368,7 @@ public:
 
         QMenu *menu = menuBar()->addMenu("&File");
         menu->addAction("About textedit", this, SLOT(about()));
+        menu->addAction("&Quit", this, SLOT(close()));
 
         QHBoxLayout *h = new QHBoxLayout;
         h->addWidget(box = new QSpinBox(centralWidget()));

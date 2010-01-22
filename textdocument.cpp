@@ -27,11 +27,10 @@ TextDocument::~TextDocument()
     }
     Chunk *c = d->first;
     while (c) {
+        if (!(d->options & KeepTemporaryFiles) && !c->swap.isEmpty())
+            QFile::remove(c->swap);
         Chunk *tmp = c;
         c = c->next;
-        tmp->swap = 0; // no sense in deleting them here. Will be
-                       // deleted in a moment in a more optimized
-                       // manner.
         delete tmp;
     }
     foreach(TextSection *section, d->sections) {
@@ -1044,6 +1043,16 @@ bool TextDocument::isWordCharacter(const QChar &ch, int /*index*/) const
     return ch.isLetterOrNumber() || ch.isMark() || ch == QLatin1Char('_');
 }
 
+QString TextDocument::swapFileName(Chunk *chunk)
+{
+    QString file = QDesktopServices::storageLocation(QDesktopServices::TempLocation);
+    file.reserve(file.size() + 24);
+    QTextStream ts(&file);
+    ts << QLatin1Char('/') << QLatin1String("lte_") << chunk << QLatin1Char('_')
+       << this << QLatin1Char('_') << QCoreApplication::applicationPid();
+
+    return file;
+}
 
 // --- TextDocumentPrivate ---
 
@@ -1117,15 +1126,25 @@ QString TextDocumentPrivate::chunkData(const Chunk *chunk, int chunkPos) const
 #endif
     if (chunk->from == -1) {
         return chunk->data;
-    } else if (!device && !chunk->swap) {
+    } else if (!device && chunk->swap.isEmpty()) {
         // Can only happen if the device gets deleted behind our back when in Sparse mode
         return QString().fill(QLatin1Char(' '), chunk->size());
     } else {
-        QTextStream ts(chunk->swap ? static_cast<QIODevice*>(chunk->swap) : device.data());
+        QFile file;
+        QIODevice *dev = device.data();
+        if (!chunk->swap.isEmpty()) {
+            file.setFileName(chunk->swap);
+            if (!file.open(QIODevice::ReadOnly)) {
+                qWarning("TextDocumentPrivate::chunkData() Can't open file for reading '%s'", qPrintable(chunk->swap));
+                return QString().fill(QLatin1Char(' '), chunk->size());
+            }
+            dev = &file;
+        }
+        QTextStream ts(dev);
         if (textCodec)
             ts.setCodec(textCodec);
-//         if (chunk->swap) {
-//             qDebug() << "reading stuff from swap" << chunk << chunk->from << chunk->size();
+//         if (!chunk->swap.isEmpty()) {
+//             qDebug() << "reading stuff from swap" << chunk << chunk->from << chunk->size() << chunk->swap;
 //         }
         ts.seek(chunk->from);
         const QString data = ts.read(chunk->length);
@@ -1162,11 +1181,11 @@ int TextDocumentPrivate::chunkIndex(const Chunk *c) const
 
 void TextDocumentPrivate::instantiateChunk(Chunk *chunk)
 {
-    if (chunk->from == -1 && !chunk->swap)
+    if (chunk->from == -1 && chunk->swap.isEmpty())
         return;
     chunk->data = chunkData(chunk, -1);
 //    qDebug() << "instantiateChunk" << chunk << chunk->swap;
-    delete chunk->swap;
+    chunk->swap.clear();
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
     // Don't want to cache this chunk since it's going away. If it
     // already was cached then sure, but otherwise don't
@@ -1392,17 +1411,19 @@ int TextDocumentPrivate::countNewLines(Chunk *c, int chunkPos, int size) const
 
 void TextDocumentPrivate::swapOutChunk(Chunk *c)
 {
-//    qDebug() << "swapOutChunk" << c << c->swap;
-    Q_ASSERT(!c->data.isEmpty());
-    if (c->swap)
+    if (!c->swap.isEmpty())
         return;
+    Q_ASSERT(!c->data.isEmpty());
     c->from = 0;
     c->length = c->data.size();
-    c->swap = new QTemporaryFile(this);
-    c->swap->setAutoRemove(!(options & TextDocument::KeepTemporaryFiles));
-    c->swap->open();
-//    qDebug() << "swapping out" << c << "to" << c->swap->fileName() << c->data.size();
-    QTextStream ts(c->swap);
+    c->swap = q->swapFileName(c);
+    QFile file(c->swap);
+    if (!file.open(QIODevice::WriteOnly)) {
+        qWarning("TextDocumentPrivate::chunkData() Can't open file for writing '%s'", qPrintable(c->swap));
+        c->swap.clear();
+        return;
+    }
+    QTextStream ts(&file);
     if (textCodec)
         ts.setCodec(textCodec);
     ts << c->data;
@@ -1499,4 +1520,3 @@ void TextDocumentPrivate::textEditDestroyed(TextEdit *edit)
         }
     }
 }
-

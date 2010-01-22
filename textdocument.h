@@ -147,6 +147,8 @@ signals:
     void undoAvailableChanged(bool on);
     void redoAvailableChanged(bool on);
     void modificationChanged(bool modified);
+protected:
+    virtual QString swapFileName(Chunk *chunk);
 private:
     TextDocumentPrivate *d;
     friend class TextEdit;
