@@ -6,7 +6,7 @@ TEMPLATE = app
 SOURCES += main.cpp
 include($$PWD/textedit.pri)
 CONFIG -= app_bundle
-DEFINES += TEXTDOCUMENT_LINENUMBER_CACHE 
+DEFINES += TEXTDOCUMENT_LINENUMBER_CACHE
 release {
     QMAKE_CXXFLAGS += -g
 }

@@ -61,6 +61,7 @@ private slots:
     void carriageReturns();
     void isWordOverride();
     void insertText();
+    void textDocmentIteratorOnDocumentSize();
 };
 
 tst_TextDocument::tst_TextDocument()
@@ -689,6 +690,26 @@ void tst_TextDocument::insertText()
                "Expected result was        : %s\n",
                qPrintable(out), qPrintable(expected));
     }
+}
+
+void tst_TextDocument::textDocmentIteratorOnDocumentSize()
+{
+    QByteArray data;
+    for (int i=0; i<26; ++i) {
+        data.append('a' + i);
+    }
+    QBuffer buffer;
+    buffer.setData(data);
+    buffer.open(QIODevice::ReadOnly);
+
+    TextDocument doc;
+    doc.setChunkSize(10);
+    QVERIFY(doc.load(&buffer));
+    TextCursor cursor(&doc);
+    cursor.movePosition(TextCursor::End);
+    cursor.insertText("\n");
+    cursor.setPosition(doc.documentSize());
+    cursor.movePosition(TextCursor::PreviousBlock);
 }
 
 QTEST_MAIN(tst_TextDocument)

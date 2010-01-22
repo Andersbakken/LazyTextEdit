@@ -361,6 +361,7 @@ bool TextDocument::save(QIODevice *device)
 
     return true;
 }
+
 int TextDocument::documentSize() const
 {
     return d->documentSize;
@@ -1137,6 +1138,12 @@ QString TextDocumentPrivate::chunkData(const Chunk *chunk, int chunkPos) const
             cachedChunk = const_cast<Chunk*>(chunk);
             cachedChunkData = data;
             cachedChunkPos = chunkPos;
+#ifdef QT_DEBUG
+            if (chunkPos != chunk->pos()) {
+                qWarning() << chunkPos << chunk->pos();
+            }
+            Q_ASSERT(chunkPos == chunk->pos());
+#endif
         }
 #endif
         return data;

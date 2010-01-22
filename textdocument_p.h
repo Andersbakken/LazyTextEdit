@@ -37,6 +37,8 @@
 #endif
 #endif
 
+#define Q_COMPARE_ASSERT(left, right) if (left != right) { qWarning() << left << right; Q_ASSERT(left == right); }
+
 #include "textdocument.h"
 #ifdef NO_TEXTDOCUMENT_CACHE
 #define NO_TEXTDOCUMENT_CHUNK_CACHE
@@ -225,22 +227,25 @@ public:
         : doc(d), pos(p), convert(false)
     {
         Q_ASSERT(doc);
-        if (p == d->documentSize) {
-            chunk = d->last;
-            offset = chunk->size() - 1;
-        } else {
-            chunk = doc->chunkAt(p, &offset);
-            Q_ASSERT(chunk);
-            const int chunkPos = p - offset;
-            chunkData = doc->chunkData(chunk, chunkPos);
+#ifndef NO_TEXTDOCUMENTITERATOR_CACHE
+        chunk = doc->chunkAt(p, &offset);
+        Q_ASSERT(chunk);
+        const int chunkPos = p - offset;
+        chunkData = doc->chunkData(chunk, chunkPos);
+        Q_COMPARE_ASSERT(chunkData.size(), chunk->size());
 #ifdef QT_DEBUG
+        if (p != d->documentSize) {
             if (doc->q->readCharacter(p) != chunkData.at(offset)) {
-                qDebug() << doc->q->readCharacter(p) << pos
-                         << chunkData.at(offset) << offset << chunkData.size();
+                qDebug() << "got" << chunkData.at(offset) << "at" << offset << "in" << chunk << "of size" << chunkData.size()
+                         << "expected" << doc->q->readCharacter(p) << "at document pos" << pos;
             }
-#endif
             Q_ASSERT(chunkData.at(offset) == doc->q->readCharacter(p));
+        } else {
+            Q_ASSERT(chunkData.size() == offset);
         }
+#endif
+#endif
+
 #ifdef QT_DEBUG
         doc->iterators.insert(this);
 #endif
@@ -254,12 +259,12 @@ public:
 
     inline bool hasNext() const
     {
-        return (chunk->next || chunk->size() > offset + 1);
+        return pos < doc->documentSize;
     }
 
     inline bool hasPrevious() const
     {
-        return (chunk->previous || offset > 0);
+        return pos > 0;
     }
 
     inline int position() const
@@ -270,45 +275,58 @@ public:
     inline QChar current() const
     {
         Q_ASSERT(doc);
+#ifndef NO_TEXTDOCUMENTITERATOR_CACHE
         Q_ASSERT(chunk);
+        Q_COMPARE_ASSERT(chunkData.size(), chunk->size());
         if (pos == doc->documentSize)
             return QChar();
 #ifdef QT_DEBUG
         if (doc->q->readCharacter(pos) != chunkData.at(offset)) {
-            qDebug() << doc->q->readCharacter(pos) << pos
-                     << chunkData.at(offset) << offset << chunkData.size();
+            qDebug() << "got" << chunkData.at(offset) << "at" << offset << "in" << chunk << "of size" << chunkData.size()
+                     << "expected" << doc->q->readCharacter(pos) << "at document pos" << pos;
         }
 #endif
         ASSUME(doc->q->readCharacter(pos) == chunkData.at(offset));
         return convert ? chunkData.at(offset).toLower() : chunkData.at(offset);
+#else
+        return convert ? doc->q->readCharacter(pos).toLower() : doc->q->readCharacter(pos);
+#endif
     }
 
     inline QChar next()
     {
         Q_ASSERT(doc);
-        Q_ASSERT(chunk);
         ++pos;
-        if (++offset >= chunkData.size()) {
+#ifndef NO_TEXTDOCUMENTITERATOR_CACHE
+        Q_ASSERT(chunk);
+        if (++offset >= chunkData.size() && chunk->next) { // special case for offset == chunkData.size() and !chunk->next
             offset = 0;
             chunk = chunk->next;
             Q_ASSERT(chunk);
             chunkData = doc->chunkData(chunk, pos);
+            Q_COMPARE_ASSERT(chunkData.size(), chunk->size());
         }
+#endif
         return current();
     }
 
     inline QChar previous()
     {
         Q_ASSERT(doc);
-        Q_ASSERT(chunk);
         Q_ASSERT(hasPrevious());
         --pos;
+        Q_ASSERT(pos >= 0);
+        Q_ASSERT(pos <= doc->documentSize);
+#ifndef NO_TEXTDOCUMENTITERATOR_CACHE
+        Q_ASSERT(chunk);
         if (--offset < 0) {
             chunk = chunk->previous;
             Q_ASSERT(chunk);
-            chunkData = doc->chunkData(chunk, pos - chunk->size() - 1);
+            chunkData = doc->chunkData(chunk, pos - chunk->size() + 1);
+            Q_COMPARE_ASSERT(chunkData.size(), chunk->size());
             offset = chunkData.size() - 1;
         }
+#endif
         return current();
     }
 
@@ -332,12 +350,12 @@ public:
         }
     }
 
-    bool convertToLowerCase() const
+    inline bool convertToLowerCase() const
     {
         return convert;
     }
 
-    void setConvertToLowerCase(bool on)
+    inline void setConvertToLowerCase(bool on)
     {
         convert = on;
     }
@@ -345,9 +363,11 @@ public:
 private:
     const TextDocumentPrivate *doc;
     int pos;
+#ifndef NO_TEXTDOCUMENTITERATOR_CACHE
     int offset;
     QString chunkData;
     Chunk *chunk;
+#endif
     bool convert;
 };
 
