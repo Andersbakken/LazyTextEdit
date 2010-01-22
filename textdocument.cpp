@@ -632,9 +632,10 @@ bool TextDocument::insert(int pos, const QString &string)
 #ifdef TEXTDOCUMENT_LINENUMBER_CACHE
                 c->lineNumbers.clear();
                 // ### could be optimized
-#endif
+#else
                 Q_ASSERT(c->lines != -1);
                 c->lines += extraLines;
+#endif
                 c = c->next;
                 while (c) {
                     if (c->firstLineIndex != -1) {
@@ -1373,10 +1374,8 @@ int TextDocumentPrivate::countNewLines(Chunk *c, int chunkPos, int size) const
     static const int lineNumberCacheInterval = TEXTDOCUMENT_LINENUMBER_CACHE_INTERVAL;
     if (c->lineNumbers.isEmpty()) {
         const QString data = chunkData(c, chunkPos);
-        Q_ASSERT(!data.isEmpty());
         const int s = data.size();
-        c->lineNumbers.fill(0, (data.size() + lineNumberCacheInterval - 1)
-                            / lineNumberCacheInterval);
+        c->lineNumbers.fill(0, (s + lineNumberCacheInterval - 1) / lineNumberCacheInterval);
 //        qDebug() << data.size() << c->lineNumbers.size() << lineNumberCacheInterval;
 
         for (int i=0; i<s; ++i) {
