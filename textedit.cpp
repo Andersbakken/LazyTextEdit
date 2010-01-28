@@ -297,7 +297,7 @@ static inline SelectionAddStatus addSelection(int layoutStart, int layoutLength,
 
     format->start = qMax(0, cursor.selectionStart() - layoutStart);
     format->length = qMin(layoutLength - format->start,
-                          cursor.selectionSize());
+                          cursor.selectionEnd() - layoutStart - format->start);
     return Success;
 }
 
