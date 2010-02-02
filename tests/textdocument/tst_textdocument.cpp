@@ -519,7 +519,7 @@ void tst_TextDocument::lineNumbers()
     }
     QCOMPARE(8, doc.read(0, 16).count(QLatin1Char('\n')));
     for (int i=0; i<1024; ++i) {
-        QCOMPARE(doc.lineNumber(i * 2), i + 1); // 1-indexed
+        QCOMPARE(doc.lineNumber(i * 2), i); // 1-indexed
     }
 }
 
