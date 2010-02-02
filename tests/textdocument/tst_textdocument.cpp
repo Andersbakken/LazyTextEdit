@@ -511,7 +511,7 @@ void tst_TextDocument::unicode()
 void tst_TextDocument::lineNumbers()
 {
     TextDocument doc;
-    QCOMPARE(doc.lineNumber(0), 1); // Shouldn't assert with empty doc
+    QCOMPARE(doc.lineNumber(0), 0); // Shouldn't assert with empty doc
     doc.setChunkSize(16);
     QString line = "f\n";
     for (int i=0; i<1024; ++i) {

@@ -1002,7 +1002,7 @@ int TextDocument::lineNumber(int position) const
         // if we're on a newline it shouldn't count so we do read(0, position)
         // not read(0, position + 1);
         const int count = data.count(QLatin1Char('\n'));
-        if (count + 1 != c->firstLineIndex + extra) {
+        if (count != c->firstLineIndex + extra) {
             qDebug() << "TextDocument::lineNumber returns" << (c->firstLineIndex + extra)
                      << "should have returned" << (count + 1)
                      << "for index" << position;
@@ -1325,7 +1325,7 @@ void TextDocumentPrivate::updateChunkLineNumbers(Chunk *c, int chunkPos) const
         do {
             const int size = cc->size();
             if (!cc->previous) {
-                cc->firstLineIndex = 1;
+                cc->firstLineIndex = 0;
             } else {
                 const int prevSize = cc->previous->size();
                 const int lineCount = countNewLines(cc->previous, pos - prevSize, prevSize);
