@@ -1,6 +1,6 @@
 // Copyright 2010 Anders Bakken
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the Apache License, Version 2.0(the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -23,8 +23,8 @@ QT_FORWARD_DECLARE_CLASS(TextDocument)
 //TESTED_CLASS=
 //TESTED_FILES=
 
-Q_DECLARE_METATYPE(TextDocument::Options);
-Q_DECLARE_METATYPE(TextDocument::DeviceMode);
+    Q_DECLARE_METATYPE(TextDocument::Options);
+    Q_DECLARE_METATYPE(TextDocument::DeviceMode);
 
 class tst_TextDocument : public QObject
 {
@@ -33,6 +33,9 @@ class tst_TextDocument : public QObject
 public:
     tst_TextDocument();
     virtual ~tst_TextDocument();
+
+private:
+    int convertRowColumnToIndex(const TextDocument *doc, int row, int column);
 
 private slots:
     void cursor_data();
@@ -60,7 +63,9 @@ private slots:
     void carriageReturns_data();
     void carriageReturns();
     void isWordOverride();
+    void chunkBacktrack();
     void insertText();
+    void memUsage();
     void textDocmentIteratorOnDocumentSize();
 };
 
@@ -358,7 +363,7 @@ struct Command {
     const QString text;
 };
 
-Q_DECLARE_METATYPE(Command);
+    Q_DECLARE_METATYPE(Command);
 
 void tst_TextDocument::cursor_data()
 {
@@ -655,6 +660,141 @@ void tst_TextDocument::isWordOverride()
     }
 }
 
+void tst_TextDocument::chunkBacktrack()
+{
+    TextDocument doc;
+/*    QString s(doc.chunkSize()-2, 'x');
+    s += "\nabcdefg\n";
+    s = s + s + s + s + s;
+    doc.setText(s);
+    TextCursor c(&doc);
+    c.setPosition(doc.documentSize());
+    while (c.position() > 0) {
+        c = doc.find('\n', c.position()-1, TextDocument::FindBackward);
+        if (c.isNull()) {
+            break;
+        }
+    }
+*/
+    QCOMPARE(doc.load("Script"), true);
+    QString s("Sarah");
+
+    int index = 0;
+    TextCursor tc;
+    while (!(tc = doc.find(s, index, 0)).isNull()) {
+        printf("  Found at %d\n", tc.position());
+        index = tc.position() + 1;
+
+        TextCursor c(&doc, index);
+        int row = c.lineNumber()-1;
+        int col = c.columnNumber();
+        int otherindex = convertRowColumnToIndex(&doc, row, col);
+        Q_ASSERT(index == otherindex);
+    }
+}
+
+int tst_TextDocument::convertRowColumnToIndex(const TextDocument *doc, int row, int column)
+{
+    // NOTE: this function works, but is slow. Quantify points
+    // the finger at the underlying lazy document counting lines.
+    // The line-numbering cache in there helps, but it's still
+    // much slower than motif.  Needs tuned.
+    if (row < 0) {
+        printf("Requested row index %d must be greater than 0\n", row);
+        return -1;
+    }
+    if (column < 0) {
+        printf("Requested column index %d must be greater than 0\n", row);
+        return -1;
+    }
+
+
+    int max = doc->documentSize();
+
+    // The Qt widget seems to start row numbering at 1, not 0...
+    int docrow = row+1;
+
+    // This is a bit lame.  Keep skipping through until we hit it.
+    int index = -1;
+    TextCursor tc(doc);
+    tc.setPosition(0);
+
+    if (getenv("QT_LOOKUP")) {
+        // TODO: I started to look at this, since it seems like a cleaner way
+        // to do things, but it ends up being noticably slower (with 10 operations
+        // in the test I was creating taking about 10 seconds, versus 4 with the code below).
+        // Needs further investigation, but this is really what we should be doing,
+        // (or rather, what TextCursor should be doing).
+
+        // Get to the right row
+        for (int i=0; i < docrow; ++i) {
+            if (tc.position() >= max) {
+                printf("Requested line number %d is out of range - the document has %d lines\n", row, i);
+                return -1;
+            }
+            tc.movePosition(TextCursor::NextBlock);
+        }
+
+        // At this stage, we're in the right row.  We should also be at the beginning,
+        // since we advanced from the start.
+
+        // Cache the number of columns in this row in case we need to print an error message
+        int rowStart = tc.position();
+        tc.movePosition(TextCursor::EndOfLine, TextCursor::KeepAnchor);
+        int actualColumns = tc.selectionSize();
+        if (column > actualColumns) {
+            printf("Requested column number %d is out of range - line %d has %d columns\n",
+                   column, row, actualColumns);
+            return -1;
+        }
+
+        return rowStart + column;
+    } else {
+
+        int inc = 100;
+        while (index < 0) {
+            int pos     = tc.position();
+            int thisrow = tc.lineNumber();
+
+            if (thisrow >= docrow) {
+                // If we passed the row we want - back up
+                while (tc.position() && tc.lineNumber() > docrow) {
+                    tc.movePosition(TextCursor::PreviousBlock);
+                }
+                // Now we're in the right row.
+                // First, determine whether we need to go back or forwards
+                int incr = (tc.columnNumber() > column ? -1 : 1);
+                while (tc.columnNumber() != column) {
+                    tc.setPosition(tc.position() + incr);
+                    if (tc.position() <=0
+                        || tc.position() >= max
+                        || tc.lineNumber() != docrow) {
+                        // Make sure we didn't 'wrap around' to another row.
+                        printf("Requested column number %d is out of range for line %d\n",
+                               column, row);
+                        return -1;
+                    }
+                }
+                index = tc.position() - (tc.columnNumber() - column);
+                break;
+            } else {
+                // Advance, but make sure we don't shoot off the end of the document
+                int incr = (pos + inc < max ? inc : max - pos);
+                if (incr) {
+                    tc.setPosition(pos + incr);
+                } else {
+                    // We already hit the end of the document
+                    printf("Requested line number %d is out of range - the document has %d lines\n", row, tc.lineNumber()-1);
+                    break;
+                }
+            }
+        }
+    }
+
+    return index;
+}
+
+
 void tst_TextDocument::insertText()
 {
     TextDocument d;
@@ -676,12 +816,12 @@ void tst_TextDocument::insertText()
     QString thirdBlock  = QString(blockSize, '^');
     c = TextCursor(&d);
     c.insertText(firstBlock);
-    c.movePosition( TextCursor::End );
+    c.movePosition(TextCursor::End);
     QCOMPARE(c.position(), blockSize);
-    c.insertText( secondBlock);
-    c.movePosition( TextCursor::End );
+    c.insertText(secondBlock);
+    c.movePosition(TextCursor::End);
     QCOMPARE(c.position(), blockSize*2);
-    c.insertText( thirdBlock);
+    c.insertText(thirdBlock);
 
     QString out = d.read(0, blockSize*3);
     QString expected = firstBlock + secondBlock + thirdBlock;
@@ -691,6 +831,47 @@ void tst_TextDocument::insertText()
                "Expected result was        : %s\n",
                qPrintable(out), qPrintable(expected));
     }
+
+    QCOMPARE(d.load("Script"), true);
+
+    TextCursor c2(&d);
+    c2.movePosition(TextCursor::End);
+    c2.insertText("\n");
+
+    c2.setPosition(d.documentSize());
+    c2.movePosition(TextCursor::PreviousBlock);
+}
+
+void printStatistics(const TextDocument *doc)
+{
+    const int chunkCount = doc->chunkCount();
+    const int instantiatedChunkCount = doc->instantiatedChunkCount();
+
+    printf("Memory usage: %d bytes, spread across %d chunks(%d instantiated, %d swapped)\n",
+           doc->currentMemoryUsage(),
+           chunkCount,
+           instantiatedChunkCount,
+           chunkCount - instantiatedChunkCount);
+}
+
+void tst_TextDocument::memUsage()
+{
+    TextDocument d;
+    d.setOptions(TextDocument::SwapChunks);
+    QString s = "%1  +------------------------------------------------------+\n";
+    const int iterations = 1000000;
+
+    printStatistics(&d);
+
+    for (int i=0; i<iterations; ++i) {
+        if (i%10000==0) {
+            printf("%d%% - %d/%d: ", (int)(i ? ((double)i/iterations)*100 : 0), i, iterations);
+            printStatistics(&d);
+        }
+        d.append(s.arg(i));
+    }
+    printStatistics(&d);
+
 }
 
 void tst_TextDocument::textDocmentIteratorOnDocumentSize()
