@@ -65,6 +65,9 @@ private slots:
     void cursorForPosition();
     void columnNumberIssue();
     void selectionTest();
+    void sectionTest();
+    void deleteTest();
+    void emptyDocumentTest();
 };
 
 tst_TextEdit::tst_TextEdit()
@@ -238,6 +241,40 @@ void tst_TextEdit::selectionTest()
     QCOMPARE(edit.textCursor().selectedText(), QString());
     QCOMPARE(edit.textCursor().anchor(), 0);
     QCOMPARE(edit.textCursor().position(), 0);
+}
+
+void tst_TextEdit::sectionTest()
+{
+    TextEdit edit;
+    QString  text = "This is some\nrandom document string\nthing\n";
+    edit.document()->setText(text);
+    TextSection *ts = edit.insertTextSection(5, 10);
+    edit.document()->takeTextSection(ts);
+    QVERIFY( !edit.sections().contains(ts) );    
+}
+
+void tst_TextEdit::deleteTest()
+{
+    TextDocument *doc = new TextDocument();
+    doc->setText("Test to make sure that deleting a text edit with sections doesn't result in the sections being deleted again in the document destructor\n");
+    TextEdit *edit = new TextEdit();
+    edit->setDocument(doc);
+
+    TextSection *s = edit->insertTextSection(4, 4);
+    delete edit;
+    delete doc;    
+}
+
+void tst_TextEdit::emptyDocumentTest()
+{
+    TextEdit edit;
+    for(int i=0; i < 100 ; i++) {
+	edit.append(QString("This is text on line %1\n").arg(i));
+    }
+    edit.show();
+    QTest::qWaitForWindowShown(&edit);
+    edit.setDocument(new TextDocument()); /// This causes the problem
+    QTest::qWaitForWindowShown(&edit);
 }
 
 QTEST_MAIN(tst_TextEdit)
