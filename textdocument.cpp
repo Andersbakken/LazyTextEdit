@@ -392,6 +392,17 @@ int TextDocument::instantiatedChunkCount() const
     return count;
 }
 
+int TextDocument::swappedChunkCount() const
+{
+    Chunk *c = d->first;
+    int count = 0;
+    while (c) {
+        if (!c->swap.isEmpty())
+            ++count;
+        c = c->next;
+    }
+    return count;
+}
 
 TextDocument::DeviceMode TextDocument::deviceMode() const
 {
