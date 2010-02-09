@@ -380,6 +380,19 @@ int TextDocument::chunkCount() const
     return count;
 }
 
+int TextDocument::instantiatedChunkCount() const
+{
+    Chunk *c = d->first;
+    int count = 0;
+    while (c) {
+        if (!c->data.isEmpty())
+            ++count;
+        c = c->next;
+    }
+    return count;
+}
+
+
 TextDocument::DeviceMode TextDocument::deviceMode() const
 {
     return d->deviceMode;
