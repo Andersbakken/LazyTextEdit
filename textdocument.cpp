@@ -1008,7 +1008,7 @@ int TextDocument::lineNumber(int position) const
     d->hasChunksWithLineNumbers = true;
     int offset;
     Chunk *c = d->chunkAt(position, &offset);
-    d->updateChunkLineNumbers(c, position + offset);
+    d->updateChunkLineNumbers(c, position - offset);
     Q_ASSERT(c->firstLineIndex != -1);
     Q_ASSERT(d->first->firstLineIndex != -1);
     const int extra = (offset == 0 ? 0 : d->countNewLines(c, position - offset, offset));
