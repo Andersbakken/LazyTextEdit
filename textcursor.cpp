@@ -194,7 +194,6 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
         return n == 0;
     }
     detach();
-//    d->flipSelection(op);
 
     switch (op) {
     case NoMove:
@@ -361,12 +360,8 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
     case Left:
     case Right:
         d->overrideColumn = -1;
-        if (mode == MoveAnchor && hasSelection()) {
-            setPosition(position(), MoveAnchor);
-        } else {
-            setPosition(qBound<int>(0, position() + (op == TextCursor::Left ? -1 : 1),
-                                    d->document->documentSize()), mode);
-        }
+        setPosition(qBound<int>(0, position() + (op == TextCursor::Left ? -1 : 1),
+                                d->document->documentSize()), mode);
         break;
     };
 
@@ -444,7 +439,7 @@ void TextCursor::removeSelectedText()
     cursorChanged(false);
     const int min = qMin(d->anchor, d->position);
     const int max = qMax(d->anchor, d->position);
-    d->flipSelection(TextCursor::Left);
+    d->anchor = d->position = min;
     const bool old = d->document->d->cursorCommand;
     d->document->d->cursorCommand = true;
     d->document->remove(min, max - min);

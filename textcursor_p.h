@@ -198,49 +198,6 @@ public:
         ASSUME(ref == 0);
     }
 
-    void flipSelection(TextCursor::MoveOperation op)
-    {
-        // ### what is this function good for?
-        ASSUME(ref == 1);
-        const int min = qMin(anchor, position);
-        const int max = qMax(anchor, position);
-        if (min == max)
-            return;
-
-        switch (op) {
-        case TextCursor::NoMove:
-            break;
-
-        case TextCursor::Start:
-        case TextCursor::Up:
-        case TextCursor::StartOfLine:
-        case TextCursor::StartOfBlock:
-        case TextCursor::StartOfWord:
-        case TextCursor::PreviousBlock:
-        case TextCursor::PreviousCharacter:
-        case TextCursor::PreviousWord:
-        case TextCursor::Left:
-        case TextCursor::WordLeft:
-            anchor = max;
-            position = min;
-            break;
-
-        case TextCursor::End:
-        case TextCursor::Down:
-        case TextCursor::EndOfLine:
-        case TextCursor::EndOfWord:
-        case TextCursor::EndOfBlock:
-        case TextCursor::NextBlock:
-        case TextCursor::NextCharacter:
-        case TextCursor::NextWord:
-        case TextCursor::Right:
-        case TextCursor::WordRight:
-            anchor = min;
-            position = max;
-            break;
-        };
-    }
-
     mutable QAtomicInt ref;
     int position, anchor, overrideColumn, viewportWidth;
 
