@@ -424,14 +424,15 @@ void TextEdit::mousePressEvent(QMouseEvent *e)
             d->textCursor.movePosition(TextCursor::StartOfBlock);
             d->textCursor.movePosition(TextCursor::EndOfBlock, TextCursor::KeepAnchor);
         } else {
-            clearSelection();
+            const bool shift = e->modifiers() & Qt::ShiftModifier;
+            if (!shift) {
+                clearSelection();
+            }
             int pos = textPositionAt(e->pos());
             if (pos == -1)
                 pos = d->document->documentSize() - 1;
             d->sectionPressed = d->document->d->sectionAt(pos, this);
-            setCursorPosition(pos, e->modifiers() & Qt::ShiftModifier
-                              ? TextCursor::KeepAnchor
-                              : TextCursor::MoveAnchor);
+            setCursorPosition(pos, shift ? TextCursor::KeepAnchor : TextCursor::MoveAnchor);
         }
         e->accept();
     } else if (e->button() == Qt::MidButton && qApp->clipboard()->supportsSelection()) {
