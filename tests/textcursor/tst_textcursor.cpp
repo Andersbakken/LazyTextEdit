@@ -30,14 +30,19 @@ public:
     virtual ~tst_TextCursor();
 
 private slots:
+    void operatorEquals_data();
+    void operatorEquals();
     void setPosition();
     void setPosition_data();
     void movePosition_data();
     void movePosition();
+private:
+    TextDocument document;
 };
 
 tst_TextCursor::tst_TextCursor()
 {
+    document.append("This is some text");
 }
 
 tst_TextCursor::~tst_TextCursor()
@@ -177,6 +182,53 @@ void tst_TextCursor::movePosition()
     QCOMPARE(cursor.selectedText(), selectedText);
 }
 
+void tst_TextCursor::operatorEquals_data()
+{
+    QTest::addColumn<TextCursor*>("left");
+    QTest::addColumn<TextCursor*>("right");
+    QTest::addColumn<bool>("expected");
+
+    QTest::newRow("null vs null") << new TextCursor << new TextCursor << true;
+    QTest::newRow("non null vs null") << new TextCursor(&document) << new TextCursor << false;
+
+    QTest::newRow("normal vs normal equal") << new TextCursor(&document) << new TextCursor(&document) << true;
+    TextCursor *cursor = new TextCursor(&document);
+    cursor->setPosition(1);
+    QTest::newRow("normal vs normal different") << new TextCursor(&document) << cursor << false;
+
+    cursor = new TextCursor(&document);
+    cursor->setPosition(1, TextCursor::KeepAnchor);
+
+    TextCursor *cursor2 = new TextCursor(&document);
+    cursor2->setPosition(1, TextCursor::KeepAnchor);
+    QTest::newRow("selection vs selection") << cursor << cursor2 << true;
+
+    cursor = new TextCursor(&document);
+    cursor->setPosition(1, TextCursor::KeepAnchor);
+
+    cursor2 = new TextCursor(&document);
+    cursor2->setPosition(1, TextCursor::MoveAnchor);
+    QTest::newRow("selection vs selection different") << cursor << cursor2 << false;
+
+
+}
+
+void tst_TextCursor::operatorEquals()
+{
+    QFETCH(TextCursor*, left);
+    QFETCH(TextCursor*, right);
+    QFETCH(bool, expected);
+
+    const bool equal = (*left == *right);
+    const bool notEqual = (*left != *right);
+    delete left;
+    delete right;
+    QVERIFY(equal != notEqual);
+    QCOMPARE(equal, expected);
+}
+
+
+Q_DECLARE_METATYPE(TextCursor *);
 Q_DECLARE_METATYPE(TextCursor::MoveOperation);
 Q_DECLARE_METATYPE(TextCursor::MoveMode);
 
