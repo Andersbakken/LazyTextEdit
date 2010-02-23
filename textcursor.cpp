@@ -541,7 +541,9 @@ bool TextCursor::operator==(const TextCursor &rhs) const
     if (!rhs.d)
         return false;
 
-    return d->position == rhs.d->position && d->document == rhs.d->document;
+    return (d->position == rhs.d->position
+            && d->anchor == rhs.d->anchor
+            && d->document == rhs.d->document);
 }
 
 bool TextCursor::operator>=(const TextCursor &rhs) const
