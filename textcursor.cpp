@@ -303,7 +303,7 @@ bool TextCursor::movePosition(TextCursor::MoveOperation op, TextCursor::MoveMode
     case EndOfBlock: {
         TextDocumentIterator it(d->document->d, d->position);
         const QLatin1Char newline('\n');
-        while (it.hasNext() && it.next() != newline) ;
+        while (it.current() != newline && it.hasNext() && it.next() != newline) ;
         setPosition(it.position(), mode);
         break; }
 
