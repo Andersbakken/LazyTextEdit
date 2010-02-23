@@ -125,6 +125,12 @@ void tst_TextCursor::movePosition_data()
     QTest::newRow("LastCharacterReverse") << 180 << 180 << TextCursor::PreviousCharacter
                                           << TextCursor::KeepAnchor << 179 << 180 << "\n";
 
+    QTest::newRow("EmptyBlock") << 180 << 180 << TextCursor::NextBlock
+                                << TextCursor::KeepAnchor << 181 << 180 << "\n";
+
+    QTest::newRow("EmptyBlockReverse") << 181 << 181 << TextCursor::PreviousBlock
+                                       << TextCursor::KeepAnchor << 180 << 181 << "\n";
+
 //     QTest::newRow("End") << 0 << 0 << TextCursor::End
 //                          << TextCursor::MoveAnchor << 0 << 0 << QString();
 //     QTest::newRow("Down") << 0 << 0 << TextCursor::Down
@@ -145,7 +151,8 @@ void tst_TextCursor::movePosition()
     static const char *trueToLife = "I can only sing it loud\n" // 0 - 23
                                     "always try to sing it clear what the hell are we all doing here\n" // 24 - 87
                                     "making too much of nothing\n" // 88 - 114
-                                    "or creating one unholy mess an unfair study in survival, I guess\n"; // 115 - 179
+                                    "or creating one unholy mess an unfair study in survival, I guess\n" // 115 - 179
+                                    "\nSomething\n";  // 180 - 190
     TextDocument document;
     document.setText(QString::fromLatin1(trueToLife));
 
