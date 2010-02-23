@@ -1310,12 +1310,22 @@ void TextEditPrivate::scrollLines(int lines)
     int pos = viewportPosition;
     const Direction d = (lines < 0 ? Backward : Forward);
     const int add = lines < 0 ? -1 : 1;
+
     while (pos + add >= 0 && pos + add < document->documentSize()) {
-        pos += add;
-        QChar c = bufferReadCharacter(pos);
-        if (bufferReadCharacter(pos) == '\n') {
-            if ((lines -= add) == 0) {
-                break;
+        if (d == Forward &&
+            (lines - add == 0) &&
+            bufferReadCharacter(pos) == '\n') {
+            // When iterating forwards, be sure not to skip over blank lines
+            // (ie. lines containing only '\n') by just ignoring them here
+            // - updateViewportPosition automatically takes us one index past
+            // this newline, thus displaying the next line)
+            break;
+        } else {
+            pos += add;
+            if (bufferReadCharacter(pos) == '\n') {
+                if ((lines -= add) == 0) {
+                    break;
+                }
             }
         }
     }
