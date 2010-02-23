@@ -62,6 +62,7 @@ public:
 private slots:
     void clickInReadOnlyEdit();
     void scrollReadOnly();
+    void scrollLines();
     void cursorForPosition();
     void columnNumberIssue();
     void selectionTest();
@@ -98,6 +99,51 @@ void tst_TextEdit::scrollReadOnly()
 //     loop.exec();
     QTest::keyClick(&edit, Qt::Key_Down);
     QVERIFY(edit.verticalScrollBar()->value() != 0);
+}
+
+void tst_TextEdit::scrollLines()
+{
+    TextEdit edit;
+    QString text = "Line 1\nLine2\nLine 3\n\nLine 5\n\nLine 7\nLine 8\n\nLine 10\n";
+    int numLines = text.count('\n');
+    edit.document()->setText(text);
+
+    QList<int> lineSteps;
+    lineSteps << 1 << 3; // Single-click, mouse wheel
+
+    QList<int> directions;
+    directions << 1 << -1; // Forwards, backwards
+
+    QScrollBar *vsb = edit.verticalScrollBar();
+
+    foreach(int lineStep, lineSteps) {
+        int lineNo = 0;
+        //printf("%d-line step\n", lineStep);
+        foreach(int direction, directions) {
+            //printf("  %s\n", direction>0?"Forwards":"Backwards");
+            if (direction>0) {
+                // Forwards
+                vsb->setSliderPosition( 0 );
+            }
+
+            // Forwards
+            while (lineNo <= numLines && lineNo >= 0) {
+                int actualLineNo = edit.lineNumber(edit.viewportPosition());
+                //printf("    Line %d\n", actualLineNo);
+                if (lineNo != actualLineNo) {
+                    printf("  %s: expected to be at line %d, actually at line %d\n",
+                           (direction > 0 ? "Forwards" : "Backwards"), lineNo, actualLineNo);
+                }
+                QCOMPARE(lineNo, actualLineNo);
+                for (int i=0; i<lineStep; lineNo+=direction, ++i) {
+                    vsb->triggerAction(direction > 0
+                                       ? QAbstractSlider::SliderSingleStepAdd
+                                       : QAbstractSlider::SliderSingleStepSub);
+                }
+            }
+            lineNo = numLines;
+        }
+    }
 }
 
 void tst_TextEdit::clickInReadOnlyEdit()
@@ -250,7 +296,7 @@ void tst_TextEdit::sectionTest()
     edit.document()->setText(text);
     TextSection *ts = edit.insertTextSection(5, 10);
     edit.document()->takeTextSection(ts);
-    QVERIFY( !edit.sections().contains(ts) );    
+    QVERIFY( !edit.sections().contains(ts) );
 }
 
 void tst_TextEdit::deleteTest()
@@ -261,8 +307,9 @@ void tst_TextEdit::deleteTest()
     edit->setDocument(doc);
 
     TextSection *s = edit->insertTextSection(4, 4);
+    Q_UNUSED(s);
     delete edit;
-    delete doc;    
+    delete doc;
 }
 
 void tst_TextEdit::emptyDocumentTest()
