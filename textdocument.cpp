@@ -345,6 +345,8 @@ bool TextDocument::save(QIODevice *device)
     emit saveProgress(0);
     int written = 0;
     QTextStream ts(device);
+    if (d->textCodec)
+        ts.setCodec(d->textCodec);
     while (c) {
         ts << d->chunkData(c, written);
         written += c->size();
@@ -923,6 +925,8 @@ void TextDocument::setText(const QString &text)
     QBuffer buffer;
     buffer.open(QIODevice::WriteOnly);
     QTextStream ts(&buffer);
+    if (d->textCodec)
+        ts.setCodec(d->textCodec);
     ts << text;
     buffer.close();
     buffer.open(QIODevice::ReadOnly);
