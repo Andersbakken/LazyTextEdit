@@ -609,8 +609,6 @@ void tst_TextDocument::lineNumbersGenerated()
     QFETCH(int, seed);
     QFETCH(int, size);
     QFETCH(int, tests);
-    QVERIFY(true);
-    return;
 
     TextDocument doc;
     doc.setChunkSize(chunkSize);
