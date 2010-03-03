@@ -696,7 +696,7 @@ void tst_TextDocument::chunkBacktrack()
     int index = 0;
     TextCursor tc;
     while (!(tc = doc.find(s, index, 0)).isNull()) {
-        printf("  Found at %d\n", tc.position());
+//        printf("  Found at %d\n", tc.position());
         index = tc.position() + 1;
 
         TextCursor c(&doc, index);
@@ -856,6 +856,7 @@ void tst_TextDocument::insertText()
     c2.movePosition(TextCursor::PreviousBlock);
 }
 
+#if 0
 void printStatistics(const TextDocument *doc)
 {
     const int chunkCount = doc->chunkCount();
@@ -867,6 +868,7 @@ void printStatistics(const TextDocument *doc)
            instantiatedChunkCount,
            chunkCount - instantiatedChunkCount);
 }
+#endif
 
 void tst_TextDocument::memUsage()
 {
@@ -875,17 +877,16 @@ void tst_TextDocument::memUsage()
     QString s = "%1  +------------------------------------------------------+\n";
     const int iterations = 1000000;
 
-    printStatistics(&d);
+//    printStatistics(&d);
 
     for (int i=0; i<iterations; ++i) {
-        if (i%10000==0) {
-            printf("%d%% - %d/%d: ", (int)(i ? ((double)i/iterations)*100 : 0), i, iterations);
-            printStatistics(&d);
-        }
+//        if (i%10000==0) {
+//            printf("%d%% - %d/%d: ", (int)(i ? ((double)i/iterations)*100 : 0), i, iterations);
+//            printStatistics(&d);
+//        }
         d.append(s.arg(i));
     }
-    printStatistics(&d);
-
+//    printStatistics(&d);
 }
 
 void tst_TextDocument::textDocmentIteratorOnDocumentSize()
