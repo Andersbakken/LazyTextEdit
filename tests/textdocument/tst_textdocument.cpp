@@ -53,6 +53,7 @@ private slots:
     void find3();
     void findQChar_data();
     void findQChar();
+    void findWholeWordsRecursionCrash();
     void sections();
     void iterator();
     void modified();
@@ -431,6 +432,19 @@ void tst_TextDocument::sections()
     // "[abcd][e]fghijklmnopqrstuvwxyz\n";
 }
 
+void tst_TextDocument::findWholeWordsRecursionCrash()
+{
+    QTemporaryFile file;
+    file.open();
+    QTextStream ts(&file);
+    for (int i=0; i<100000; ++i) {
+        ts << "_sometext_" << endl;
+    }
+
+    TextDocument document;
+    QVERIFY(document.load(file.fileName()));
+    QVERIFY(document.find("omet", 0, TextDocument::FindWholeWords).isNull());
+}
 
 void tst_TextDocument::findQChar_data()
 {
