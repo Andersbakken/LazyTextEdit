@@ -469,62 +469,65 @@ TextCursor TextDocument::find(const QString &in, int pos, FindMode flags) const
         return TextCursor();
 
     const bool reverse = flags & FindBackward;
-    if (pos == d->documentSize) {
-        if (!reverse)
-            return TextCursor();
-        --pos;
-    }
-
     const bool caseSensitive = flags & FindCaseSensitively;
     const bool wholeWords = flags & FindWholeWords;
 
-    // ### what if one searches for a string with non-word characters in it and FindWholeWords?
-    const TextDocumentIterator::Direction direction = (reverse ? TextDocumentIterator::Left : TextDocumentIterator::Right);
-    QString word = caseSensitive ? in : in.toLower();
-    if (reverse) {
-        QString tmp = word;
-        for (int i=0; i<word.size(); ++i) {
-            word[i] = tmp.at(word.size() - i - 1);
-        }
-    }
-    TextDocumentIterator it(d, pos);
-    if (!caseSensitive)
-        it.setConvertToLowerCase(true);
-
-    bool ok = true;
-    QChar ch = it.current();
-    int wordIndex = 0;
     do {
-        if (ch == word.at(wordIndex)) {
-            if (++wordIndex == word.size()) {
-                break;
-            }
-        } else if (wordIndex != 0) {
-            wordIndex = 0;
-            continue;
-        }
-        ch = it.nextPrev(direction, ok);
-    } while (ok);
-
-    if (ok) {
-        int pos = it.position() - (reverse ? 0 : word.size() - 1);
-        // the iterator reads one past the last matched character so we have to account for that here
-
-        if (wholeWords &&
-            ((pos != 0 && isWordCharacter(readCharacter(pos - 1), pos - 1))
-             || (pos + word.size() < d->documentSize
-                 && isWordCharacter(readCharacter(pos + word.size()),
-                                                  pos + word.size())))) {
-            // checking if the characters before and after are word characters
-            pos += reverse ? -1 : 1;
-            if (pos < 0 || pos >= d->documentSize)
+        if (pos == d->documentSize) {
+            if (!reverse)
                 return TextCursor();
-            return find(word, pos, flags);
+            --pos;
         }
 
-        TextCursor cursor(this, pos);
-        return cursor;
-    }
+
+        // ### what if one searches for a string with non-word characters in it and FindWholeWords?
+        const TextDocumentIterator::Direction direction = (reverse ? TextDocumentIterator::Left : TextDocumentIterator::Right);
+        QString word = caseSensitive ? in : in.toLower();
+        if (reverse) {
+            QString tmp = word;
+            for (int i=0; i<word.size(); ++i) {
+                word[i] = tmp.at(word.size() - i - 1);
+            }
+        }
+        TextDocumentIterator it(d, pos);
+        if (!caseSensitive)
+            it.setConvertToLowerCase(true);
+
+        bool ok = true;
+        QChar ch = it.current();
+        int wordIndex = 0;
+        do {
+            if (ch == word.at(wordIndex)) {
+                if (++wordIndex == word.size()) {
+                    break;
+                }
+            } else if (wordIndex != 0) {
+                wordIndex = 0;
+                continue;
+            }
+            ch = it.nextPrev(direction, ok);
+        } while (ok);
+
+        if (ok) {
+            int pos = it.position() - (reverse ? 0 : word.size() - 1);
+            // the iterator reads one past the last matched character so we have to account for that here
+
+            if (wholeWords &&
+                ((pos != 0 && isWordCharacter(readCharacter(pos - 1), pos - 1))
+                 || (pos + word.size() < d->documentSize
+                     && isWordCharacter(readCharacter(pos + word.size()),
+                                        pos + word.size())))) {
+                // checking if the characters before and after are word characters
+                pos += reverse ? -1 : 1;
+                if (pos < 0 || pos >= d->documentSize)
+                    return TextCursor();
+                continue; // keep looking
+            }
+
+            TextCursor cursor(this, pos);
+            return cursor;
+        }
+    } while (false);
 
     return TextCursor();
 }
