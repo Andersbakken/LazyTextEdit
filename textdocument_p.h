@@ -145,7 +145,7 @@ public:
         cachePos(-1),
 #endif
         documentSize(0),
-        saveState(NotSaving), findState(NotFinding), ownDevice(false), modified(false),
+        saveState(NotSaving), ownDevice(false), modified(false),
         deviceMode(TextDocument::Sparse), chunkSize(16384),
         undoRedoStackCurrent(0), modifiedIndex(-1), undoRedoEnabled(true), ignoreUndoRedo(false),
         hasChunksWithLineNumbers(false), textCodec(0), options(TextDocument::DefaultOptions),
@@ -170,7 +170,6 @@ public:
 
     int documentSize;
     enum SaveState { NotSaving, Saving, AbortSave } saveState;
-    enum FindState { NotFinding, Finding, AbortFind } findState;
     QList<TextSection*> sections;
     WeakPointer<QIODevice> device;
     bool ownDevice, modified;
