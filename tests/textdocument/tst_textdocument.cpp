@@ -919,23 +919,10 @@ void tst_TextDocument::find4()
     QCOMPARE(val, 17);
 }
 
-class Aborter : public QObject
+static inline bool abortFindCallback(const TextDocument *, int, int)
 {
-    Q_OBJECT
-public:
-    Aborter(TextDocument *doc)
-        : document(doc)
-    {
-        connect(document, SIGNAL(findProgress(int,int)), this, SLOT(onFindProgress(int,int)));
-    }
-public slots:
-    void onFindProgress(int, int)
-    {
-        document->abortFind();
-    }
-private:
-    TextDocument *document;
-};
+    return true;
+}
 
 void tst_TextDocument::abortFind_data()
 {
@@ -950,19 +937,18 @@ void tst_TextDocument::abortFind()
     QFETCH(QVariant, needle);
     TextDocument doc;
     doc.setText("abcdefg\nabcdefg\n bcd z\n");
-    Aborter aborter(&doc);
     switch (needle.type()) {
     case QVariant::RegExp:
         QVERIFY(doc.find(needle.toRegExp(), 0, 0).isValid());
-        QVERIFY(!doc.find(needle.toRegExp(), 0, TextDocument::AllowInterrupt).isValid());
+        QVERIFY(!doc.find(needle.toRegExp(), 0, 0, &abortFindCallback).isValid());
         break;
     case QVariant::String:
         QVERIFY(doc.find(needle.toString(), 0, 0).isValid());
-        QVERIFY(!doc.find(needle.toString(), 0, TextDocument::AllowInterrupt).isValid());
+        QVERIFY(!doc.find(needle.toString(), 0, 0, &abortFindCallback).isValid());
         break;
     case QVariant::Char:
         QVERIFY(doc.find(needle.toChar(), 0, 0).isValid());
-        QVERIFY(!doc.find(needle.toChar(), 0, TextDocument::AllowInterrupt).isValid());
+        QVERIFY(!doc.find(needle.toChar(), 0, 0, &abortFindCallback).isValid());
         break;
     default:
         qFatal("huh?");
