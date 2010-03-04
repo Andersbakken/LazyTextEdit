@@ -207,6 +207,8 @@ public:
     QString wordAt(int position, int *start = 0) const;
     QString paragraphAt(int position, int *start = 0) const;
 
+    uint wordBoundariesAt(int pos) const;
+
     friend class TextDocument;
     void swapOutChunk(Chunk *c);
     QList<TextSection*> getSections(int from, int size, TextSection::TextSectionOptions opt, const TextEdit *filter) const;
@@ -334,7 +336,7 @@ public:
         return current();
     }
 
-    enum Direction { Left, Right };
+    enum Direction { Left = 0x1, Right = 0x2 };
     inline QChar nextPrev(Direction dir, bool &ok)
     {
         if (dir == Left) {

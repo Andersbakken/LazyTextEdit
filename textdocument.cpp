@@ -472,62 +472,56 @@ TextCursor TextDocument::find(const QString &in, int pos, FindMode flags) const
     const bool caseSensitive = flags & FindCaseSensitively;
     const bool wholeWords = flags & FindWholeWords;
 
+    if (pos == d->documentSize) {
+        if (!reverse)
+            return TextCursor();
+        --pos;
+    }
+
+
+    // ### what if one searches for a string with non-word characters in it and FindWholeWords?
+    const TextDocumentIterator::Direction direction = (reverse ? TextDocumentIterator::Left : TextDocumentIterator::Right);
+    QString word = caseSensitive ? in : in.toLower();
+    if (reverse) {
+        QChar *data = word.data();
+        const int size = word.size();
+        for (int i=0; i<size / 2; ++i) {
+            qSwap(data[i], data[size - 1 - i]);
+        }
+    }
+    TextDocumentIterator it(d, pos);
+    if (!caseSensitive)
+        it.setConvertToLowerCase(true);
+
+    bool ok = true;
+    QChar ch = it.current();
+    int wordIndex = 0;
     do {
-        if (pos == d->documentSize) {
-            if (!reverse)
-                return TextCursor();
-            --pos;
-        }
-
-
-        // ### what if one searches for a string with non-word characters in it and FindWholeWords?
-        const TextDocumentIterator::Direction direction = (reverse ? TextDocumentIterator::Left : TextDocumentIterator::Right);
-        QString word = caseSensitive ? in : in.toLower();
-        if (reverse) {
-            QString tmp = word;
-            for (int i=0; i<word.size(); ++i) {
-                word[i] = tmp.at(word.size() - i - 1);
+        bool found = ch == word.at(wordIndex);
+        if (found && wholeWords && (wordIndex == 0 || wordIndex == word.size() - 1)) {
+            const uint requiredBounds = ((wordIndex == 0) != reverse) ? TextDocumentIterator::Left : TextDocumentIterator::Right;
+            const uint bounds = d->wordBoundariesAt(it.position());
+            if (requiredBounds & ~bounds) {
+                found = false;
             }
         }
-        TextDocumentIterator it(d, pos);
-        if (!caseSensitive)
-            it.setConvertToLowerCase(true);
-
-        bool ok = true;
-        QChar ch = it.current();
-        int wordIndex = 0;
-        do {
-            if (ch == word.at(wordIndex)) {
-                if (++wordIndex == word.size()) {
-                    break;
-                }
-            } else if (wordIndex != 0) {
-                wordIndex = 0;
-                continue;
+        if (found) {
+            if (++wordIndex == word.size()) {
+                break;
             }
-            ch = it.nextPrev(direction, ok);
-        } while (ok);
-
-        if (ok) {
-            int pos = it.position() - (reverse ? 0 : word.size() - 1);
-            // the iterator reads one past the last matched character so we have to account for that here
-
-            if (wholeWords &&
-                ((pos != 0 && isWordCharacter(readCharacter(pos - 1), pos - 1))
-                 || (pos + word.size() < d->documentSize
-                     && isWordCharacter(readCharacter(pos + word.size()),
-                                        pos + word.size())))) {
-                // checking if the characters before and after are word characters
-                pos += reverse ? -1 : 1;
-                if (pos < 0 || pos >= d->documentSize)
-                    return TextCursor();
-                continue; // keep looking
-            }
-
-            TextCursor cursor(this, pos);
-            return cursor;
+        } else if (wordIndex != 0) {
+            wordIndex = 0;
+            continue;
         }
-    } while (false);
+        ch = it.nextPrev(direction, ok);
+    } while (ok);
+
+    if (ok) {
+        int pos = it.position() - (reverse ? 0 : word.size() - 1);
+        // the iterator reads one past the last matched character so we have to account for that here
+        TextCursor cursor(this, pos);
+        return cursor;
+    }
 
     return TextCursor();
 }
@@ -1333,6 +1327,20 @@ QString TextDocumentPrivate::paragraphAt(int position, int *start) const
         *start = from.position();
     return q->read(from.position(), to.position() - from.position());
 }
+
+uint TextDocumentPrivate::wordBoundariesAt(int pos) const
+{
+    Q_ASSERT(pos >= 0 && pos < documentSize);
+    uint ret = 0;
+    if (pos == 0 || !q->isWordCharacter(q->readCharacter(pos - 1), pos - 1)) {
+        ret |= TextDocumentIterator::Left;
+    }
+    if (pos + 1 == documentSize || !q->isWordCharacter(q->readCharacter(pos + 1), pos + 1)) {
+        ret |= TextDocumentIterator::Right;
+    }
+    return ret;
+}
+
 
 void TextDocumentPrivate::joinLastTwoCommands()
 {
