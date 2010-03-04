@@ -51,6 +51,7 @@ private slots:
     void find2();
     void find3_data();
     void find3();
+    void find4();
     void findQChar_data();
     void findQChar();
     void findWholeWordsRecursionCrash();
@@ -905,6 +906,14 @@ void tst_TextDocument::textDocmentIteratorOnDocumentSize()
     cursor.insertText("\n");
     cursor.setPosition(doc.documentSize());
     cursor.movePosition(TextCursor::PreviousBlock);
+}
+
+void tst_TextDocument::find4()
+{
+    TextDocument doc;
+    doc.setText("abcdefg\nabcdefg\n bcd \n");
+    const int val = doc.find("bcd", 0, TextDocument::FindWholeWords).position();
+    QCOMPARE(val, 17);
 }
 
 QTEST_MAIN(tst_TextDocument)
