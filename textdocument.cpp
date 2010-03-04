@@ -416,15 +416,7 @@ QTextCodec * TextDocument::textCodec() const
     return d->textCodec;
 }
 
-class FindScope
-{
-public:
-    FindScope(TextDocumentPrivate::FindState *s) : state(s) { if (state) *state = TextDocumentPrivate::Finding; }
-    ~FindScope() { if (state) *state = TextDocumentPrivate::NotFinding; }
-    TextDocumentPrivate::FindState *state;
-};
-
-TextCursor TextDocument::find(const QRegExp &rx, int pos, FindMode flags) const
+TextCursor TextDocument::find(const QRegExp &rx, int pos, FindMode flags, AbortFindCallback callback) const
 {
     if (flags & FindWholeWords) {
         qWarning("FindWholeWords doesn't work with regexps. Instead use an actual RegExp for this");
@@ -452,8 +444,7 @@ TextCursor TextDocument::find(const QRegExp &rx, int pos, FindMode flags) const
     int lastProgress = pos;
     const int initialPos = pos;
     int maxFindLength = 0;
-    const FindScope scope(flags & AllowInterrupt ? &d->findState : 0);
-    if (flags & AllowInterrupt) {
+    if (callback) {
         progressInterval = qMax<int>(1, (reverse
                                          ? (static_cast<qreal>(pos) / 100.0)
                                          : (static_cast<qreal>(d->documentSize) - static_cast<qreal>(pos)) / 100.0));
@@ -477,20 +468,17 @@ TextCursor TextDocument::find(const QRegExp &rx, int pos, FindMode flags) const
             cursor.setPosition(from + index);
             return cursor;
         }
-        if (progressInterval != 0 && qAbs(it.position() - lastProgress) >= progressInterval) {
+        if (callback && qAbs(it.position() - lastProgress) >= progressInterval) {
             const qreal progress = qAbs<int>(static_cast<qreal>(it.position() - initialPos)) / static_cast<qreal>(maxFindLength);
-            emit findProgress(static_cast<int>(progress * 100.0), it.position());
-            if (d->findState == TextDocumentPrivate::AbortFind) {
-                d->findState = TextDocumentPrivate::NotFinding;
+            if (callback(this, static_cast<int>(progress * 100.0), it.position()))
                 break;
-            }
             lastProgress = it.position();
         }
     } while (ok);
     return TextCursor();
 }
 
-TextCursor TextDocument::find(const QString &in, int pos, FindMode flags) const
+TextCursor TextDocument::find(const QString &in, int pos, FindMode flags, AbortFindCallback callback) const
 {
     Q_ASSERT(pos >= 0 && pos <= d->documentSize);
     if (in.isEmpty())
@@ -528,20 +516,17 @@ TextCursor TextDocument::find(const QString &in, int pos, FindMode flags) const
     int lastProgress = pos;
     const int initialPos = pos;
     int maxFindLength = 0;
-    const FindScope scope(flags & AllowInterrupt ? &d->findState : 0);
-    if (flags & AllowInterrupt) {
+    if (callback) {
         progressInterval = qMax<int>(1, (reverse
                                          ? (static_cast<qreal>(pos) / 100.0)
                                          : (static_cast<qreal>(d->documentSize) - static_cast<qreal>(pos)) / 100.0));
         maxFindLength = (reverse ? pos : d->documentSize - pos);
     }
     do {
-        if (progressInterval != 0 && qAbs(it.position() - lastProgress) >= progressInterval) {
+        if (callback && qAbs(it.position() - lastProgress) >= progressInterval) {
             const qreal progress = qAbs<int>(static_cast<qreal>(it.position() - initialPos)) / static_cast<qreal>(maxFindLength);
-            emit findProgress(static_cast<int>(progress * 100.0), it.position());
-            if (d->findState == TextDocumentPrivate::AbortFind) {
+            if (callback(this, static_cast<int>(progress * 100.0), it.position()))
                 break;
-            }
             lastProgress = it.position();
         }
 
@@ -574,7 +559,7 @@ TextCursor TextDocument::find(const QString &in, int pos, FindMode flags) const
     return TextCursor();
 }
 
-TextCursor TextDocument::find(const QChar &chIn, int pos, FindMode flags) const
+TextCursor TextDocument::find(const QChar &chIn, int pos, FindMode flags, AbortFindCallback callback) const
 {
     if (flags & FindWholeWords) {
         qWarning("FindWholeWords makes not sense searching for characters");
@@ -600,8 +585,7 @@ TextCursor TextDocument::find(const QChar &chIn, int pos, FindMode flags) const
     const int initialPos = pos;
     int maxFindLength = 0;
     int progressInterval = 0;
-    const FindScope scope(flags & AllowInterrupt ? &d->findState : 0);
-    if (flags & AllowInterrupt) {
+    if (callback) {
         progressInterval = qMax<int>(1, (reverse
                                          ? (static_cast<qreal>(pos) / 100.0)
                                          : (static_cast<qreal>(d->documentSize) - static_cast<qreal>(pos)) / 100.0));
@@ -617,13 +601,10 @@ TextCursor TextDocument::find(const QChar &chIn, int pos, FindMode flags) const
             return cursor;
         }
         c = it.nextPrev(dir, ok);
-        if (progressInterval != 0 && qAbs(it.position() - lastProgress) >= progressInterval) {
+        if (callback && qAbs(it.position() - lastProgress) >= progressInterval) {
             const qreal progress = qAbs<int>(static_cast<qreal>(it.position() - initialPos)) / static_cast<qreal>(maxFindLength);
-            emit findProgress(static_cast<int>(progress * 100.0), it.position());
-            if (d->findState == TextDocumentPrivate::AbortFind) {
-                d->findState = TextDocumentPrivate::NotFinding;
+            if (callback(this, static_cast<int>(progress * 100.0), it.position()))
                 break;
-            }
             lastProgress = it.position();
         }
 
@@ -957,16 +938,6 @@ bool TextDocument::abortSave()
     }
     return false;
 }
-
-bool TextDocument::abortFind() const
-{
-    if (d->findState == TextDocumentPrivate::Finding) {
-        d->findState = TextDocumentPrivate::AbortFind;
-        return true;
-    }
-    return false;
-}
-
 
 QChar TextDocument::readCharacter(int pos) const
 {

@@ -98,8 +98,7 @@ public:
     enum FindModeFlag {
         FindBackward = 0x00001,
         FindCaseSensitively = 0x00002,
-        FindWholeWords = 0x00004,
-        AllowInterrupt = 0x00008
+        FindWholeWords = 0x00004
     };
     Q_DECLARE_FLAGS(FindMode, FindModeFlag);
 
@@ -110,10 +109,10 @@ public:
     void setUndoRedoEnabled(bool enable);
 
     QIODevice *device() const;
-
-    TextCursor find(const QRegExp &rx, int pos = 0, FindMode flags = 0) const;
-    TextCursor find(const QString &ba, int pos = 0, FindMode flags = 0) const;
-    TextCursor find(const QChar &ch, int pos = 0, FindMode flags = 0) const;
+    typedef bool (*AbortFindCallback)(const TextDocument *document, int, int);
+    TextCursor find(const QRegExp &rx, int pos = 0, FindMode flags = 0, AbortFindCallback callback = 0) const;
+    TextCursor find(const QString &ba, int pos = 0, FindMode flags = 0, AbortFindCallback callback = 0) const;
+    TextCursor find(const QChar &ch, int pos = 0, FindMode flags = 0, AbortFindCallback callback = 0) const;
 
     bool insert(int pos, const QString &ba);
     void remove(int pos, int size);
@@ -142,7 +141,6 @@ public slots:
     void undo();
     void redo();
     bool abortSave();
-    bool abortFind() const;
 signals:
     void textChanged();
     void sectionAdded(TextSection *section);
@@ -150,7 +148,6 @@ signals:
     void charactersAdded(int from, int count);
     void charactersRemoved(int from, int count);
     void saveProgress(int progress);
-    void findProgress(int progress, int position) const;
     void documentSizeChanged(int size);
     void undoAvailableChanged(bool on);
     void redoAvailableChanged(bool on);
