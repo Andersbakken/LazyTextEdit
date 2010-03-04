@@ -23,8 +23,9 @@ QT_FORWARD_DECLARE_CLASS(TextDocument)
 //TESTED_CLASS=
 //TESTED_FILES=
 
-    Q_DECLARE_METATYPE(TextDocument::Options);
-    Q_DECLARE_METATYPE(TextDocument::DeviceMode);
+Q_DECLARE_METATYPE(TextDocument::Options);
+Q_DECLARE_METATYPE(TextDocument::DeviceMode);
+Q_DECLARE_METATYPE(QVariant);
 
 class tst_TextDocument : public QObject
 {
@@ -52,6 +53,8 @@ private slots:
     void find3_data();
     void find3();
     void find4();
+    void abortFind_data();
+    void abortFind();
     void findQChar_data();
     void findQChar();
     void findWholeWordsRecursionCrash();
@@ -914,6 +917,57 @@ void tst_TextDocument::find4()
     doc.setText("abcdefg\nabcdefg\n bcd \n");
     const int val = doc.find("bcd", 0, TextDocument::FindWholeWords).position();
     QCOMPARE(val, 17);
+}
+
+class Aborter : public QObject
+{
+    Q_OBJECT
+public:
+    Aborter(TextDocument *doc)
+        : document(doc)
+    {
+        connect(document, SIGNAL(findProgress(int,int)), this, SLOT(onFindProgress(int,int)));
+    }
+public slots:
+    void onFindProgress(int, int)
+    {
+        document->abortFind();
+    }
+private:
+    TextDocument *document;
+};
+
+void tst_TextDocument::abortFind_data()
+{
+    QTest::addColumn<QVariant>("needle");
+    QTest::newRow("QRegExp") << QVariant(QRegExp(" bcd"));
+    QTest::newRow("QString") << QVariant(QString::fromLatin1(" bcd"));
+    QTest::newRow("QChar") << QVariant(QChar('z'));
+}
+
+void tst_TextDocument::abortFind()
+{
+    QFETCH(QVariant, needle);
+    TextDocument doc;
+    doc.setText("abcdefg\nabcdefg\n bcd z\n");
+    Aborter aborter(&doc);
+    switch (needle.type()) {
+    case QVariant::RegExp:
+        QVERIFY(doc.find(needle.toRegExp(), 0, 0).isValid());
+        QVERIFY(!doc.find(needle.toRegExp(), 0, TextDocument::AllowInterrupt).isValid());
+        break;
+    case QVariant::String:
+        QVERIFY(doc.find(needle.toString(), 0, 0).isValid());
+        QVERIFY(!doc.find(needle.toString(), 0, TextDocument::AllowInterrupt).isValid());
+        break;
+    case QVariant::Char:
+        QVERIFY(doc.find(needle.toChar(), 0, 0).isValid());
+        QVERIFY(!doc.find(needle.toChar(), 0, TextDocument::AllowInterrupt).isValid());
+        break;
+    default:
+        qFatal("huh?");
+        break;
+    }
 }
 
 QTEST_MAIN(tst_TextDocument)
