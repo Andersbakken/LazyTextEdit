@@ -438,11 +438,15 @@ static void initFind(const TextCursor &cursor, bool reverse, int *start, int *li
     }
 }
 
-TextCursor TextDocument::find(const QRegExp &rx, const TextCursor &cursor, FindMode flags) const
+TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, FindMode flags) const
 {
     if (flags & FindWholeWords) {
         qWarning("FindWholeWords doesn't work with regexps. Instead use an actual RegExp for this");
     }
+    if (flags & FindCaseSensitively) {
+        qWarning("FindCaseSensitively doesn't work with regexps. Instead use an QRegExp::caseSensitivity for this");
+    }
+
 
     const bool reverse = flags & FindBackward;
     int pos;
@@ -455,10 +459,6 @@ TextCursor TextDocument::find(const QRegExp &rx, const TextCursor &cursor, FindM
         --pos;
     }
 
-
-    QRegExp regexp = rx;
-    if ((rx.caseSensitivity() == Qt::CaseSensitive) != (flags & FindCaseSensitively))
-        regexp.setCaseSensitivity(flags & FindCaseSensitively ? Qt::CaseSensitive : Qt::CaseInsensitive);
 
     const TextDocumentIterator::Direction direction = (reverse
                                                        ? TextDocumentIterator::Left
