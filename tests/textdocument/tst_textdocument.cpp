@@ -924,9 +924,15 @@ void tst_TextDocument::find5()
 {
     TextDocument doc;
     doc.setText("abcdefg\nabcdefg\n bcd \n");
-    TextCursor cursor(&doc, 1, 4);
+    TextCursor cursor(&doc, 0, 4);
+    QVERIFY(doc.find('a', cursor).isValid());
+    QVERIFY(doc.find('e', cursor).isNull());
+    QVERIFY(doc.find('g', cursor).isNull());
+    QVERIFY(doc.find("abcd", cursor).isValid());
     QVERIFY(doc.find("abcde", cursor).isNull());
-    QVERIFY(!doc.find("abc", cursor).isNull());
+    QVERIFY(doc.find("abcde", cursor).isNull());
+    QVERIFY(doc.find(QRegExp("[^c][a-z]"), cursor).isValid());
+    QVERIFY(doc.find(QRegExp("d[a-z]"), cursor).isNull());
 }
 
 

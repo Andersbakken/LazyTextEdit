@@ -278,21 +278,19 @@ public:
     void setMaxBoundary(int bound)
     {
         max = bound;
-        Q_ASSERT(pos <= min);
+        Q_ASSERT(pos <= max);
     }
 
 
     inline bool hasNext() const
     {
-        return pos < doc->documentSize;
-//        return pos < end();
+        return pos < end();
     }
 
     inline bool hasPrevious() const
     {
         Q_ASSERT(min == 0);
-//        return pos > 0; ### how could this be different? Valgrind
-        return pos > min;
+        return pos > 0;
     }
 
     inline int position() const

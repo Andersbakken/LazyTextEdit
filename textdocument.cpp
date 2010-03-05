@@ -464,6 +464,11 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
                                                        ? TextDocumentIterator::Left
                                                        : TextDocumentIterator::Right);
     TextDocumentIterator it(d, pos);
+    if (reverse) {
+        it.setMinBoundary(limit);
+    } else {
+        it.setMaxBoundary(limit);
+    }
     const QLatin1Char newline('\n');
     int last = pos;
     bool ok = true;
@@ -492,6 +497,8 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
         last = it.position() + 1;
         const int index = regexp.indexIn(line);
         if (index != -1) {
+            if (!reverse && index + regexp.matchedLength() > limit)
+                break;
             TextCursor cursor(this);
             cursor.setPosition(from + index);
             return cursor;
@@ -540,6 +547,11 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
         }
     }
     TextDocumentIterator it(d, pos);
+    if (reverse) {
+        it.setMinBoundary(limit);
+    } else {
+        it.setMaxBoundary(limit);
+    }
     if (!caseSensitive)
         it.setConvertToLowerCase(true);
 
@@ -616,6 +628,11 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
     const bool caseSensitive = flags & FindCaseSensitively;
     const QChar ch = (caseSensitive ? chIn : chIn.toLower());
     TextDocumentIterator it(d, pos);
+    if (reverse) {
+        it.setMinBoundary(limit);
+    } else {
+        it.setMaxBoundary(limit);
+    }
     const TextDocumentIterator::Direction dir = (reverse
                                                  ? TextDocumentIterator::Left
                                                  : TextDocumentIterator::Right);
