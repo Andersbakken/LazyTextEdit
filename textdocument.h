@@ -111,9 +111,17 @@ public:
 
     QIODevice *device() const;
 
-    TextCursor find(const QRegExp &rx, int pos = 0, FindMode flags = 0) const;
-    TextCursor find(const QString &ba, int pos = 0, FindMode flags = 0) const;
-    TextCursor find(const QChar &ch, int pos = 0, FindMode flags = 0) const;
+    TextCursor find(const QRegExp &rx, const TextCursor &cursor, FindMode flags = 0) const;
+    TextCursor find(const QString &ba, const TextCursor &cursor, FindMode flags = 0) const;
+    TextCursor find(const QChar &ch, const TextCursor &cursor, FindMode flags = 0) const;
+
+    inline TextCursor find(const QRegExp &rx, int pos = 0, FindMode flags = 0) const
+    { return find(rx, TextCursor(this, pos), flags); }
+    inline TextCursor find(const QString &ba, int pos = 0, FindMode flags = 0) const
+    { return find(ba, TextCursor(this, pos), flags); }
+    inline TextCursor find(const QChar &ch, int pos = 0, FindMode flags = 0) const
+    { return find(ch, TextCursor(this, pos), flags); }
+
 
     bool insert(int pos, const QString &ba);
     void remove(int pos, int size);

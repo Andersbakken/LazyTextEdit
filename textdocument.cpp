@@ -424,13 +424,15 @@ public:
     TextDocumentPrivate::FindState *state;
 };
 
-TextCursor TextDocument::find(const QRegExp &rx, int pos, FindMode flags) const
+TextCursor TextDocument::find(const QRegExp &rx, const TextCursor &cursor, FindMode flags) const
 {
     if (flags & FindWholeWords) {
         qWarning("FindWholeWords doesn't work with regexps. Instead use an actual RegExp for this");
     }
 
     const bool reverse = flags & FindBackward;
+    int pos = reverse ? cursor.selectionEnd() : cursor.selectionStart();
+
     if (pos == d->documentSize) {
         if (!reverse)
             return TextCursor();
@@ -490,15 +492,17 @@ TextCursor TextDocument::find(const QRegExp &rx, int pos, FindMode flags) const
     return TextCursor();
 }
 
-TextCursor TextDocument::find(const QString &in, int pos, FindMode flags) const
+TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindMode flags) const
 {
-    Q_ASSERT(pos >= 0 && pos <= d->documentSize);
     if (in.isEmpty())
         return TextCursor();
 
     const bool reverse = flags & FindBackward;
     const bool caseSensitive = flags & FindCaseSensitively;
     const bool wholeWords = flags & FindWholeWords;
+
+    int pos = reverse ? cursor.selectionEnd() : cursor.selectionStart();
+    Q_ASSERT(pos >= 0 && pos <= d->documentSize);
 
     if (pos == d->documentSize) {
         if (!reverse)
@@ -574,21 +578,20 @@ TextCursor TextDocument::find(const QString &in, int pos, FindMode flags) const
     return TextCursor();
 }
 
-TextCursor TextDocument::find(const QChar &chIn, int pos, FindMode flags) const
+TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindMode flags) const
 {
     if (flags & FindWholeWords) {
         qWarning("FindWholeWords makes not sense searching for characters");
     }
 
-    Q_ASSERT(pos >= 0 && pos <= d->documentSize);
-
     const bool reverse = flags & FindBackward;
+    int pos = reverse ? cursor.selectionEnd() : cursor.selectionStart();
     if (pos == d->documentSize) {
         if (!reverse)
             return TextCursor();
         --pos;
     }
-
+    Q_ASSERT(pos >= 0 && pos <= d->documentSize);
 
     const bool caseSensitive = flags & FindCaseSensitively;
     const QChar ch = (caseSensitive ? chIn : chIn.toLower());
