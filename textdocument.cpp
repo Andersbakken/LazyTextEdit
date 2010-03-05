@@ -446,7 +446,10 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
     if (flags & FindCaseSensitively) {
         qWarning("FindCaseSensitively doesn't work with regexps. Instead use an QRegExp::caseSensitivity for this");
     }
-
+    if (flags & FindWrap && cursor.hasSelection()) {
+        qWarning("It makes no sense to pass FindWrap and set a selection for the cursor. The entire selection will be searched");
+        flags &= ~FindWrap;
+    }
 
     const bool reverse = flags & FindBackward;
     int pos;
@@ -458,7 +461,6 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
             return TextCursor();
         --pos;
     }
-
 
     const TextDocumentIterator::Direction direction = (reverse
                                                        ? TextDocumentIterator::Left
@@ -515,6 +517,18 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
             lastProgress = it.position();
         }
     } while (ok);
+
+    if (flags & FindWrap) {
+        Q_ASSERT(!cursor.hasSelection());
+        if (reverse) {
+            if (cursor.position() + 1 < d->documentSize) {
+                return find(regexp, TextCursor(this, cursor.position(), d->documentSize), flags & ~FindWrap);
+            }
+        } else if (cursor.position() > 0) {
+            return find(regexp, TextCursor(this, 0, cursor.position()), flags & ~FindWrap);
+        }
+    }
+
     return TextCursor();
 }
 
@@ -526,6 +540,10 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
     const bool reverse = flags & FindBackward;
     const bool caseSensitive = flags & FindCaseSensitively;
     const bool wholeWords = flags & FindWholeWords;
+    if (flags & FindWrap && cursor.hasSelection()) {
+        qWarning("It makes no sense to pass FindWrap and set a selection for the cursor. The entire selection will be searched");
+        flags &= ~FindWrap;
+    }
 
     int pos;
     int limit;
@@ -607,6 +625,17 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
         return ret;
     }
 
+    if (flags & FindWrap) {
+        Q_ASSERT(!cursor.hasSelection());
+        if (reverse) {
+            if (cursor.position() + 1 < d->documentSize) {
+                return find(in, TextCursor(this, cursor.position(), d->documentSize), flags & ~FindWrap);
+            }
+        } else if (cursor.position() > 0) {
+            return find(in, TextCursor(this, 0, cursor.position()), flags & ~FindWrap);
+        }
+    }
+
     return TextCursor();
 }
 
@@ -614,6 +643,11 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
 {
     if (flags & FindWholeWords) {
         qWarning("FindWholeWords makes not sense searching for characters");
+    }
+
+    if (flags & FindWrap && cursor.hasSelection()) {
+        qWarning("It makes no sense to pass FindWrap and set a selection for the cursor. The entire selection will be searched");
+        flags &= ~FindWrap;
     }
 
     const bool reverse = flags & FindBackward;
@@ -669,6 +703,17 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
         }
 
     } while (ok);
+
+    if (flags & FindWrap) {
+        Q_ASSERT(!cursor.hasSelection());
+        if (reverse) {
+            if (cursor.position() + 1 < d->documentSize) {
+                return find(ch, TextCursor(this, cursor.position(), d->documentSize), flags & ~FindWrap);
+            }
+        } else if (cursor.position() > 0) {
+            return find(ch, TextCursor(this, 0, cursor.position()), flags & ~FindWrap);
+        }
+    }
 
     return TextCursor();
 }
