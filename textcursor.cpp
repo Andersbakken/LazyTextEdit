@@ -475,8 +475,7 @@ int TextCursor::selectionSize() const
 
 QString TextCursor::selectedText() const
 {
-    Q_ASSERT(!isNull());
-    if (d->anchor == d->position)
+    if (isNull() || d->anchor == d->position)
         return QString();
 
     const int min = qMin(d->anchor, d->position);
