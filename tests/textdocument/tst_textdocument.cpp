@@ -54,6 +54,7 @@ private slots:
     void find3();
     void find4();
     void find5();
+    void findWrap();
     void abortFind_data();
     void abortFind();
     void findQChar_data();
@@ -955,6 +956,20 @@ void tst_TextDocument::find5()
     QVERIFY(doc.find(QRegExp("[^c][a-z]"), cursor).isValid());
     QVERIFY(doc.find(QRegExp("d[a-z]"), cursor).isNull());
 }
+
+void tst_TextDocument::findWrap()
+{
+    TextDocument doc;
+    doc.setText("abcdefghijklmnopqrstuvwxyz");
+    QVERIFY(doc.find('d', 4).isNull());
+    QVERIFY(doc.find('d', 4, TextDocument::FindWrap).isValid());
+    QVERIFY(doc.find("d", 4).isNull());
+    QVERIFY(doc.find("d", 4, TextDocument::FindWrap).isValid());
+    QVERIFY(doc.find(QRegExp("d"), 4).isNull());
+    QVERIFY(doc.find(QRegExp("d"), 4, TextDocument::FindWrap).isValid());
+
+}
+
 
 
 class Aborter : public QObject
