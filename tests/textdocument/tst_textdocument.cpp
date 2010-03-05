@@ -53,6 +53,7 @@ private slots:
     void find3_data();
     void find3();
     void find4();
+    void find5();
     void abortFind_data();
     void abortFind();
     void findQChar_data();
@@ -918,6 +919,16 @@ void tst_TextDocument::find4()
     const int val = doc.find("bcd", 0, TextDocument::FindWholeWords).position();
     QCOMPARE(val, 17);
 }
+
+void tst_TextDocument::find5()
+{
+    TextDocument doc;
+    doc.setText("abcdefg\nabcdefg\n bcd \n");
+    TextCursor cursor(&doc, 1, 4);
+    QVERIFY(doc.find("abcde", cursor).isNull());
+    QVERIFY(!doc.find("abc", cursor).isNull());
+}
+
 
 class Aborter : public QObject
 {
