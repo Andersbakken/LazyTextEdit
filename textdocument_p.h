@@ -231,7 +231,7 @@ class TextDocumentIterator
 {
 public:
     TextDocumentIterator(const TextDocumentPrivate *d, int p)
-        : doc(d), pos(p), convert(false)
+        : doc(d), pos(p), min(0), max(-1), convert(false)
     {
         Q_ASSERT(doc);
 #ifndef NO_TEXTDOCUMENTITERATOR_CACHE
@@ -264,14 +264,35 @@ public:
     }
 #endif
 
+    int end() const
+    {
+        return max != -1 ? max : doc->documentSize;
+    }
+
+    void setMinBoundary(int bound)
+    {
+        min = bound;
+        Q_ASSERT(pos >= min);
+    }
+
+    void setMaxBoundary(int bound)
+    {
+        max = bound;
+        Q_ASSERT(pos <= min);
+    }
+
+
     inline bool hasNext() const
     {
         return pos < doc->documentSize;
+//        return pos < end();
     }
 
     inline bool hasPrevious() const
     {
-        return pos > 0;
+        Q_ASSERT(min == 0);
+//        return pos > 0; ### how could this be different? Valgrind
+        return pos > min;
     }
 
     inline int position() const
@@ -285,7 +306,7 @@ public:
 #ifndef NO_TEXTDOCUMENTITERATOR_CACHE
         Q_ASSERT(chunk);
         Q_COMPARE_ASSERT(chunkData.size(), chunk->size());
-        if (pos == doc->documentSize)
+        if (pos == end())
             return QChar();
 #ifdef QT_DEBUG
         if (doc->q->readCharacter(pos) != chunkData.at(offset)) {
@@ -322,8 +343,8 @@ public:
         Q_ASSERT(doc);
         Q_ASSERT(hasPrevious());
         --pos;
-        Q_ASSERT(pos >= 0);
-        Q_ASSERT(pos <= doc->documentSize);
+        Q_ASSERT(pos >= min);
+        Q_ASSERT(pos <= end());
 #ifndef NO_TEXTDOCUMENTITERATOR_CACHE
         Q_ASSERT(chunk);
         if (--offset < 0) {
@@ -370,6 +391,7 @@ public:
 private:
     const TextDocumentPrivate *doc;
     int pos;
+    int min, max;
 #ifndef NO_TEXTDOCUMENTITERATOR_CACHE
     int offset;
     QString chunkData;
