@@ -159,8 +159,8 @@ signals:
     void sectionRemoved(TextSection *removed);
     void charactersAdded(int from, int count);
     void charactersRemoved(int from, int count);
-    void saveProgress(int progress);
-    void findProgress(int progress, int position) const;
+    void saveProgress(qreal progress);
+    void findProgress(qreal progress, int position) const;
     void documentSizeChanged(int size);
     void undoAvailableChanged(bool on);
     void redoAvailableChanged(bool on);

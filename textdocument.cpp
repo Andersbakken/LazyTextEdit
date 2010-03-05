@@ -15,6 +15,10 @@
 
 // #define DEBUG_CACHE_HITS
 
+#ifndef TEXTDOCUMENT_FIND_INTERVAL_PERCENTAGE
+#define TEXTDOCUMENT_FIND_INTERVAL_PERCENTAGE 1000
+#endif
+
 TextDocument::TextDocument(QObject *parent)
     : QObject(parent), d(new TextDocumentPrivate(this))
 {
@@ -342,7 +346,7 @@ bool TextDocument::save(QIODevice *device)
     }
     d->saveState = TextDocumentPrivate::Saving;
     const Chunk *c = d->first;
-    emit saveProgress(0);
+    emit saveProgress(0.0);
     int written = 0;
     QTextStream ts(device);
     if (d->textCodec)
@@ -352,7 +356,7 @@ bool TextDocument::save(QIODevice *device)
         written += c->size();
         if (c != d->last) {
             const double part = qreal(written) / double(d->documentSize);
-            emit saveProgress(int(part * 100.0));
+            emit saveProgress(part * 100.0);
         }
         if (d->saveState == TextDocumentPrivate::AbortSave) {
             d->saveState = TextDocumentPrivate::NotSaving;
@@ -361,7 +365,7 @@ bool TextDocument::save(QIODevice *device)
         c = c->next;
     }
     d->saveState = TextDocumentPrivate::NotSaving;
-    emit saveProgress(100);
+    emit saveProgress(100.0);
 
     return true;
 }
@@ -481,7 +485,7 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
     const FindScope scope(flags & FindAllowInterrupt ? &d->findState : 0);
     if (flags & FindAllowInterrupt) {
         progressInterval = qMax<int>(1, (reverse
-                                         ? (static_cast<qreal>(pos) / 100.0)
+                                         ? (static_cast<qreal>(pos) / static_cast<qreal>(TEXTDOCUMENT_FIND_INTERVAL_PERCENTAGE))
                                          : (static_cast<qreal>(d->documentSize) - static_cast<qreal>(pos)) / 100.0));
         maxFindLength = (reverse ? pos : d->documentSize - pos);
     }
@@ -509,7 +513,7 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
         }
         if (progressInterval != 0 && qAbs(it.position() - lastProgress) >= progressInterval) {
             const qreal progress = qAbs<int>(static_cast<qreal>(it.position() - initialPos)) / static_cast<qreal>(maxFindLength);
-            emit findProgress(static_cast<int>(progress * 100.0), it.position());
+            emit findProgress(progress * 100.0, it.position());
             if (d->findState == TextDocumentPrivate::AbortFind) {
                 d->findState = TextDocumentPrivate::NotFinding;
                 break;
@@ -585,14 +589,14 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
     const FindScope scope(flags & FindAllowInterrupt ? &d->findState : 0);
     if (flags & FindAllowInterrupt) {
         progressInterval = qMax<int>(1, (reverse
-                                         ? (static_cast<qreal>(pos) / 100.0)
+                                         ? (static_cast<qreal>(pos) / static_cast<qreal>(TEXTDOCUMENT_FIND_INTERVAL_PERCENTAGE))
                                          : (static_cast<qreal>(d->documentSize) - static_cast<qreal>(pos)) / 100.0));
         maxFindLength = (reverse ? pos : d->documentSize - pos);
     }
     do {
         if (progressInterval != 0 && qAbs(it.position() - lastProgress) >= progressInterval) {
             const qreal progress = qAbs<int>(static_cast<qreal>(it.position() - initialPos)) / static_cast<qreal>(maxFindLength);
-            emit findProgress(static_cast<int>(progress * 100.0), it.position());
+            emit findProgress(progress * 100.0, it.position());
             if (d->findState == TextDocumentPrivate::AbortFind) {
                 break;
             }
@@ -679,7 +683,7 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
     const FindScope scope(flags & FindAllowInterrupt ? &d->findState : 0);
     if (flags & FindAllowInterrupt) {
         progressInterval = qMax<int>(1, (reverse
-                                         ? (static_cast<qreal>(pos) / 100.0)
+                                         ? (static_cast<qreal>(pos) / static_cast<qreal>(TEXTDOCUMENT_FIND_INTERVAL_PERCENTAGE))
                                          : (static_cast<qreal>(d->documentSize) - static_cast<qreal>(pos)) / 100.0));
         maxFindLength = (reverse ? pos : d->documentSize - pos);
     }
@@ -694,7 +698,7 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
         c = it.nextPrev(dir, ok);
         if (progressInterval != 0 && qAbs(it.position() - lastProgress) >= progressInterval) {
             const qreal progress = qAbs<int>(static_cast<qreal>(it.position() - initialPos)) / static_cast<qreal>(maxFindLength);
-            emit findProgress(static_cast<int>(progress * 100.0), it.position());
+            emit findProgress(progress * 100.0, it.position());
             if (d->findState == TextDocumentPrivate::AbortFind) {
                 d->findState = TextDocumentPrivate::NotFinding;
                 break;

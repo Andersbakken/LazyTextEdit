@@ -979,10 +979,10 @@ public:
     Aborter(TextDocument *doc)
         : document(doc)
     {
-        connect(document, SIGNAL(findProgress(int,int)), this, SLOT(onFindProgress(int,int)));
+        connect(document, SIGNAL(findProgress(qreal,int)), this, SLOT(onFindProgress(qreal,int)));
     }
 public slots:
-    void onFindProgress(int, int)
+    void onFindProgress(qreal, int)
     {
         document->abortFind();
     }
