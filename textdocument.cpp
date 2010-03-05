@@ -492,16 +492,18 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
                 ++to;
         } else if (direction == TextDocumentIterator::Left) {
             ++from;
+            ++to;
         }
         const QString line = read(from, to - from);
         last = it.position() + 1;
-        const int index = regexp.indexIn(line);
+        const int index = (reverse ? regexp.lastIndexIn(line) : regexp.indexIn(line));
         if (index != -1) {
-            if (!reverse && index + regexp.matchedLength() > limit)
+            if (!reverse && from + index + regexp.matchedLength() > limit)
                 break;
-            TextCursor cursor(this);
-            cursor.setPosition(from + index);
-            return cursor;
+
+            TextCursor ret(this, from + index, from + index + regexp.matchedLength());
+            Q_ASSERT(ret.selectedText() == regexp.capturedTexts().first());
+            return ret;
         }
         if (progressInterval != 0 && qAbs(it.position() - lastProgress) >= progressInterval) {
             const qreal progress = qAbs<int>(static_cast<qreal>(it.position() - initialPos)) / static_cast<qreal>(maxFindLength);
@@ -601,8 +603,8 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
     if (ok && wordIndex == word.size()) {
         int pos = it.position() - (reverse ? 0 : word.size() - 1);
         // the iterator reads one past the last matched character so we have to account for that here
-        TextCursor cursor(this, pos);
-        return cursor;
+        TextCursor ret(this, pos, pos + wordIndex);
+        return ret;
     }
 
     return TextCursor();
@@ -652,9 +654,8 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
     bool ok = true;
     do {
         if ((caseSensitive ? c : c.toLower()) == ch) {
-            TextCursor cursor(this);
-            cursor.setPosition(it.position());
-            return cursor;
+            TextCursor ret(this, it.position(), it.position() + 1);
+            return ret;
         }
         c = it.nextPrev(dir, ok);
         if (progressInterval != 0 && qAbs(it.position() - lastProgress) >= progressInterval) {

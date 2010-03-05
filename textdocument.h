@@ -96,6 +96,7 @@ public:
     int swappedChunkCount() const;
 
     enum FindModeFlag {
+        FindNone = 0x00000,
         FindBackward = 0x00001,
         FindCaseSensitively = 0x00002,
         FindWholeWords = 0x00004,
