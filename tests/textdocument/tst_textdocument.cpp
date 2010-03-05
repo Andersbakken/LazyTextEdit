@@ -215,14 +215,15 @@ void tst_TextDocument::find3_data()
     QTest::addColumn<int>("position");
     QTest::addColumn<int>("flags");
     QTest::addColumn<int>("expected");
+    QTest::addColumn<QString>("expectedText");
 
-    QTest::newRow("1") << QRegExp("This") << 0 << 0 << 0;
-    QTest::newRow("2") << QRegExp("This") << 1 << 0 << 17;
-    QTest::newRow("3") << QRegExp("This") << -1 << int(TextDocument::FindBackward) << 17;
-    QTest::newRow("4") << QRegExp("This") << 16 << int(TextDocument::FindBackward) << 0;
-    QTest::newRow("5") << QRegExp("\\bis") << 16 << int(TextDocument::FindBackward) << 5;
-    QTest::newRow("6") << QRegExp("is") << 0 << 0 << 2;
-    QTest::newRow("7") << QRegExp("\\bis") << 0 << 0 << 5;
+    QTest::newRow("1") << QRegExp("This") << 0 << 0 << 0 << "This";
+    QTest::newRow("2") << QRegExp("This") << 1 << 0 << 17 << "This";
+    QTest::newRow("3") << QRegExp("This") << -1 << int(TextDocument::FindBackward) << 17 << "This";
+    QTest::newRow("4") << QRegExp("This") << 16 << int(TextDocument::FindBackward) << 0 << "This";
+    QTest::newRow("5") << QRegExp("\\bis") << 16 << int(TextDocument::FindBackward) << 5 << "is";
+    QTest::newRow("6") << QRegExp("is") << 0 << 0 << 2 << "is";
+    QTest::newRow("7") << QRegExp("\\bis") << 0 << 0 << 5 << "is";
 }
 
 
@@ -234,10 +235,13 @@ void tst_TextDocument::find3()
     QFETCH(int, position);
     QFETCH(int, flags);
     QFETCH(int, expected);
+    QFETCH(QString, expectedText);
     if (position == -1)
         position = doc.documentSize();
 
     QCOMPARE(doc.find(regExp, position, (TextDocument::FindMode)flags).position(), expected);
+    QCOMPARE(doc.find(regExp, position, (TextDocument::FindMode)flags).selectedText(), expectedText);
+
 }
 
 
@@ -485,8 +489,25 @@ void tst_TextDocument::findQChar()
 
 //    qDebug() << ch << doc.readCharacter(position) << position << doc.read(qMax(0, position - 3), 7) << position;
 //    qDebug() << ch << position << doc.documentSize() << flags << expected;
-    QCOMPARE(doc.find(ch, position, (TextDocument::FindMode)flags).position(), expected);
-    QCOMPARE(doc.find(QString(ch), position, (TextDocument::FindMode)flags).position(), expected);
+    TextCursor cursor = doc.find(ch, position, (TextDocument::FindMode)flags);;
+    QCOMPARE(cursor.position(), expected);
+    QCOMPARE(cursor.selectedText().toUpper(), QString(ch).toUpper());
+    cursor = doc.find(QString(ch), position, (TextDocument::FindMode)flags);
+    QCOMPARE(cursor.position(), expected);
+    QCOMPARE(cursor.selectedText().toUpper(), QString(ch).toUpper());
+    QRegExp rx(ch);
+    if (flags & TextDocument::FindCaseSensitively) {
+        flags &= ~TextDocument::FindCaseSensitively;
+        rx.setCaseSensitivity(Qt::CaseSensitive);
+    } else {
+        rx.setCaseSensitivity(Qt::CaseInsensitive);
+    }
+
+    cursor = doc.find(rx, position, (TextDocument::FindMode)flags);
+    QCOMPARE(cursor.position(), expected);
+    QCOMPARE(cursor.selectedText().toUpper(), QString(ch).toUpper());
+    QCOMPARE(cursor.selectedText().toUpper(), rx.capturedTexts().value(0).toUpper());
+
 }
 
 
