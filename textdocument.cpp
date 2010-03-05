@@ -424,6 +424,20 @@ public:
     TextDocumentPrivate::FindState *state;
 };
 
+static void initFind(const TextCursor &cursor, bool reverse, int *start, int *limit)
+{
+    if (cursor.hasSelection()) {
+        *start = cursor.selectionStart();
+        *limit = cursor.selectionEnd();
+        if (reverse) {
+            qSwap(*start, *limit);
+        }
+    } else {
+        *start = cursor.position();
+        *limit = (reverse ? 0 : cursor.document()->documentSize());
+    }
+}
+
 TextCursor TextDocument::find(const QRegExp &rx, const TextCursor &cursor, FindMode flags) const
 {
     if (flags & FindWholeWords) {
@@ -431,13 +445,16 @@ TextCursor TextDocument::find(const QRegExp &rx, const TextCursor &cursor, FindM
     }
 
     const bool reverse = flags & FindBackward;
-    int pos = reverse ? cursor.selectionEnd() : cursor.selectionStart();
+    int pos;
+    int limit;
+    ::initFind(cursor, reverse, &pos, &limit);
 
     if (pos == d->documentSize) {
         if (!reverse)
             return TextCursor();
         --pos;
     }
+
 
     QRegExp regexp = rx;
     if ((rx.caseSensitivity() == Qt::CaseSensitive) != (flags & FindCaseSensitively))
@@ -501,8 +518,9 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
     const bool caseSensitive = flags & FindCaseSensitively;
     const bool wholeWords = flags & FindWholeWords;
 
-    int pos = reverse ? cursor.selectionEnd() : cursor.selectionStart();
-    Q_ASSERT(pos >= 0 && pos <= d->documentSize);
+    int pos;
+    int limit;
+    ::initFind(cursor, reverse, &pos, &limit);
 
     if (pos == d->documentSize) {
         if (!reverse)
@@ -585,7 +603,9 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
     }
 
     const bool reverse = flags & FindBackward;
-    int pos = reverse ? cursor.selectionEnd() : cursor.selectionStart();
+    int pos;
+    int limit;
+    ::initFind(cursor, reverse, &pos, &limit);
     if (pos == d->documentSize) {
         if (!reverse)
             return TextCursor();
