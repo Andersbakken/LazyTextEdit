@@ -992,15 +992,15 @@ void tst_TextDocument::abortFind()
     switch (needle.type()) {
     case QVariant::RegExp:
         QVERIFY(doc.find(needle.toRegExp(), 0, 0).isValid());
-        QVERIFY(!doc.find(needle.toRegExp(), 0, TextDocument::AllowInterrupt).isValid());
+        QVERIFY(!doc.find(needle.toRegExp(), 0, TextDocument::FindAllowInterrupt).isValid());
         break;
     case QVariant::String:
         QVERIFY(doc.find(needle.toString(), 0, 0).isValid());
-        QVERIFY(!doc.find(needle.toString(), 0, TextDocument::AllowInterrupt).isValid());
+        QVERIFY(!doc.find(needle.toString(), 0, TextDocument::FindAllowInterrupt).isValid());
         break;
     case QVariant::Char:
         QVERIFY(doc.find(needle.toChar(), 0, 0).isValid());
-        QVERIFY(!doc.find(needle.toChar(), 0, TextDocument::AllowInterrupt).isValid());
+        QVERIFY(!doc.find(needle.toChar(), 0, TextDocument::FindAllowInterrupt).isValid());
         break;
     default:
         qFatal("huh?");

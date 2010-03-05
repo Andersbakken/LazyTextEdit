@@ -100,7 +100,7 @@ public:
         FindBackward = 0x00001,
         FindCaseSensitively = 0x00002,
         FindWholeWords = 0x00004,
-        AllowInterrupt = 0x00008
+        FindAllowInterrupt = 0x00008
     };
     Q_DECLARE_FLAGS(FindMode, FindModeFlag);
 

@@ -476,8 +476,8 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
     int lastProgress = pos;
     const int initialPos = pos;
     int maxFindLength = 0;
-    const FindScope scope(flags & AllowInterrupt ? &d->findState : 0);
-    if (flags & AllowInterrupt) {
+    const FindScope scope(flags & FindAllowInterrupt ? &d->findState : 0);
+    if (flags & FindAllowInterrupt) {
         progressInterval = qMax<int>(1, (reverse
                                          ? (static_cast<qreal>(pos) / 100.0)
                                          : (static_cast<qreal>(d->documentSize) - static_cast<qreal>(pos)) / 100.0));
@@ -564,8 +564,8 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
     int lastProgress = pos;
     const int initialPos = pos;
     int maxFindLength = 0;
-    const FindScope scope(flags & AllowInterrupt ? &d->findState : 0);
-    if (flags & AllowInterrupt) {
+    const FindScope scope(flags & FindAllowInterrupt ? &d->findState : 0);
+    if (flags & FindAllowInterrupt) {
         progressInterval = qMax<int>(1, (reverse
                                          ? (static_cast<qreal>(pos) / 100.0)
                                          : (static_cast<qreal>(d->documentSize) - static_cast<qreal>(pos)) / 100.0));
@@ -642,8 +642,8 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
     const int initialPos = pos;
     int maxFindLength = 0;
     int progressInterval = 0;
-    const FindScope scope(flags & AllowInterrupt ? &d->findState : 0);
-    if (flags & AllowInterrupt) {
+    const FindScope scope(flags & FindAllowInterrupt ? &d->findState : 0);
+    if (flags & FindAllowInterrupt) {
         progressInterval = qMax<int>(1, (reverse
                                          ? (static_cast<qreal>(pos) / 100.0)
                                          : (static_cast<qreal>(d->documentSize) - static_cast<qreal>(pos)) / 100.0));
