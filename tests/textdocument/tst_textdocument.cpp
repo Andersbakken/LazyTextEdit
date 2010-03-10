@@ -57,6 +57,7 @@ private slots:
     void findWrap();
     void abortFind_data();
     void abortFind();
+    void abortFindSleep();
     void findQChar_data();
     void findQChar();
     void findWholeWordsRecursionCrash();
@@ -1022,6 +1023,42 @@ void tst_TextDocument::abortFind()
         break;
     }
 }
+
+class Aborter2 : public QObject
+{
+    Q_OBJECT
+public:
+    Aborter2(TextDocument *doc)
+        : document(doc)
+    {
+        connect(document, SIGNAL(findProgress(qreal,int)), this, SLOT(onFindProgress(qreal,int)));
+        timer.start();
+    }
+public slots:
+    void onFindProgress(qreal percentage, int progress)
+    {
+        qDebug() << timer.restart() << percentage << progress;
+//        document->abortFind();
+    }
+private:
+    TextDocument *document;
+    QTime timer;
+};
+
+
+void tst_TextDocument::abortFindSleep()
+{
+    TextDocument doc;
+    QString line = "abcdefghijklmnopqrstuvwxyz0123456789\n";
+    for (int i=0; i<1024; ++i)
+        doc.append(line);
+    doc.append("_");
+    doc.setProperty("TEXTDOCUMENT_FIND_SLEEP", 2500);
+    Aborter2 aborter(&doc);
+    doc.find('_', 0, TextDocument::FindAllowInterrupt);
+    QVERIFY(true);
+}
+
 
 QTEST_MAIN(tst_TextDocument)
 #include "tst_textdocument.moc"

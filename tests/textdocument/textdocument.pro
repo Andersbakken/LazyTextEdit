@@ -11,6 +11,7 @@ INCLUDEPATH += .
 SOURCES += tst_textdocument.cpp
 CONFIG += debug
 CONFIG -= app_bundle
+DEFINES += TEXTDOCUMENT_FIND_SLEEP
 unix {
     MOC_DIR=.moc
     UI_DIR=.ui
@@ -22,3 +23,4 @@ unix {
 }
 load(qtestlib.prf)
 include(../../textedit.pri)
+
