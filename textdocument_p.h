@@ -132,6 +132,7 @@ struct DocumentCommand {
 
 struct TextSection;
 struct TextCursorSharedPrivate;
+class Needle;
 struct TextDocumentPrivate : public QObject
 {
     Q_OBJECT
@@ -209,6 +210,7 @@ public:
     QString paragraphAt(int position, int *start = 0) const;
 
     uint wordBoundariesAt(int pos) const;
+    TextCursor find(Needle *needle, const TextCursor &cursor) const;
 
     friend class TextDocument;
     void swapOutChunk(Chunk *c);

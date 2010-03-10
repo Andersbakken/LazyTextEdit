@@ -2,6 +2,7 @@
 #include "textcursor.h"
 #include "textcursor_p.h"
 #include "textdocument_p.h"
+#include "textdocument_find_p.h"
 #include <QBuffer>
 #include <QObject>
 #include <QString>
@@ -420,6 +421,7 @@ QTextCodec * TextDocument::textCodec() const
     return d->textCodec;
 }
 
+#if 0
 class FindScope
 {
 public:
@@ -720,6 +722,25 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
     }
 
     return TextCursor();
+}
+#endif
+
+TextCursor TextDocument::find(const QRegExp &rx, const TextCursor &cursor, FindMode flags) const
+{
+    RegExpNeedle needle(flags, rx);
+    return d->find(&needle, cursor);
+}
+
+TextCursor TextDocument::find(const QString &string, const TextCursor &cursor, FindMode flags) const
+{
+    StringNeedle needle(flags, string);
+    return d->find(&needle, cursor);
+}
+
+TextCursor TextDocument::find(const QChar &ch, const TextCursor &cursor, FindMode flags) const
+{
+    CharNeedle needle(flags, ch);
+    return d->find(&needle, cursor);
 }
 
 bool TextDocument::insert(int pos, const QString &string)
