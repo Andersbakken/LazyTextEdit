@@ -34,7 +34,7 @@ static void findSleep(const TextDocument *doc)
         duration = document->property("TEXTDOCUMENT_FIND_SLEEP").toInt();
     }
     if (duration > 0) {
-        qDebug() << "sleeping" << (duration * 1000);
+//        qDebug() << "sleeping" << (duration * 1000);
         usleep(duration * 1000);
     }
 }
@@ -514,7 +514,6 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
     }
     do {
 #ifdef TEXTDOCUMENT_FIND_SLEEP
-        printf("%s %d: findSleep(this);\n", __FILE__, __LINE__);
         findSleep(this);
 #endif
         while ((it.nextPrev(direction, ok) != newline) && ok) ;
@@ -629,7 +628,6 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
     do {
 
 #ifdef TEXTDOCUMENT_FIND_SLEEP
-        printf("%s %d: findSleep(this);\n", __FILE__, __LINE__);
         findSleep(this);
 #endif
         if (progressInterval != 0) {
@@ -748,7 +746,6 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
 //                  << lastProgressTime.elapsed() << TEXTDOCUMENT_MAX_INTERVAL;
         if (progressInterval != 0) {
             const int progress = qAbs(it.position() - lastProgress);
-            qDebug() << progress << lastProgressTime.elapsed() << TEXTDOCUMENT_MAX_INTERVAL;
             if (progress >= progressInterval
                 || (progress % 10 == 0 && lastProgressTime.elapsed() >= TEXTDOCUMENT_MAX_INTERVAL)) {
                 const qreal progress = qAbs<int>(static_cast<qreal>(it.position() - initialPos)) / static_cast<qreal>(maxFindLength);
