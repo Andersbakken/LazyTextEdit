@@ -1031,12 +1031,12 @@ public:
     Aborter2(TextDocument *doc)
         : document(doc), prcnt(-1)
     {
-        connect(document, SIGNAL(findProgress(qreal,int)), this, SLOT(onFindProgress(qreal,int)));
+        connect(document, SIGNAL(findProgress(qreal,int)), this, SLOT(onFindProgress(qreal)));
         timer.start();
     }
     qreal percentage() const { return prcnt; }
 public slots:
-    void onFindProgress(qreal percentage, int progress)
+    void onFindProgress(qreal percentage)
     {
         prcnt = percentage;
         document->abortFind();
@@ -1061,9 +1061,23 @@ void tst_TextDocument::abortFindSleep()
     TextDocument doc;
     QVERIFY(doc.load(tmpFile.fileName()));
     doc.setProperty("TEXTDOCUMENT_FIND_SLEEP", 10);
-    Aborter2 aborter(&doc);
-    QVERIFY(doc.find('_', 0, TextDocument::FindAllowInterrupt).isNull());
-    QVERIFY(aborter.percentage() < 1.0);
+    {
+        Aborter2 aborter(&doc);
+        QVERIFY(doc.find('_', 0, TextDocument::FindAllowInterrupt).isNull());
+        QVERIFY(aborter.percentage() < 1.0);
+    }
+    {
+        Aborter2 aborter(&doc);
+        QVERIFY(doc.find("_", 0, TextDocument::FindAllowInterrupt).isNull());
+        QVERIFY(aborter.percentage() < 1.0);
+    }
+    {
+        Aborter2 aborter(&doc);
+        QVERIFY(doc.find(QRegExp("[^a-z0-9]"), 0, TextDocument::FindAllowInterrupt).isNull());
+        QVERIFY(aborter.percentage() < 1.0);
+    }
+
+
 }
 
 
