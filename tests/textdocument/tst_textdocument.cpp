@@ -1029,34 +1029,41 @@ class Aborter2 : public QObject
     Q_OBJECT
 public:
     Aborter2(TextDocument *doc)
-        : document(doc)
+        : document(doc), prcnt(-1)
     {
         connect(document, SIGNAL(findProgress(qreal,int)), this, SLOT(onFindProgress(qreal,int)));
         timer.start();
     }
+    qreal percentage() const { return prcnt; }
 public slots:
     void onFindProgress(qreal percentage, int progress)
     {
-        qDebug() << timer.restart() << percentage << progress;
-//        document->abortFind();
+        prcnt = percentage;
+        document->abortFind();
     }
 private:
     TextDocument *document;
     QTime timer;
+    qreal prcnt;
 };
 
 
 void tst_TextDocument::abortFindSleep()
 {
+    QTemporaryFile tmpFile;
+    tmpFile.open();
+    QTextStream ts(&tmpFile);
+    const QString line = "abcdefghijklmnopqrstuvwxyz0123456789\n";
+    for (int i=0; i<1024 * 1024; ++i)
+        ts << line;
+    ts << '_';
+
     TextDocument doc;
-    QString line = "abcdefghijklmnopqrstuvwxyz0123456789\n";
-    for (int i=0; i<1024; ++i)
-        doc.append(line);
-    doc.append("_");
-    doc.setProperty("TEXTDOCUMENT_FIND_SLEEP", 2500);
+    QVERIFY(doc.load(tmpFile.fileName()));
+    doc.setProperty("TEXTDOCUMENT_FIND_SLEEP", 10);
     Aborter2 aborter(&doc);
-    doc.find('_', 0, TextDocument::FindAllowInterrupt);
-    QVERIFY(true);
+    QVERIFY(doc.find('_', 0, TextDocument::FindAllowInterrupt).isNull());
+    QVERIFY(aborter.percentage() < 1.0);
 }
 
 
