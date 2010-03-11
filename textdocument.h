@@ -126,6 +126,7 @@ public:
 
 
     bool insert(int pos, const QString &ba);
+    inline bool insert(int pos, const QChar &ba) { return insert(pos, QString(ba)); }
     void remove(int pos, int size);
 
     QList<TextSection*> sections(int from = 0, int size = -1, TextSection::TextSectionOptions opt = 0) const;
@@ -148,6 +149,7 @@ public:
     virtual bool isWordCharacter(const QChar &ch, int index) const;
 public slots:
     inline bool append(const QString &ba) { return insert(documentSize(), ba); }
+    inline bool append(const QChar &ba) { return append(QString(ba)); }
     void setModified(bool modified);
     void undo();
     void redo();
