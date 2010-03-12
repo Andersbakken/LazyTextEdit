@@ -446,6 +446,7 @@ void tst_TextDocument::sections()
 void tst_TextDocument::findWholeWordsRecursionCrash()
 {
     QTemporaryFile file;
+    file.setAutoRemove(true);
     file.open();
     QTextStream ts(&file);
     for (int i=0; i<100000; ++i) {
@@ -1051,6 +1052,7 @@ private:
 void tst_TextDocument::abortFindSleep()
 {
     QTemporaryFile tmpFile;
+    tmpFile.setAutoRemove(true);
     tmpFile.open();
     QTextStream ts(&tmpFile);
     const QString line = "abcdefghijklmnopqrstuvwxyz0123456789\n";
