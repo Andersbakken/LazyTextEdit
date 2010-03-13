@@ -24,15 +24,10 @@
 #endif
 
 #ifdef TEXTDOCUMENT_FIND_SLEEP
-static void findSleep(const TextDocument *doc)
+static void findSleep(const TextDocument *document)
 {
-    Q_ASSERT(doc);
-    static const TextDocument *document = 0;
-    static int duration = 0;
-    if (document != doc) {
-        document = doc;
-        duration = document->property("TEXTDOCUMENT_FIND_SLEEP").toInt();
-    }
+    Q_ASSERT(document);
+    const int duration = document->property("TEXTDOCUMENT_FIND_SLEEP").toInt();
     if (duration > 0) {
         usleep(duration * 1000);
     }
@@ -551,7 +546,7 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
         }
     } while (ok);
 
-    if (flags & FindWrap) {
+    if (flags & FindWrap && d->findState != TextDocumentPrivate::AbortFind) {
         Q_ASSERT(!cursor.hasSelection());
         if (reverse) {
             if (cursor.position() + 1 < d->documentSize) {
@@ -668,7 +663,7 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
         return ret;
     }
 
-    if (flags & FindWrap) {
+    if (flags & FindWrap && d->findState != TextDocumentPrivate::AbortFind) {
         Q_ASSERT(!cursor.hasSelection());
         if (reverse) {
             if (cursor.position() + 1 < d->documentSize) {
@@ -757,7 +752,7 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
         }
     } while (ok);
 
-    if (flags & FindWrap) {
+    if (flags & FindWrap && d->findState != TextDocumentPrivate::AbortFind) {
         Q_ASSERT(!cursor.hasSelection());
         if (reverse) {
             if (cursor.position() + 1 < d->documentSize) {
