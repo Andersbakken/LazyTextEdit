@@ -196,6 +196,9 @@ void tst_TextDocument::find()
     QCOMPARE(doc.find("This", 0, TextDocument::FindWholeWords).position(), 0);
     doc.remove(1, 1);
     QCOMPARE(doc.find("This", 0, TextDocument::FindWholeWords).position(), 16);
+    QCOMPARE(doc.find("This", 0, TextDocument::FindWholeWords).anchor(), 16);
+    QCOMPARE(doc.find("This", 0, TextDocument::FindWholeWords).selectedText(), QString("This"));
+
 }
 
 void tst_TextDocument::find2()
@@ -216,16 +219,17 @@ void tst_TextDocument::find3_data()
     QTest::addColumn<QRegExp>("regExp");
     QTest::addColumn<int>("position");
     QTest::addColumn<int>("flags");
-    QTest::addColumn<int>("expected");
+    QTest::addColumn<int>("expectedAnchor");
+    QTest::addColumn<int>("expectedPosition");
     QTest::addColumn<QString>("expectedText");
 
-    QTest::newRow("1") << QRegExp("This") << 0 << 0 << 0 << "This";
-    QTest::newRow("2") << QRegExp("This") << 1 << 0 << 17 << "This";
-    QTest::newRow("3") << QRegExp("This") << -1 << int(TextDocument::FindBackward) << 17 << "This";
-    QTest::newRow("4") << QRegExp("This") << 16 << int(TextDocument::FindBackward) << 0 << "This";
-    QTest::newRow("5") << QRegExp("\\bis") << 16 << int(TextDocument::FindBackward) << 5 << "is";
-    QTest::newRow("6") << QRegExp("is") << 0 << 0 << 2 << "is";
-    QTest::newRow("7") << QRegExp("\\bis") << 0 << 0 << 5 << "is";
+    QTest::newRow("1") << QRegExp("This") << 0 << 0 << 0 << 4 << "This";
+    QTest::newRow("2") << QRegExp("This") << 1 << 0 << 17 << 21 << "This";
+    QTest::newRow("3") << QRegExp("This") << -1 << int(TextDocument::FindBackward) << 17 << 21 << "This";
+    QTest::newRow("4") << QRegExp("This") << 16 << int(TextDocument::FindBackward) << 0 << 4 << "This";
+    QTest::newRow("5") << QRegExp("\\bis") << 16 << int(TextDocument::FindBackward) << 5 << 7 << "is";
+    QTest::newRow("6") << QRegExp("is") << 0 << 0 << 2 << 4 << "is";
+    QTest::newRow("7") << QRegExp("\\bis") << 0 << 0 << 5 << 7 << "is";
 }
 
 
@@ -236,12 +240,16 @@ void tst_TextDocument::find3()
     QFETCH(QRegExp, regExp);
     QFETCH(int, position);
     QFETCH(int, flags);
-    QFETCH(int, expected);
+    QFETCH(int, expectedAnchor);
+    QFETCH(int, expectedPosition);
     QFETCH(QString, expectedText);
     if (position == -1)
         position = doc.documentSize();
 
-    QCOMPARE(doc.find(regExp, position, (TextDocument::FindMode)flags).position(), expected);
+    TextCursor cursor = doc.find(regExp, position, (TextDocument::FindMode)flags);
+    QCOMPARE(cursor.anchor(), expectedAnchor);
+    QCOMPARE(cursor.position(), expectedPosition);
+    QCOMPARE(cursor.selectedText(), expectedText);
     QCOMPARE(doc.find(regExp, position, (TextDocument::FindMode)flags).selectedText(), expectedText);
 
 }
@@ -507,7 +515,8 @@ void tst_TextDocument::findQChar()
     }
 
     cursor = doc.find(rx, position, (TextDocument::FindMode)flags);
-    QCOMPARE(cursor.position(), expected);
+    QCOMPARE(cursor.anchor(), expected);
+    QCOMPARE(cursor.position(), expected + 1);
     QCOMPARE(cursor.selectedText().toUpper(), QString(ch).toUpper());
     QCOMPARE(cursor.selectedText().toUpper(), rx.capturedTexts().value(0).toUpper());
 
