@@ -34,7 +34,6 @@ static void findSleep(const TextDocument *doc)
         duration = document->property("TEXTDOCUMENT_FIND_SLEEP").toInt();
     }
     if (duration > 0) {
-//        qDebug() << "sleeping" << (duration * 1000);
         usleep(duration * 1000);
     }
 }
@@ -626,7 +625,6 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
         lastProgressTime.start();
     }
     do {
-
 #ifdef TEXTDOCUMENT_FIND_SLEEP
         findSleep(this);
 #endif
