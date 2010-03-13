@@ -368,12 +368,12 @@ void TextLayout::updateViewportPosition(int pos, Direction direction)
     } else {
         Q_ASSERT(document->documentSize() > 0);
         int index = document->find('\n', qMax(0, pos + (direction == Backward ? -1 : 0)),
-                                   TextDocument::FindMode(direction)).position();
+                                   TextDocument::FindMode(direction)).anchor();
         if (index == -1) {
             if (direction == Backward) {
                 index = 0;
             } else {
-                index = qMax(0, document->find('\n', document->documentSize() - 1, TextDocument::FindBackward).position() + 1);
+                index = qMax(0, document->find('\n', document->documentSize() - 1, TextDocument::FindBackward).position());
                 // position after last newline in document
                 // if there is no newline put it at 0
             }

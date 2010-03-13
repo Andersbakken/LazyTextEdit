@@ -532,7 +532,7 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
             if (!reverse && from + index + regexp.matchedLength() > limit)
                 break;
 
-            TextCursor ret(this, from + index, from + index + regexp.matchedLength());
+            TextCursor ret(this, from + index + regexp.matchedLength(), from + index);
             Q_ASSERT(ret.selectedText() == regexp.capturedTexts().first());
             return ret;
         }
@@ -664,7 +664,7 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
     if (ok && wordIndex == word.size()) {
         int pos = it.position() - (reverse ? 0 : word.size() - 1);
         // the iterator reads one past the last matched character so we have to account for that here
-        TextCursor ret(this, pos, pos + wordIndex);
+        TextCursor ret(this, pos + wordIndex, pos);
         return ret;
     }
 
@@ -736,7 +736,7 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
         findSleep(this);
 #endif
         if ((caseSensitive ? c : c.toLower()) == ch) {
-            TextCursor ret(this, it.position(), it.position() + 1);
+            TextCursor ret(this, it.position() + 1, it.position());
             return ret;
         }
         c = it.nextPrev(dir, ok);

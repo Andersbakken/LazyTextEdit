@@ -178,25 +178,25 @@ void tst_TextDocument::find()
     QVERIFY(!doc.find('\n', 0).isNull());
     QString searchTerm = "another";
     doc.append(searchTerm);
-    int index = doc.find(searchTerm, 0).position();
+    int index = doc.find(searchTerm, 0).anchor();
     QVERIFY(index != -1);
     const int first = index;
-    index = doc.find(searchTerm, index).position();
+    index = doc.find(searchTerm, index).anchor();
     QCOMPARE(index, first);
 
-    index = doc.find(searchTerm, index + 1).position();
+    index = doc.find(searchTerm, index + 1).anchor();
     QCOMPARE(index, doc.documentSize() - searchTerm.size());
-    QCOMPARE(doc.find(searchTerm, index - 1, TextDocument::FindBackward).position(), first);
-    QCOMPARE(doc.find(searchTerm, index + 1).position(), -1);
-    QCOMPARE(doc.find(searchTerm, index - 2, TextDocument::FindWholeWords).position(), index);
+    QCOMPARE(doc.find(searchTerm, index - 1, TextDocument::FindBackward).anchor(), first);
+    QCOMPARE(doc.find(searchTerm, index + 1).anchor(), -1);
+    QCOMPARE(doc.find(searchTerm, index - 2, TextDocument::FindWholeWords).anchor(), index);
     QVERIFY(!doc.find(searchTerm, 0).isNull());
     searchTerm.chop(1);
     searchTerm.remove(0, 1);
     QVERIFY(doc.find(searchTerm, 0, TextDocument::FindWholeWords).isNull());
-    QCOMPARE(doc.find("This", 0, TextDocument::FindWholeWords).position(), 0);
+    QCOMPARE(doc.find("This", 0, TextDocument::FindWholeWords).anchor(), 0);
     doc.remove(1, 1);
-    QCOMPARE(doc.find("This", 0, TextDocument::FindWholeWords).position(), 16);
     QCOMPARE(doc.find("This", 0, TextDocument::FindWholeWords).anchor(), 16);
+    QCOMPARE(doc.find("This", 0, TextDocument::FindWholeWords).position(), 20);
     QCOMPARE(doc.find("This", 0, TextDocument::FindWholeWords).selectedText(), QString("This"));
 
 }
@@ -206,11 +206,11 @@ void tst_TextDocument::find2()
     TextDocument doc;
     doc.setChunkSize(2);
     doc.insert(0, "foobar");
-    QCOMPARE(doc.find("oo", 0).position(), 1);
-    QCOMPARE(doc.find("foobar", 0).position(), 0);
-    QCOMPARE(doc.find("foobar", doc.documentSize(), TextDocument::FindBackward).position(), 0);
-    QCOMPARE(doc.find("b", 0).position(), 3);
-    QCOMPARE(doc.find("b", doc.documentSize(), TextDocument::FindBackward).position(), 3);
+    QCOMPARE(doc.find("oo", 0).anchor(), 1);
+    QCOMPARE(doc.find("foobar", 0).anchor(), 0);
+    QCOMPARE(doc.find("foobar", doc.documentSize(), TextDocument::FindBackward).anchor(), 0);
+    QCOMPARE(doc.find("b", 0).anchor(), 3);
+    QCOMPARE(doc.find("b", doc.documentSize(), TextDocument::FindBackward).anchor(), 3);
 
 }
 
@@ -501,10 +501,10 @@ void tst_TextDocument::findQChar()
 //    qDebug() << ch << doc.readCharacter(position) << position << doc.read(qMax(0, position - 3), 7) << position;
 //    qDebug() << ch << position << doc.documentSize() << flags << expected;
     TextCursor cursor = doc.find(ch, position, (TextDocument::FindMode)flags);;
-    QCOMPARE(cursor.position(), expected);
+    QCOMPARE(cursor.anchor(), expected);
     QCOMPARE(cursor.selectedText().toUpper(), QString(ch).toUpper());
     cursor = doc.find(QString(ch), position, (TextDocument::FindMode)flags);
-    QCOMPARE(cursor.position(), expected);
+    QCOMPARE(cursor.position(), expected + 1);
     QCOMPARE(cursor.selectedText().toUpper(), QString(ch).toUpper());
     QRegExp rx(ch);
     if (flags & TextDocument::FindCaseSensitively) {
@@ -949,7 +949,7 @@ void tst_TextDocument::find4()
 {
     TextDocument doc;
     doc.setText("abcdefg\nabcdefg\n bcd \n");
-    const int val = doc.find("bcd", 0, TextDocument::FindWholeWords).position();
+    const int val = doc.find("bcd", 0, TextDocument::FindWholeWords).anchor();
     QCOMPARE(val, 17);
 }
 
@@ -1042,7 +1042,6 @@ public:
         : document(doc), prcnt(-1)
     {
         connect(document, SIGNAL(findProgress(qreal,int)), this, SLOT(onFindProgress(qreal)));
-        timer.start();
     }
     qreal percentage() const { return prcnt; }
 public slots:
@@ -1051,9 +1050,8 @@ public slots:
         prcnt = percentage;
         document->abortFind();
     }
-private:
+public:
     TextDocument *document;
-    QTime timer;
     qreal prcnt;
 };
 
@@ -1070,7 +1068,6 @@ void tst_TextDocument::abortFindSleep()
     ts << '_';
 
     TextDocument doc;
-    QVERIFY(doc.load(tmpFile.fileName()));
     doc.setProperty("TEXTDOCUMENT_FIND_SLEEP", 10);
     {
         Aborter2 aborter(&doc);
@@ -1087,8 +1084,6 @@ void tst_TextDocument::abortFindSleep()
         QVERIFY(doc.find(QRegExp("[^a-z0-9]"), 0, TextDocument::FindAllowInterrupt).isNull());
         QVERIFY(aborter.percentage() < 1.0);
     }
-
-
 }
 
 

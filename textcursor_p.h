@@ -108,7 +108,7 @@ public:
         }
         int startPos = (cursor.position() == 0
                         ? 0
-                        : qMax(0, doc->find(QLatin1Char('\n'), cursor.position() - 1, TextDocument::FindBackward).position()));
+                        : qMax(0, doc->find(QLatin1Char('\n'), cursor.position() - 1, TextDocument::FindBackward).anchor()));
         // We start at the beginning of the current line
         int linesAbove = margin;
         if (startPos > 0) {
@@ -119,9 +119,9 @@ public:
                     break;
                 }
                 startPos = c.position();
-                ASSUME(c.position() == 0 || c.cursorCharacter() == QLatin1Char('\n'));
-                ASSUME(c.position() == 0 || doc->readCharacter(c.position()) == QLatin1Char('\n'));
-                ASSUME(c.cursorCharacter() == doc->readCharacter(c.position()));
+                ASSUME(c.anchor() == 0 || c.cursorCharacter() == QLatin1Char('\n'));
+                ASSUME(c.anchor() == 0 || doc->readCharacter(c.anchor()) == QLatin1Char('\n'));
+                ASSUME(c.cursorCharacter() == doc->readCharacter(c.anchor()));
 
                 --linesAbove;
             }
@@ -136,7 +136,7 @@ public:
                     endPos = doc->documentSize();
                     break;
                 }
-                endPos = c.position();
+                endPos = c.anchor();
                 --linesBelow;
             }
         }
