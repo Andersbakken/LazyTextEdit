@@ -32,6 +32,7 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
         textLayout->clearAdditionalFormats();
     } else {
         textLayout = new QTextLayout;
+        textLayout->setCacheEnabled(true);
         textLayout->setFont(font);
         QTextOption option;
         option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
