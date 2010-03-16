@@ -534,10 +534,10 @@ bool TextCursor::operator<=(const TextCursor &rhs) const
 
 bool TextCursor::operator==(const TextCursor &rhs) const
 {
-    if (!d)
-        return !rhs.d;
+    if (isCopyOf(rhs))
+        return true;
 
-    if (!rhs.d)
+    if (!d || !rhs.d)
         return false;
 
     return (d->position == rhs.d->position
