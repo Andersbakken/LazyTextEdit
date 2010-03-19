@@ -325,9 +325,9 @@ public:
         }
         QFont f(fontFamily, fontSize);
         textEdit->setFont(f);
-//        textEdit->setSyntaxHighlighter(new Highlighter(textEdit));
-//        textEdit->setSyntaxHighlighter(new BlockLight(textEdit));
-        textEdit->setSyntaxHighlighter(new SpellCheck(textEdit));
+        textEdit->addSyntaxHighlighter(new Highlighter(textEdit));
+        textEdit->addSyntaxHighlighter(new BlockLight(textEdit));
+        textEdit->addSyntaxHighlighter(new SpellCheck(textEdit));
 #ifndef QT_NO_DEBUG_STREAM
         if (codec) {
             qDebug() << "using codec" << codec->name();

@@ -53,8 +53,14 @@ public:
     void setExtraSelections(const QList<ExtraSelection> &selections);
     QList<ExtraSelection> extraSelections() const;
 
-    void setSyntaxHighlighter(SyntaxHighlighter *highlighter);
-    SyntaxHighlighter *syntaxHighlighter() const;
+    inline void setSyntaxHighlighter(SyntaxHighlighter *h) { clearSyntaxHighlighters(); if (h) addSyntaxHighlighter(h); }
+    inline SyntaxHighlighter *syntaxHighlighter() const { return syntaxHighlighters().value(0); }
+
+    QList<SyntaxHighlighter*> syntaxHighlighters() const;
+    void addSyntaxHighlighter(SyntaxHighlighter *highlighter);
+    void takeSyntaxHighlighter(SyntaxHighlighter *highlighter);
+    void removeSyntaxHighlighter(SyntaxHighlighter *highlighter);
+    void clearSyntaxHighlighters();
 
     bool load(QIODevice *device, TextDocument::DeviceMode mode = TextDocument::Sparse, QTextCodec *codec = 0);
     bool load(const QString &fileName, TextDocument::DeviceMode mode = TextDocument::Sparse, QTextCodec *codec = 0);

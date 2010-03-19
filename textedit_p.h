@@ -71,6 +71,7 @@ public:
     QPoint lastHoverPos, lastMouseMove;
     QHash<DocumentCommand *, QPair<CursorData, CursorData> > undoRedoCommands;
 public slots:
+    void onSyntaxHighlighterDestroyed(QObject *o);
     void onSelectionChanged();
     void onTextSectionAdded(TextSection *section);
     void onTextSectionRemoved(TextSection *section);

@@ -100,7 +100,7 @@ public:
             l->lineBreaking = cursor.textEdit->lineBreaking();
             l->sections = cursor.textEdit->d->sections;
             l->font = cursor.textEdit->font();
-            l->syntaxHighlighter = cursor.textEdit->syntaxHighlighter();
+            l->syntaxHighlighters = cursor.textEdit->syntaxHighlighters();
 //            l->extraSelections = cursor.textEdit->extraSelections();
             // ### can the extra selections impact layout? If so they
             // ### need to be in the actual textLayout shouldn't need

@@ -26,7 +26,7 @@ SyntaxHighlighter::SyntaxHighlighter(TextEdit *parent)
     : QObject(parent), d(new Private)
 {
     if (parent) {
-        parent->setSyntaxHighlighter(this);
+        parent->addSyntaxHighlighter(this);
     }
 }
 

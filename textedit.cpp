@@ -1016,32 +1016,55 @@ void TextEditPrivate::updateCopyAndCutEnabled()
     }
 }
 
-void TextEdit::setSyntaxHighlighter(SyntaxHighlighter *highlighter)
+void TextEdit::takeSyntaxHighlighter(SyntaxHighlighter *highlighter)
 {
-    if (d->syntaxHighlighter.data() == highlighter)
-        return;
-
-    if (d->syntaxHighlighter) {
-        if (d->syntaxHighlighter.data()->parent() == this) {
-            delete d->syntaxHighlighter.data();
-        } else {
-            d->syntaxHighlighter.data()->d->textEdit = 0;
-            d->syntaxHighlighter.data()->d->textLayout = 0;
-        }
-    }
-
-    d->syntaxHighlighter = highlighter;
-    if (d->syntaxHighlighter) {
-        d->syntaxHighlighter.data()->d->textEdit = this;
-        d->syntaxHighlighter.data()->d->textLayout = d;
-    }
-    d->layoutDirty = true;
-    viewport()->update();
+    Q_ASSERT(highlighter);
+    const bool found = d->syntaxHighlighters.removeOne(highlighter);
+    Q_ASSERT(found);
+    Q_UNUSED(found);
+    highlighter->d->textEdit = 0;
+    highlighter->d->textLayout = 0;
+    disconnect(highlighter, 0, d, 0);
 }
 
-SyntaxHighlighter * TextEdit::syntaxHighlighter() const
+void TextEdit::removeSyntaxHighlighter(SyntaxHighlighter *highlighter)
 {
-    return d->syntaxHighlighter.data();
+    takeSyntaxHighlighter(highlighter);
+    delete highlighter;
+}
+
+void TextEdit::addSyntaxHighlighter(SyntaxHighlighter *highlighter)
+{
+    Q_ASSERT(highlighter);
+    if (highlighter->textEdit() != this) {
+        if (highlighter->textEdit()) {
+            qWarning("A SyntaxHighlighter can only be added to 1 TextEdit");
+            return;
+        }
+        d->syntaxHighlighters.append(highlighter);
+        connect(highlighter, SIGNAL(destroyed(QObject*)), d, SLOT(onSyntaxHighlighterDestroyed(QObject*)));
+        d->layoutDirty = true;
+        highlighter->d->textEdit = this;
+        highlighter->d->textLayout = d;
+        viewport()->update();
+    }
+}
+
+void TextEdit::clearSyntaxHighlighters()
+{
+    qDeleteAll(d->syntaxHighlighters);
+    d->syntaxHighlighters.clear();
+}
+
+
+void TextEditPrivate::onSyntaxHighlighterDestroyed(QObject *o)
+{
+    textEdit->takeSyntaxHighlighter(static_cast<SyntaxHighlighter*>(o));
+}
+
+QList<SyntaxHighlighter*> TextEdit::syntaxHighlighters() const
+{
+    return d->syntaxHighlighters;
 }
 
 static inline bool compareExtraSelection(const TextEdit::ExtraSelection &left, const TextEdit::ExtraSelection &right)

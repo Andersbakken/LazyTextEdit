@@ -85,7 +85,7 @@ public:
     }
 
     TextEdit *textEdit;
-    WeakPointer<SyntaxHighlighter> syntaxHighlighter;
+    QList<SyntaxHighlighter*> syntaxHighlighters;
     int viewportPosition, layoutEnd, viewport, visibleLines,
         lastVisibleCharacter, lastBottomMargin, widest, maxViewportPosition;
     bool layoutDirty, sectionsDirty, lineBreaking, suppressTextEditUpdates;

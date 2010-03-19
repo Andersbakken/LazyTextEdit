@@ -85,27 +85,27 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
     int rightMargin = 0;
     int topMargin = 0;
     int bottomMargin = 0;
-    if (syntaxHighlighter) {
-        syntaxHighlighter.data()->d->currentBlockPosition = lineStart;
-        syntaxHighlighter.data()->d->formatRanges.clear();
-        syntaxHighlighter.data()->d->currentBlock = string;
-        syntaxHighlighter.data()->highlightBlock(string);
-        syntaxHighlighter.data()->d->currentBlock.clear();
-        if (syntaxHighlighter.data()->d->blockFormat.isValid()) {
-            blockFormats[textLayout] = syntaxHighlighter.data()->d->blockFormat;
-            if (syntaxHighlighter.data()->d->blockFormat.hasProperty(QTextFormat::BlockLeftMargin))
-                leftMargin = syntaxHighlighter.data()->d->blockFormat.leftMargin();
-            if (syntaxHighlighter.data()->d->blockFormat.hasProperty(QTextFormat::BlockRightMargin))
-                rightMargin = syntaxHighlighter.data()->d->blockFormat.rightMargin();
-            if (syntaxHighlighter.data()->d->blockFormat.hasProperty(QTextFormat::BlockTopMargin))
-                topMargin = syntaxHighlighter.data()->d->blockFormat.topMargin();
-            if (syntaxHighlighter.data()->d->blockFormat.hasProperty(QTextFormat::BlockBottomMargin))
-                bottomMargin = syntaxHighlighter.data()->d->blockFormat.bottomMargin();
+    foreach(SyntaxHighlighter *syntaxHighlighter, syntaxHighlighters) {
+        syntaxHighlighter->d->currentBlockPosition = lineStart;
+        syntaxHighlighter->d->formatRanges.clear();
+        syntaxHighlighter->d->currentBlock = string;
+        syntaxHighlighter->highlightBlock(string);
+        syntaxHighlighter->d->currentBlock.clear();
+        if (syntaxHighlighter->d->blockFormat.isValid()) {
+            blockFormats[textLayout] = syntaxHighlighter->d->blockFormat;
+            if (syntaxHighlighter->d->blockFormat.hasProperty(QTextFormat::BlockLeftMargin))
+                leftMargin = syntaxHighlighter->d->blockFormat.leftMargin();
+            if (syntaxHighlighter->d->blockFormat.hasProperty(QTextFormat::BlockRightMargin))
+                rightMargin = syntaxHighlighter->d->blockFormat.rightMargin();
+            if (syntaxHighlighter->d->blockFormat.hasProperty(QTextFormat::BlockTopMargin))
+                topMargin = syntaxHighlighter->d->blockFormat.topMargin();
+            if (syntaxHighlighter->d->blockFormat.hasProperty(QTextFormat::BlockBottomMargin))
+                bottomMargin = syntaxHighlighter->d->blockFormat.bottomMargin();
 
         }
-        syntaxHighlighter.data()->d->previousBlockState = syntaxHighlighter.data()->d->currentBlockState;
-        if (!syntaxHighlighter.data()->d->formatRanges.isEmpty())
-            formats += syntaxHighlighter.data()->d->formatRanges;
+        syntaxHighlighter->d->previousBlockState = syntaxHighlighter->d->currentBlockState;
+        if (!syntaxHighlighter->d->formatRanges.isEmpty())
+            formats += syntaxHighlighter->d->formatRanges;
     }
     textLayout->setAdditionalFormats(formats);
     textLayout->beginLayout();
@@ -150,10 +150,10 @@ int TextLayout::doLayout(int index, QList<TextSection*> *sections) // index is i
     Q_ASSERT(!lineBreaking || contentRect.right() <= qint64(viewportWidth()) + LeftMargin
              || viewportWidth() == -1);
 
-    if (syntaxHighlighter) {
-        syntaxHighlighter.data()->d->formatRanges.clear();
-        syntaxHighlighter.data()->d->blockFormat = QTextBlockFormat();
-        syntaxHighlighter.data()->d->currentBlockPosition = -1;
+    foreach(SyntaxHighlighter *syntaxHighlighter, syntaxHighlighters) {
+        syntaxHighlighter->d->formatRanges.clear();
+        syntaxHighlighter->d->blockFormat = QTextBlockFormat();
+        syntaxHighlighter->d->currentBlockPosition = -1;
     }
 
     return index;
@@ -196,8 +196,8 @@ QList<TextSection*> TextLayout::relayoutCommon()
     contentRect = QRect();
     visibleLines = lastVisibleCharacter = -1;
 
-    if (syntaxHighlighter) {
-        syntaxHighlighter.data()->d->previousBlockState = syntaxHighlighter.data()->d->currentBlockState = -1;
+    foreach(SyntaxHighlighter *syntaxHighlighter, syntaxHighlighters) {
+        syntaxHighlighter->d->previousBlockState = syntaxHighlighter->d->currentBlockState = -1;
     }
 
     if (viewportPosition < bufferPosition
