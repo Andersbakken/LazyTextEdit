@@ -1,5 +1,6 @@
 TEMPLATE = subdirs
 SUBDIRS = textcursor \
           textedit \
-          textdocument
+          textdocument \
+          syntaxhighlighter
 
