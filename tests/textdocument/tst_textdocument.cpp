@@ -531,7 +531,7 @@ void tst_TextDocument::iterator()
 {
     TextDocument doc;
     doc.setChunkSize(100);
-    QVERIFY(doc.load("../../textedit.cpp", TextDocument::Sparse));
+    QVERIFY(doc.load("./Script", TextDocument::Sparse));
     TextDocumentIterator it(doc.d, 0);
     while (it.hasNext()) {
         const QChar ch = doc.readCharacter(it.position() + 1);
