@@ -127,6 +127,12 @@ QAction *TextEdit::action(ActionType type) const
 TextEdit::~TextEdit()
 {
     if (d->document) {
+        foreach(SyntaxHighlighter *syntaxHighlighter, d->syntaxHighlighters) {
+            if (syntaxHighlighter->parent() == this)
+                disconnect(syntaxHighlighter, 0, d, 0);
+            syntaxHighlighter->d->textEdit = 0;
+            syntaxHighlighter->d->textLayout = 0;
+        }
         disconnect(d->document, 0, this, 0);
         if (d->document->parent() == this) {
             delete d->document;
