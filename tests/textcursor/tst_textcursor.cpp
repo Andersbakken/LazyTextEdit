@@ -40,6 +40,10 @@ private:
     TextDocument document;
 };
 
+Q_DECLARE_METATYPE(TextCursor *);
+Q_DECLARE_METATYPE(TextCursor::MoveOperation);
+Q_DECLARE_METATYPE(TextCursor::MoveMode);
+
 tst_TextCursor::tst_TextCursor()
 {
     document.append("This is some text");
@@ -228,9 +232,6 @@ void tst_TextCursor::operatorEquals()
 }
 
 
-Q_DECLARE_METATYPE(TextCursor *);
-Q_DECLARE_METATYPE(TextCursor::MoveOperation);
-Q_DECLARE_METATYPE(TextCursor::MoveMode);
 
 QTEST_MAIN(tst_TextCursor)
 #include "tst_textcursor.moc"
