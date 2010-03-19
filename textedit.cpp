@@ -1049,23 +1049,33 @@ void TextEdit::addSyntaxHighlighter(SyntaxHighlighter *highlighter)
         }
         d->syntaxHighlighters.append(highlighter);
         connect(highlighter, SIGNAL(destroyed(QObject*)), d, SLOT(onSyntaxHighlighterDestroyed(QObject*)));
-        d->layoutDirty = true;
         highlighter->d->textEdit = this;
         highlighter->d->textLayout = d;
+        d->layoutDirty = true;
         viewport()->update();
     }
 }
 
 void TextEdit::clearSyntaxHighlighters()
 {
-    qDeleteAll(d->syntaxHighlighters);
-    d->syntaxHighlighters.clear();
+    foreach(SyntaxHighlighter *highlighter, d->syntaxHighlighters) {
+        if (highlighter->parent() == this) {
+            removeSyntaxHighlighter(highlighter);
+        } else {
+            takeSyntaxHighlighter(highlighter);
+        }
+    }
+    Q_ASSERT(d->syntaxHighlighters.isEmpty());
 }
 
 
 void TextEditPrivate::onSyntaxHighlighterDestroyed(QObject *o)
 {
-    textEdit->takeSyntaxHighlighter(static_cast<SyntaxHighlighter*>(o));
+    const bool found = syntaxHighlighters.removeOne(static_cast<SyntaxHighlighter*>(o));
+    Q_ASSERT(found);
+    Q_UNUSED(found);
+    layoutDirty = true;
+    textEdit->viewport()->update();
 }
 
 QList<SyntaxHighlighter*> TextEdit::syntaxHighlighters() const
@@ -1540,3 +1550,15 @@ int TextEditPrivate::findLastPageSize() const
     return -1;
 }
 
+void TextEdit::setSyntaxHighlighter(SyntaxHighlighter *h)
+{
+    if (h && h->textEdit() == this) {
+        if (d->syntaxHighlighters.size() == 1)
+            return;
+        takeSyntaxHighlighter(h);
+    }
+    clearSyntaxHighlighters();
+    if (h) {
+        addSyntaxHighlighter(h);
+    }
+}

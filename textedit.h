@@ -53,7 +53,7 @@ public:
     void setExtraSelections(const QList<ExtraSelection> &selections);
     QList<ExtraSelection> extraSelections() const;
 
-    inline void setSyntaxHighlighter(SyntaxHighlighter *h) { clearSyntaxHighlighters(); if (h) addSyntaxHighlighter(h); }
+    void setSyntaxHighlighter(SyntaxHighlighter *h);
     inline SyntaxHighlighter *syntaxHighlighter() const { return syntaxHighlighters().value(0); }
 
     QList<SyntaxHighlighter*> syntaxHighlighters() const;
