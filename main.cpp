@@ -63,8 +63,34 @@ public:
             setFormat(0, string.size(), format);
         }
     }
-
 };
+
+class FindHighlight : public SyntaxHighlighter
+{
+    Q_OBJECT
+public:
+    FindHighlight(const QString &str, TextEdit *edit)
+        : SyntaxHighlighter(edit), match(str)
+    {}
+
+    virtual void highlightBlock(const QString &string)
+    {
+        int idx = 0;
+        while ((idx = string.indexOf(match, idx)) != -1) {
+            setBackgroundColor(idx++, match.size(), Qt::green);
+        }
+    }
+public slots:
+    void setFindString(const QString &text)
+    {
+        match = text;
+        rehighlight();
+    }
+private:
+    QString match;
+};
+
+
 
 class Highlighter : public SyntaxHighlighter
 {
@@ -172,6 +198,7 @@ public:
     MainWindow(QWidget *parent = 0)
         : QMainWindow(parent), doLineNumbers(false)
     {
+        findHighlight = 0;
 //        changeSelectionTimer.start(1000, this);
         QString fileName = "main.cpp";
         bool replay = false;
@@ -314,6 +341,18 @@ public:
         otherEdit->setLineBreaking(false);
         otherEdit->setObjectName("otherEdit");
         textEdit->setReadOnly(readOnly);
+        findEdit = new QLineEdit;
+        l->addWidget(findEdit);
+        connect(findEdit, SIGNAL(textChanged(QString)), this, SLOT(onFindEditTextChanged(QString)));
+        QShortcut *shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_F), this);
+        connect(shortcut, SIGNAL(activated()), findEdit, SLOT(show()));
+        connect(shortcut, SIGNAL(activated()), findEdit, SLOT(setFocus()));
+
+        shortcut = new QShortcut(QKeySequence(Qt::Key_Escape), findEdit);
+        connect(shortcut, SIGNAL(activated()), findEdit, SLOT(clear()));
+        connect(shortcut, SIGNAL(activated()), findEdit, SLOT(hide()));
+        findEdit->hide();
+
         if (!fontFamily.isEmpty()) {
             QFontDatabase fdb;
             foreach(const QString &family, fdb.families()) {
@@ -577,6 +616,18 @@ public slots:
         setWindowTitle(ch);
     }
 
+public slots:
+    void onFindEditTextChanged(const QString &string)
+    {
+        if (string.isEmpty()) {
+            delete findHighlight;
+            findHighlight = 0;
+        } else if (!findHighlight) {
+            findHighlight = new FindHighlight(string, textEdit);
+        } else {
+            findHighlight->setFindString(string);
+        }
+    }
 private:
     QSpinBox *box;
     TextEdit *textEdit, *otherEdit;
@@ -584,6 +635,8 @@ private:
     QLinkedList<QEvent*> events;
     bool doLineNumbers;
     QBasicTimer appendTimer, changeSelectionTimer;
+    FindHighlight *findHighlight;
+    QLineEdit *findEdit;
 };
 
 #include "main.moc"
