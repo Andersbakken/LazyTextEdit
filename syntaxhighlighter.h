@@ -45,10 +45,13 @@ protected:
     void setFormat(int start, int count, const QColor &color);
     inline void setColor(int start, int count, const QColor &color)
     { setFormat(start, count, color); }
+    inline void setBackground(int start, int count, const QBrush &brush)
+    { QTextCharFormat format; format.setBackground(brush); setFormat(start, count, format); }
+    inline void setBackgroundColor(int start, int count, const QColor &color)
+    { setBackground(start, count, color); }
     void setFormat(int start, int count, const QFont &font);
     inline void setFont(int start, int count, const QFont &font)
     { setFormat(start, count, font); }
-
     QTextBlockFormat blockFormat() const;
     void setBlockFormat(const QTextBlockFormat &format);
     QTextCharFormat format(int pos) const;
