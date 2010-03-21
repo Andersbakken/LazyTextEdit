@@ -36,9 +36,6 @@ public:
     void setTextEdit(TextEdit *doc);
     TextEdit *textEdit() const;
     TextDocument *document() const;
-public Q_SLOTS:
-    void rehighlight();
-protected:
     virtual void highlightBlock(const QString &text) = 0;
     QString currentBlock() const { return d->currentBlock; }
     void setFormat(int start, int count, const QTextCharFormat &format);
@@ -59,6 +56,8 @@ protected:
     int currentBlockState() const;
     void setCurrentBlockState(int s);
     int currentBlockPosition() const;
+public Q_SLOTS:
+    void rehighlight();
 private:
     struct Private {
         Private() : textEdit(0), textLayout(0), previousBlockState(0), currentBlockState(0),
