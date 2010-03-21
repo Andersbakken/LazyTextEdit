@@ -63,6 +63,7 @@ public:
         ConvertCarriageReturns = 0x0004, // incompatible with Sparse and must be set before loading
         AutoDetectCarriageReturns = 0x0010,
         NoImplicitLoadAll = 0x0020,
+        Locking = 0x0040,
         DefaultOptions = AutoDetectCarriageReturns
     };
     Q_DECLARE_FLAGS(Options, Option);
@@ -94,6 +95,12 @@ public:
     int chunkCount() const;
     int instantiatedChunkCount() const;
     int swappedChunkCount() const;
+
+    void lockForRead();
+    void lockForWrite();
+    bool tryLockForRead();
+    bool tryLockForWrite();
+    void unlock();
 
     enum FindModeFlag {
         FindNone = 0x00000,

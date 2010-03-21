@@ -41,30 +41,34 @@ TextDocument::TextDocument(QObject *parent)
 
 TextDocument::~TextDocument()
 {
-    foreach(TextCursorSharedPrivate *cursor, d->textCursors) {
-        cursor->document = 0;
+    {
+        QWriteLocker locker(d->readWriteLock);
+        foreach(TextCursorSharedPrivate *cursor, d->textCursors) {
+            cursor->document = 0;
+        }
+        Chunk *c = d->first;
+        while (c) {
+            if (!(d->options & KeepTemporaryFiles) && !c->swap.isEmpty())
+                QFile::remove(c->swap);
+            Chunk *tmp = c;
+            c = c->next;
+            delete tmp;
+        }
+        foreach(TextSection *section, d->sections) {
+            section->d.document = 0;
+            section->d.textEdit = 0;
+            delete section;
+        }
+        if (d->ownDevice)
+            delete d->device.data();
     }
-    Chunk *c = d->first;
-    while (c) {
-        if (!(d->options & KeepTemporaryFiles) && !c->swap.isEmpty())
-            QFile::remove(c->swap);
-        Chunk *tmp = c;
-        c = c->next;
-        delete tmp;
-    }
-    foreach(TextSection *section, d->sections) {
-        section->d.document = 0;
-        section->d.textEdit = 0;
-        delete section;
-    }
-    if (d->ownDevice)
-        delete d->device.data();
-
+    delete d->readWriteLock;
     delete d;
 }
 
 bool TextDocument::load(QIODevice *device, DeviceMode mode, QTextCodec *codec)
 {
+    QWriteLocker locker(d->readWriteLock);
     Q_ASSERT(device);
     if (!device->isReadable())
         return false;
@@ -211,6 +215,7 @@ void TextDocument::clear()
 
 QString TextDocument::read(int pos, int size) const
 {
+    QReadLocker locker(d->readWriteLock);
     Q_ASSERT(size >= 0);
     if (size == 0 || pos == d->documentSize) {
         return QString();
@@ -263,6 +268,7 @@ QString TextDocument::read(int pos, int size) const
 
 QStringRef TextDocument::readRef(int pos, int size) const
 {
+    QReadLocker locker(d->readWriteLock);
     int offset;
     Chunk *c = d->chunkAt(pos, &offset);
     if (c && pos + offset + size <= c->size()) {
@@ -299,6 +305,7 @@ static bool isSameFile(const QIODevice *left, const QIODevice *right)
 
 bool TextDocument::save(QIODevice *device)
 {
+    QReadLocker locker(d->readWriteLock);
     Q_ASSERT(device);
     if (::isSameFile(d->device.data(), device)) {
         QTemporaryFile tmp(0);
@@ -387,11 +394,13 @@ bool TextDocument::save(QIODevice *device)
 
 int TextDocument::documentSize() const
 {
+    QReadLocker locker(d->readWriteLock);
     return d->documentSize;
 }
 
 int TextDocument::chunkCount() const
 {
+    QReadLocker locker(d->readWriteLock);
     Chunk *c = d->first;
     int count = 0;
     while (c) {
@@ -403,6 +412,7 @@ int TextDocument::chunkCount() const
 
 int TextDocument::instantiatedChunkCount() const
 {
+    QReadLocker locker(d->readWriteLock);
     Chunk *c = d->first;
     int count = 0;
     while (c) {
@@ -415,6 +425,7 @@ int TextDocument::instantiatedChunkCount() const
 
 int TextDocument::swappedChunkCount() const
 {
+    QReadLocker locker(d->readWriteLock);
     Chunk *c = d->first;
     int count = 0;
     while (c) {
@@ -427,11 +438,13 @@ int TextDocument::swappedChunkCount() const
 
 TextDocument::DeviceMode TextDocument::deviceMode() const
 {
+    QReadLocker locker(d->readWriteLock);
     return d->deviceMode;
 }
 
 QTextCodec * TextDocument::textCodec() const
 {
+    QReadLocker locker(d->readWriteLock);
     return d->textCodec;
 }
 
@@ -459,6 +472,7 @@ static void initFind(const TextCursor &cursor, bool reverse, int *start, int *li
 
 TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, FindMode flags) const
 {
+    QReadLocker locker(d->readWriteLock);
     if (flags & FindWholeWords) {
         qWarning("FindWholeWords doesn't work with regexps. Instead use an actual RegExp for this");
     }
@@ -562,6 +576,7 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
 
 TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindMode flags) const
 {
+    QReadLocker locker(d->readWriteLock);
     if (in.isEmpty())
         return TextCursor();
 
@@ -679,6 +694,7 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
 
 TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindMode flags) const
 {
+    QReadLocker locker(d->readWriteLock);
     if (flags & FindWholeWords) {
         qWarning("FindWholeWords makes not sense searching for characters");
     }
@@ -768,6 +784,7 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
 
 bool TextDocument::insert(int pos, const QString &string)
 {
+    QWriteLocker locker(d->readWriteLock);
 #ifdef QT_DEBUG
     Q_ASSERT(d->iterators.isEmpty());
 #endif
@@ -907,6 +924,7 @@ static inline int count(const QString &string, int from, int size, const QChar &
 
 void TextDocument::remove(int pos, int size)
 {
+    QWriteLocker locker(d->readWriteLock);
 #ifdef QT_DEBUG
     Q_ASSERT(d->iterators.isEmpty());
 #endif
@@ -1033,6 +1051,7 @@ void TextDocument::remove(int pos, int size)
 
 void TextDocument::takeTextSection(TextSection *section)
 {
+    QWriteLocker locker(d->readWriteLock);
     Q_ASSERT(section);
     Q_ASSERT(section->document() == this);
 
@@ -1057,11 +1076,13 @@ void TextDocument::takeTextSection(TextSection *section)
 
 QList<TextSection*> TextDocument::sections(int pos, int size, TextSection::TextSectionOptions flags) const
 {
+    QReadLocker locker(d->readWriteLock);
     return d->getSections(pos, size, flags, 0);
 }
 
 void TextDocument::insertTextSection(TextSection *section)
 {
+    QWriteLocker locker(d->readWriteLock);
     Q_ASSERT(!d->sections.contains(section));
     QList<TextSection*>::iterator it = qLowerBound<QList<TextSection*>::iterator>(d->sections.begin(), d->sections.end(),
                                                                                   section, compareTextSection);
@@ -1072,6 +1093,7 @@ void TextDocument::insertTextSection(TextSection *section)
 TextSection *TextDocument::insertTextSection(int pos, int size,
                                              const QTextCharFormat &format, const QVariant &data)
 {
+    QWriteLocker locker(d->readWriteLock);
     Q_ASSERT(pos >= 0);
     Q_ASSERT(size >= 0);
     Q_ASSERT(pos < d->documentSize);
@@ -1104,6 +1126,7 @@ bool TextDocument::abortFind() const
 
 QChar TextDocument::readCharacter(int pos) const
 {
+    QReadLocker locker(d->readWriteLock);
     if (pos == d->documentSize)
         return QChar();
     Q_ASSERT(pos >= 0 && pos < d->documentSize);
@@ -1147,17 +1170,20 @@ void TextDocument::setText(const QString &text)
 
 int TextDocument::chunkSize() const
 {
+    QReadLocker locker(d->readWriteLock);
     return d->chunkSize;
 }
 
 void TextDocument::setChunkSize(int size)
 {
+    QWriteLocker locker(d->readWriteLock);
     Q_ASSERT(d->chunkSize > 0);
     d->chunkSize = size;
 }
 
 int TextDocument::currentMemoryUsage() const
 {
+    QReadLocker locker(d->readWriteLock);
     Chunk *c = d->first;
     int used = 0;
     while (c) {
@@ -1210,11 +1236,13 @@ bool TextDocument::isRedoAvailable() const
 
 bool TextDocument::isModified() const
 {
+    // ### should it lock for read?
     return d->modified;
 }
 
 void TextDocument::setModified(bool modified)
 {
+    // ### should it lock for write
     if (d->modified == modified)
         return;
 
@@ -1230,7 +1258,8 @@ void TextDocument::setModified(bool modified)
 
 int TextDocument::lineNumber(int position) const
 {
-    d->hasChunksWithLineNumbers = true;
+    QReadLocker locker(d->readWriteLock);
+    d->hasChunksWithLineNumbers = true; // does this need to be a write lock?
     int offset;
     Chunk *c = d->chunkAt(position, &offset);
     d->updateChunkLineNumbers(c, position - offset);
@@ -1272,6 +1301,13 @@ int TextDocument::columnNumber(const TextCursor &cursor) const
 void TextDocument::setOptions(Options opt)
 {
     d->options = opt;
+    if ((d->options & Locking) != (d->readWriteLock != 0)) {
+        if (d->readWriteLock) {
+            delete d->readWriteLock;
+        } else {
+            d->readWriteLock = new QReadWriteLock(QReadWriteLock::Recursive);
+        }
+    }
 }
 
 TextDocument::Options TextDocument::options() const
@@ -1287,6 +1323,7 @@ bool TextDocument::isWordCharacter(const QChar &ch, int /*index*/) const
 
 QString TextDocument::swapFileName(Chunk *chunk)
 {
+    QReadLocker locker(d->readWriteLock);
     QString file = QDesktopServices::storageLocation(QDesktopServices::TempLocation);
     file.reserve(file.size() + 24);
     QTextStream ts(&file);
@@ -1470,6 +1507,7 @@ void TextDocumentPrivate::removeChunk(Chunk *c)
 
 void TextDocumentPrivate::undoRedo(bool undo)
 {
+    QWriteLocker locker(readWriteLock);
     const bool undoWasAvailable = q->isUndoAvailable();
     const bool redoWasAvailable = q->isRedoAvailable();
     DocumentCommand *cmd = undoRedoStack.at(undo
@@ -1774,3 +1812,34 @@ void TextDocumentPrivate::textEditDestroyed(TextEdit *edit)
         }
     }
 }
+
+void TextDocument::lockForRead()
+{
+    Q_ASSERT(d->readWriteLock);
+    d->readWriteLock->lockForRead();
+}
+
+void TextDocument::lockForWrite()
+{
+    Q_ASSERT(d->readWriteLock);
+    d->readWriteLock->lockForWrite();
+}
+
+bool TextDocument::tryLockForRead()
+{
+    Q_ASSERT(d->readWriteLock);
+    return d->readWriteLock->tryLockForRead();
+}
+
+bool TextDocument::tryLockForWrite()
+{
+    Q_ASSERT(d->readWriteLock);
+    return d->readWriteLock->tryLockForWrite();
+}
+
+void TextDocument::unlock()
+{
+    Q_ASSERT(d->readWriteLock);
+    d->readWriteLock->unlock();
+}
+

@@ -21,6 +21,7 @@
 #include <QIODevice>
 #include <QTime>
 #include <QMutexLocker>
+#include <QReadWriteLock>
 #include <QMutex>
 #include <QSet>
 #include <QTemporaryFile>
@@ -149,7 +150,7 @@ public:
         deviceMode(TextDocument::Sparse), chunkSize(16384),
         undoRedoStackCurrent(0), modifiedIndex(-1), undoRedoEnabled(true), ignoreUndoRedo(false),
         hasChunksWithLineNumbers(false), textCodec(0), options(TextDocument::DefaultOptions),
-        cursorCommand(false)
+        readWriteLock(0), cursorCommand(false)
     {
         first = last = new Chunk;
     }
@@ -184,6 +185,7 @@ public:
     bool hasChunksWithLineNumbers;
     QTextCodec *textCodec;
     TextDocument::Options options;
+    QReadWriteLock *readWriteLock;
     bool cursorCommand;
 
 #ifdef QT_DEBUG
