@@ -1,0 +1,10 @@
+*.o
+moc_*
+*.moc
+*.log
+Makefile
+textedit
+textcursor
+textdocument
+syntaxhighlighter
+findnewlines
