@@ -536,15 +536,34 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
         }
         const QString line = read(from, to - from);
         last = it.position() + 1;
-        const int index = (reverse ? regexp.lastIndexIn(line) : regexp.indexIn(line));
-        if (index != -1) {
-            if (!reverse && from + index + regexp.matchedLength() > limit)
-                break;
+        int lineIndex = reverse ? line.size() : 0;
+        bool done;
+        do {
+            done = true;
+            const int index = (reverse ? regexp.lastIndexIn(line, lineIndex) : regexp.indexIn(line, lineIndex));
+            if (index != -1) {
+                if (!reverse && from + index + regexp.matchedLength() > limit) {
+                    ok = false;
+                    break;
+                }
 
-            TextCursor ret(this, from + index + regexp.matchedLength(), from + index);
-            Q_ASSERT(ret.selectedText() == regexp.capturedTexts().first());
-            return ret;
-        }
+                const TextCursor ret(this, from + index + regexp.matchedLength(), from + index);
+                Q_ASSERT(ret.selectedText() == regexp.capturedTexts().first());
+                if (flags & FindAll) {
+                    emit entryFound(ret);
+                    if (reverse) {
+                        lineIndex = index;
+                    } else {
+                        lineIndex = index + regexp.matchedLength();
+                    }
+                    done = false;
+                    if (d->findState == TextDocumentPrivate::AbortFind)
+                        return TextCursor();
+                } else {
+                    return ret;
+                }
+            }
+        } while (!done);
         if (progressInterval != 0) {
             const int progress = qAbs(it.position() - lastProgress);
             if (progress >= progressInterval
@@ -552,7 +571,7 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
                 const qreal progress = qAbs<int>(static_cast<qreal>(it.position() - initialPos)) / static_cast<qreal>(maxFindLength);
                 emit findProgress(progress * 100.0, it.position());
                 if (d->findState == TextDocumentPrivate::AbortFind) {
-                    break;
+                    return TextCursor();
                 }
                 lastProgress = it.position();
                 lastProgressTime.restart();
@@ -560,7 +579,7 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
         }
     } while (ok);
 
-    if (flags & FindWrap && d->findState != TextDocumentPrivate::AbortFind) {
+    if (flags & FindWrap) {
         Q_ASSERT(!cursor.hasSelection());
         if (reverse) {
             if (cursor.position() + 1 < d->documentSize) {
@@ -645,7 +664,7 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
                 const qreal progress = qAbs<int>(static_cast<qreal>(it.position() - initialPos)) / static_cast<qreal>(maxFindLength);
                 emit findProgress(progress * 100.0, it.position());
                 if (d->findState == TextDocumentPrivate::AbortFind) {
-                    break;
+                    return TextCursor();
                 }
                 lastProgress = it.position();
                 lastProgressTime.restart();
@@ -662,7 +681,17 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
         }
         if (found) {
             if (++wordIndex == word.size()) {
-                break;
+                const int pos = it.position() - (reverse ? 0 : word.size() - 1);
+                // the iterator reads one past the last matched character so we have to account for that here
+                const TextCursor ret(this, pos + wordIndex, pos);
+                if (flags & FindAll) {
+                    emit entryFound(ret);
+                    if (d->findState == TextDocumentPrivate::AbortFind)
+                        return TextCursor();
+                    wordIndex = 0;
+                } else {
+                    return ret;
+                }
             }
         } else if (wordIndex != 0) {
             wordIndex = 0;
@@ -671,14 +700,7 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
         ch = it.nextPrev(direction, ok);
     } while (ok);
 
-    if (ok && wordIndex == word.size()) {
-        int pos = it.position() - (reverse ? 0 : word.size() - 1);
-        // the iterator reads one past the last matched character so we have to account for that here
-        TextCursor ret(this, pos + wordIndex, pos);
-        return ret;
-    }
-
-    if (flags & FindWrap && d->findState != TextDocumentPrivate::AbortFind) {
+    if (flags & FindWrap) {
         Q_ASSERT(!cursor.hasSelection());
         if (reverse) {
             if (cursor.position() + 1 < d->documentSize) {
@@ -747,8 +769,14 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
         findSleep(this);
 #endif
         if ((caseSensitive ? c : c.toLower()) == ch) {
-            TextCursor ret(this, it.position() + 1, it.position());
-            return ret;
+            const TextCursor ret(this, it.position() + 1, it.position());
+            if (flags & FindAll) {
+                emit entryFound(ret);
+                if (d->findState == TextDocumentPrivate::AbortFind)
+                    return TextCursor();
+            } else {
+                return ret;
+            }
         }
         c = it.nextPrev(dir, ok);
 //         qDebug() << "progressInterval" << progressInterval << qAbs(it.position() - lastProgress)
@@ -760,7 +788,7 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
                 const qreal progress = qAbs<int>(static_cast<qreal>(it.position() - initialPos)) / static_cast<qreal>(maxFindLength);
                 emit findProgress(progress * 100.0, it.position());
                 if (d->findState == TextDocumentPrivate::AbortFind) {
-                    break;
+                    return TextCursor();
                 }
                 lastProgress = it.position();
                 lastProgressTime.restart();
@@ -768,7 +796,7 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
         }
     } while (ok);
 
-    if (flags & FindWrap && d->findState != TextDocumentPrivate::AbortFind) {
+    if (flags & FindWrap) {
         Q_ASSERT(!cursor.hasSelection());
         if (reverse) {
             if (cursor.position() + 1 < d->documentSize) {
