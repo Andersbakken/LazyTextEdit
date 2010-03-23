@@ -108,7 +108,8 @@ public:
         FindCaseSensitively = 0x00002,
         FindWholeWords = 0x00004,
         FindAllowInterrupt = 0x00008,
-        FindWrap = 0x00010
+        FindWrap = 0x00010,
+        FindAll = 0x00020
     };
     Q_DECLARE_FLAGS(FindMode, FindModeFlag);
 
@@ -163,6 +164,7 @@ public slots:
     bool abortSave();
     bool abortFind() const;
 signals:
+    void entryFound(const TextCursor &cursor) const;
     void textChanged();
     void sectionAdded(TextSection *section);
     void sectionRemoved(TextSection *removed);
