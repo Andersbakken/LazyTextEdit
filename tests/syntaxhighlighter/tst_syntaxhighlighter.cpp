@@ -111,7 +111,11 @@ void tst_SyntaxHighlighter::sanityCheck()
         }
         QCOMPARE(list, edit.syntaxHighlighters());
     }
-
+    {
+        TextEdit edit;
+        Highlighter hl;
+        hl.setTextEdit(&edit);
+    }
 }
 
 QTEST_MAIN(tst_SyntaxHighlighter)
