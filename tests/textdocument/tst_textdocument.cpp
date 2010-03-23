@@ -58,6 +58,8 @@ private slots:
     void abortFind_data();
     void abortFind();
     void abortFindSleep();
+    void findAll_data();
+    void findAll();
     void findQChar_data();
     void findQChar();
     void findWholeWordsRecursionCrash();
@@ -1089,6 +1091,73 @@ void tst_TextDocument::abortFindSleep()
         QVERIFY(aborter.percentage() < 1.0);
     }
 }
+
+void tst_TextDocument::findAll_data()
+{
+    QTest::addColumn<QVariant>("needle");
+    QTest::newRow("QRegExp") << QVariant(QRegExp("z"));
+    QTest::newRow("QString") << QVariant(QString::fromLatin1("z"));
+    QTest::newRow("QChar") << QVariant(QChar('z'));
+}
+
+class Doc : public TextDocument
+{
+    Q_OBJECT
+public:
+    Doc()
+    {
+        connect(this, SIGNAL(entryFound(TextCursor)), this, SLOT(onEntryFound(TextCursor)));
+    }
+
+public slots:
+    void onEntryFound(const TextCursor &cursor)
+    {
+        positions.append(cursor.anchor());
+        if (positions.size() >= 5)
+            abortFind();
+    }
+public:
+    QList<int> positions;
+};
+
+void tst_TextDocument::findAll()
+{
+    QFETCH(QVariant, needle);
+    Doc doc;
+    QString alphabet;
+    for (char ch='a'; ch<='z'; ++ch) {
+        alphabet.append(QLatin1Char(ch));
+    }
+    for (int i=0; i<100; ++i) {
+        doc.append(alphabet);
+    }
+    QList<int> expected;
+    for (int i=1; i<=5; ++i) {
+        expected.append((i * 26) - 1);
+    }
+
+    switch (needle.type()) {
+    case QVariant::RegExp:
+        QVERIFY(doc.find(needle.toRegExp(), 0, 0).isValid());
+        QVERIFY(!doc.find(needle.toRegExp(), 0, TextDocument::FindAll|TextDocument::FindAllowInterrupt).isValid());
+        QCOMPARE(doc.positions, expected);
+        break;
+    case QVariant::String:
+        QVERIFY(doc.find(needle.toString(), 0, 0).isValid());
+        QVERIFY(!doc.find(needle.toString(), 0, TextDocument::FindAll|TextDocument::FindAllowInterrupt).isValid());
+        QCOMPARE(doc.positions, expected);
+        break;
+    case QVariant::Char:
+        QVERIFY(doc.find(needle.toChar(), 0, 0).isValid());
+        QVERIFY(!doc.find(needle.toChar(), 0, TextDocument::FindAll|TextDocument::FindAllowInterrupt).isValid());
+        QCOMPARE(doc.positions, expected);
+        break;
+    default:
+        qFatal("huh?");
+        break;
+    }
+}
+
 
 
 QTEST_MAIN(tst_TextDocument)
