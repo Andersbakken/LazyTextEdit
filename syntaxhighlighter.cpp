@@ -38,10 +38,10 @@ SyntaxHighlighter::~SyntaxHighlighter()
 void SyntaxHighlighter::setTextEdit(TextEdit *doc)
 {
     if (d->textEdit)
-        d->textEdit->setSyntaxHighlighter(0);
+        d->textEdit->takeSyntaxHighlighter(this);
     d->textEdit = doc;
     if (d->textEdit)
-        d->textEdit->setSyntaxHighlighter(this);
+        d->textEdit->addSyntaxHighlighter(this);
 }
 TextEdit *SyntaxHighlighter::textEdit() const
 {

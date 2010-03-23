@@ -1044,7 +1044,9 @@ void TextEdit::addSyntaxHighlighter(SyntaxHighlighter *highlighter)
     Q_ASSERT(highlighter);
     if (highlighter->textEdit() != this) {
         if (highlighter->textEdit()) {
-            qWarning("A SyntaxHighlighter can only be added to 1 TextEdit");
+            qWarning("A SyntaxHighlighter can only be added to 1 TextEdit. If this is a "
+                     "use case you care about (having a syntaxHighlighter added to multiple "
+                     "text edits I could fix it. Anders");
             return;
         }
         d->syntaxHighlighters.append(highlighter);
