@@ -37,11 +37,8 @@ SyntaxHighlighter::~SyntaxHighlighter()
 
 void SyntaxHighlighter::setTextEdit(TextEdit *doc)
 {
-    if (d->textEdit)
-        d->textEdit->takeSyntaxHighlighter(this);
-    d->textEdit = doc;
-    if (d->textEdit)
-        d->textEdit->addSyntaxHighlighter(this);
+    Q_ASSERT(doc);
+    doc->addSyntaxHighlighter(this);
 }
 TextEdit *SyntaxHighlighter::textEdit() const
 {
