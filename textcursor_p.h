@@ -118,7 +118,7 @@ public:
                     startPos = 0;
                     break;
                 }
-                startPos = c.position();
+                startPos = c.anchor();
                 ASSUME(c.anchor() == 0 || c.cursorCharacter() == QLatin1Char('\n'));
                 ASSUME(c.anchor() == 0 || doc->readCharacter(c.anchor()) == QLatin1Char('\n'));
                 ASSUME(c.cursorCharacter() == doc->readCharacter(c.anchor()));
