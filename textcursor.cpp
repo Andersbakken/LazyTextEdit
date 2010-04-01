@@ -750,7 +750,7 @@ void TextCursor::setViewportWidth(int width)
 QChar TextCursor::cursorCharacter() const
 {
     Q_ASSERT(d && d->document);
-    return d->document->readCharacter(d->position);
+    return d->document->readCharacter(d->anchor);
 }
 
 QString TextCursor::cursorLine() const
