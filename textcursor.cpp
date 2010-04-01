@@ -780,3 +780,29 @@ QString TextCursor::paragraphUnderCursor() const
     return d->document->d->paragraphAt(d->position);
 }
 
+QDebug operator<<(QDebug dbg, const TextCursor &cursor)
+{
+    QString ret = QString::fromLatin1("TextCursor(");
+    if (cursor.isNull()) {
+        ret.append(QLatin1String("null)"));
+        dbg.maybeSpace() << ret;
+    } else {
+        if (!cursor.hasSelection()) {
+            dbg << "anchor/position:" << cursor.anchor() << "character:" << cursor.cursorCharacter();
+        } else {
+            dbg << "anchor:" << cursor.anchor() << "position:" << cursor.position()
+                << "selectionSize:" << cursor.selectionSize();
+            QString selectedText;
+            if (cursor.selectionSize() > 10) {
+                selectedText = cursor.document()->read(cursor.selectionStart(), 7);
+                selectedText.append("...");
+            } else {
+                selectedText = cursor.selectedText();
+            }
+            dbg << "selectedText:" << selectedText;
+        }
+    }
+    return dbg.space();
+}
+
+

@@ -140,4 +140,6 @@ private:
     friend class TextDocumentPrivate;
 };
 
+QDebug operator<<(QDebug dbg, const TextCursor &cursor);
+
 #endif
