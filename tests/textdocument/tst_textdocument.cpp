@@ -204,7 +204,7 @@ void tst_TextDocument::find()
     QCOMPARE(doc.find("This", 0, TextDocument::FindWholeWords).anchor(), 16);
     QCOMPARE(doc.find("This", 0, TextDocument::FindWholeWords).position(), 20);
     QCOMPARE(doc.find("This", 0, TextDocument::FindWholeWords).selectedText(), QString("This"));
-
+    QCOMPARE(doc.find('\n', 20, TextDocument::FindBackward).cursorCharacter(), QChar('\n'));
 }
 
 void tst_TextDocument::find2()
