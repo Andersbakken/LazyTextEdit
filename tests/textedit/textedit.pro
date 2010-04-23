@@ -11,6 +11,7 @@ INCLUDEPATH += .
 SOURCES += tst_textedit.cpp
 CONFIG += debug
 CONFIG -= app_bundle
+DEFINES += LAZYTEXTEDIT_AUTOTEST
 unix {
     MOC_DIR=.moc
     UI_DIR=.ui

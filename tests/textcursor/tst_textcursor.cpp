@@ -36,6 +36,8 @@ private slots:
     void setPosition_data();
     void movePosition_data();
     void movePosition();
+    void invalidPosition_data();
+    void invalidPosition();
 private:
     TextDocument document;
 };
@@ -191,6 +193,31 @@ void tst_TextCursor::movePosition()
     QCOMPARE(cursor.anchor(), expectedAnchor);
     QCOMPARE(cursor.selectedText(), selectedText);
 }
+
+void tst_TextCursor::invalidPosition_data()
+{
+    QTest::addColumn<int>("position");
+    QTest::addColumn<int>("anchor");
+    QTest::addColumn<bool>("valid");
+    QTest::newRow("1") << 0 << -1 << true;
+    QTest::newRow("2") << -1 << -1 << false;
+    QTest::newRow("3") << -1 << -2 << false;
+    QTest::newRow("4") << 0 << -2 << false;
+    QTest::newRow("5") << 7 << 7 << true;
+    QTest::newRow("6") << 7 << -1 << true;
+    QTest::newRow("7") << 8 << 7 << false;
+    QTest::newRow("8") << 8 << -1 << true;
+}
+
+void tst_TextCursor::invalidPosition()
+{
+    TextDocument doc;
+    doc.setText("foo bar");
+    QCOMPARE(doc.documentSize(), 7);
+    TextCursor cursor(&doc, -1);
+
+}
+
 
 // void tst_TextCursor::assertCase1()
 // {

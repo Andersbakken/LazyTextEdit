@@ -6,6 +6,7 @@ TEMPLATE = app
 TARGET = 
 DEPENDPATH += .
 INCLUDEPATH += .
+DEFINES += LAZYTEXTEDIT_AUTOTEST
 
 # Input
 SOURCES += tst_textcursor.cpp
