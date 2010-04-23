@@ -998,6 +998,24 @@ void tst_TextDocument::findWrap()
     QVERIFY(doc.find(QRegExp("d"), 4).isNull());
     QVERIFY(doc.find(QRegExp("d"), 4, TextDocument::FindWrap).isValid());
 
+    QVERIFY(doc.find('d', doc.documentSize()).isNull());
+    QVERIFY(doc.find('d', doc.documentSize(),
+                     TextDocument::FindWrap).isValid());
+
+    QVERIFY(doc.find("d", 0, TextDocument::FindBackward).isNull());
+    QVERIFY(doc.find("d", 0, TextDocument::FindBackward|TextDocument::FindWrap)
+            .isValid());
+
+    QVERIFY(doc.find('d', 0, TextDocument::FindBackward).isNull());
+    QVERIFY(doc.find('d', 0, TextDocument::FindBackward|TextDocument::FindWrap)
+            .isValid());
+
+    QVERIFY(doc.find(QRegExp("d"), 0, TextDocument::FindBackward).isNull());
+    QVERIFY(doc.find(QRegExp("d"), 0,
+                     TextDocument::FindBackward|TextDocument::FindWrap)
+            .isValid());
+
+
 }
 
 
