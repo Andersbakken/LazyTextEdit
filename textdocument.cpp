@@ -595,9 +595,14 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
 
 TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindMode flags) const
 {
-    QReadLocker locker(d->readWriteLock);
-    if (in.isEmpty())
+    if (in.isEmpty()) {
         return TextCursor();
+    } else if (in.size() == 1) {
+        return find(in.at(0), cursor, flags);
+    }
+
+    QReadLocker locker(d->readWriteLock);
+
 
     const bool reverse = flags & FindBackward;
     const bool caseSensitive = flags & FindCaseSensitively;
