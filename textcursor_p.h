@@ -198,6 +198,11 @@ public:
         ASSUME(ref == 0);
     }
 
+    void invalidate()
+    {
+
+    }
+
     mutable QAtomicInt ref;
     int position, anchor, overrideColumn, viewportWidth;
 

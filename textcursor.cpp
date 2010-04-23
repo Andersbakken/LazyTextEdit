@@ -55,24 +55,43 @@ TextCursor::TextCursor()
 }
 
 TextCursor::TextCursor(const TextDocument *document, int pos, int anc)
-    : d(new TextCursorSharedPrivate), textEdit(0)
+    : d(0), textEdit(0)
 {
-    d->document = const_cast<TextDocument*>(document);
-    if (d->document) {
-        d->document->d->textCursors.insert(d);
+    if (document) {
+        const int documentSize = document->d->documentSize;
+        if (pos < 0 || pos > documentSize || anc < -1 || anc > documentSize) {
+#ifndef LAZYTEXTEDIT_AUTOTEST
+            qWarning("Invalid cursor data %d %d - %d\n",
+                     pos, anc, documentSize);
+#endif
+            return;
+        }
+        d = new TextCursorSharedPrivate;
+        d->document = const_cast<TextDocument*>(document);
         d->position = pos;
         d->anchor = anc == -1 ? pos : anc;
+        d->document->d->textCursors.insert(d);
     }
 }
 
 TextCursor::TextCursor(const TextEdit *edit, int pos, int anc)
-    : d(new TextCursorSharedPrivate), textEdit(0) // ### is this nasty? Will people expect that this cursor is the edit's textCursor?
+    : d(0), textEdit(0)
 {
     if (edit) {
-        d->document = edit->document();
-        d->document->d->textCursors.insert(d);
+        TextDocument *document = edit->document();
+        const int documentSize = document->d->documentSize;
+        if (pos < 0 || pos > documentSize || anc < -1 || anc > documentSize) {
+#ifndef LAZYTEXTEDIT_AUTOTEST
+            qWarning("Invalid cursor data %d %d - %d\n",
+                     pos, anc, documentSize);
+#endif
+            return;
+        }
+        d = new TextCursorSharedPrivate;
+        d->document = const_cast<TextDocument*>(document);
         d->position = pos;
         d->anchor = anc == -1 ? pos : anc;
+        d->document->d->textCursors.insert(d);
     }
 }
 
@@ -109,7 +128,8 @@ TextDocument *TextCursor::document() const
 void TextCursor::setSelection(int pos, int length) // can be negative
 {
     setPosition(pos + length);
-    setPosition(pos, KeepAnchor);
+    if (length != 0)
+        setPosition(pos, KeepAnchor);
 }
 
 void TextCursor::setPosition(int pos, MoveMode mode)
