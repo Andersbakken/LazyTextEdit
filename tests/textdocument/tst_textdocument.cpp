@@ -54,6 +54,7 @@ private slots:
     void find3();
     void find4();
     void find5();
+    void find6();
     void findWrap();
     void abortFind_data();
     void abortFind();
@@ -974,6 +975,16 @@ void tst_TextDocument::find5()
     QVERIFY(doc.find("abcde", cursor).isNull());
     QVERIFY(doc.find(QRegExp("[^c][a-z]"), cursor).isValid());
     QVERIFY(doc.find(QRegExp("d[a-z]"), cursor).isNull());
+}
+
+void tst_TextDocument::find6()
+{
+    // Searching for the whole word "a" in this document should fail, but
+    // it presently returns the "a" at the beginning of "an"
+    TextDocument doc;
+    doc.setText("Something an something");
+    QVERIFY(doc.find("a", 0, TextDocument::FindWholeWords).isNull());
+    QVERIFY(doc.find('a', 0, TextDocument::FindWholeWords).isNull());
 }
 
 void tst_TextDocument::findWrap()
