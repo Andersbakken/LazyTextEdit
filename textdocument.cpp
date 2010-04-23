@@ -675,11 +675,11 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
         if (found && wholeWords && (wordIndex == 0 || wordIndex == word.size() - 1)) {
             uint requiredBounds = 0;
             if (word.size() == 1) {
-                requiredBounds = TextDocumentIterator::Left|TextDocumentIterator::Right;
+                requiredBounds = TextDocumentIterator::Both;
             } else {
                 requiredBounds = ((wordIndex == 0) != reverse)
-                    ? TextDocumentIterator::Left
-                    : TextDocumentIterator::Right;
+                                 ? TextDocumentIterator::Left
+                                 : TextDocumentIterator::Right;
             }
             const uint bounds = d->wordBoundariesAt(it.position());
             if (requiredBounds & ~bounds) {
