@@ -490,9 +490,11 @@ TextCursor TextDocument::find(const QRegExp &regexp, const TextCursor &cursor, F
     ::initFind(cursor, reverse, &pos, &limit);
 
     if (pos == d->documentSize) {
-        if (!reverse)
+        if (reverse) {
+            --pos;
+        } else if (!(flags & FindWrap)) {
             return TextCursor();
-        --pos;
+        }
     }
 
     const TextDocumentIterator::Direction direction = (reverse
@@ -616,11 +618,12 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
     ::initFind(cursor, reverse, &pos, &limit);
 
     if (pos == d->documentSize) {
-        if (!reverse)
+        if (reverse) {
+            --pos;
+        } else if (!(flags & FindWrap)) {
             return TextCursor();
-        --pos;
+        }
     }
-
 
     // ### what if one searches for a string with non-word characters in it and FindWholeWords?
     const TextDocumentIterator::Direction direction = (reverse ? TextDocumentIterator::Left : TextDocumentIterator::Right);
@@ -734,9 +737,11 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
     int limit;
     ::initFind(cursor, reverse, &pos, &limit);
     if (pos == d->documentSize) {
-        if (!reverse)
+        if (reverse) {
+            --pos;
+        } else if (!(flags & FindWrap)) {
             return TextCursor();
-        --pos;
+        }
     }
     Q_ASSERT(pos >= 0 && pos <= d->documentSize);
 
