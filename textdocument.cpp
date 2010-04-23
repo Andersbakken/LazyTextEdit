@@ -724,10 +724,6 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
 TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindMode flags) const
 {
     QReadLocker locker(d->readWriteLock);
-    if (flags & FindWholeWords) {
-        qWarning("FindWholeWords makes not sense searching for characters");
-    }
-
     if (flags & FindWrap && cursor.hasSelection()) {
         qWarning("It makes no sense to pass FindWrap and set a selection for the cursor. The entire selection will be searched");
         flags &= ~FindWrap;
@@ -745,6 +741,7 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
     Q_ASSERT(pos >= 0 && pos <= d->documentSize);
 
     const bool caseSensitive = flags & FindCaseSensitively;
+    const bool wholeWords = flags & FindWholeWords;
     const QChar ch = (caseSensitive ? chIn : chIn.toLower());
     TextDocumentIterator it(d, pos);
     if (reverse) {
@@ -775,7 +772,8 @@ TextCursor TextDocument::find(const QChar &chIn, const TextCursor &cursor, FindM
 #ifdef TEXTDOCUMENT_FIND_SLEEP
         findSleep(this);
 #endif
-        if ((caseSensitive ? c : c.toLower()) == ch) {
+        if (((caseSensitive ? c : c.toLower()) == ch)
+            && (!wholeWords || (d->wordBoundariesAt(it.position()) == TextDocumentIterator::Both))) {
             const TextCursor ret(this, it.position() + 1, it.position());
             if (flags & FindAll) {
                 emit entryFound(ret);

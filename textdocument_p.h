@@ -358,7 +358,7 @@ public:
         return current();
     }
 
-    enum Direction { Left = 0x1, Right = 0x2 };
+    enum Direction { None = 0x0, Left = 0x1, Right = 0x2, Both = Left|Right };
     inline QChar nextPrev(Direction dir, bool &ok)
     {
         if (dir == Left) {
