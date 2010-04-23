@@ -603,7 +603,6 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
 
     QReadLocker locker(d->readWriteLock);
 
-
     const bool reverse = flags & FindBackward;
     const bool caseSensitive = flags & FindCaseSensitively;
     const bool wholeWords = flags & FindWholeWords;
@@ -678,14 +677,10 @@ TextCursor TextDocument::find(const QString &in, const TextCursor &cursor, FindM
 
         bool found = ch == word.at(wordIndex);
         if (found && wholeWords && (wordIndex == 0 || wordIndex == word.size() - 1)) {
-            uint requiredBounds = 0;
-            if (word.size() == 1) {
-                requiredBounds = TextDocumentIterator::Both;
-            } else {
-                requiredBounds = ((wordIndex == 0) != reverse)
-                                 ? TextDocumentIterator::Left
-                                 : TextDocumentIterator::Right;
-            }
+            Q_ASSERT(word.size() > 1);
+            const uint requiredBounds = ((wordIndex == 0) != reverse)
+                                        ? TextDocumentIterator::Left
+                                        : TextDocumentIterator::Right;
             const uint bounds = d->wordBoundariesAt(it.position());
             if (requiredBounds & ~bounds) {
                 found = false;
