@@ -208,6 +208,7 @@ void tst_TextDocument::find()
     QCOMPARE(doc.find("\n", 20, TextDocument::FindBackward).cursorCharacter(), QChar('\n'));
     QCOMPARE(doc.find(QRegExp("\n"), 20, TextDocument::FindBackward).cursorCharacter(), QChar('\n'));
     QCOMPARE(doc.find('\n', 20, TextDocument::FindBackward).cursorCharacter(), QChar('\n'));
+    QVERIFY(doc.find('x', 1, TextDocument::FindBackward|TextDocument::FindWrap).isNull());
 }
 
 void tst_TextDocument::find2()
