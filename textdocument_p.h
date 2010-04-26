@@ -291,8 +291,7 @@ public:
 
     inline bool hasPrevious() const
     {
-        Q_ASSERT(min == 0);
-        return pos > 0;
+        return pos > min;
     }
 
     inline int position() const
