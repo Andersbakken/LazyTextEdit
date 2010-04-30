@@ -134,6 +134,8 @@ TextEdit::~TextEdit()
             syntaxHighlighter->d->textLayout = 0;
         }
         disconnect(d->document, 0, this, 0);
+        disconnect(d->document, 0, d, 0);
+
         if (d->document->parent() == this) {
             delete d->document;
             d->document = 0;
@@ -184,6 +186,11 @@ void TextEdit::setDocument(TextDocument *doc)
     d->sectionsDirty = true;
     d->document = doc;
     d->sectionPressed = 0;
+    d->layoutDirty = true;
+    qDeleteAll(d->unusedTextLayouts);
+    d->unusedTextLayouts.clear();
+    qDeleteAll(d->textLayouts);
+    d->textLayouts.clear();
     viewport()->setCursor(Qt::IBeamCursor);
     viewport()->setMouseTracking(true);
     d->sectionCount = 0;
@@ -218,7 +225,7 @@ void TextEdit::setDocument(TextDocument *doc)
             d, SLOT(onTextSectionCursorChanged(TextSection *)));
 
     d->onDocumentSizeChanged(d->document->documentSize());
-    d->layoutDirty = true;
+
     viewport()->update();
 }
 
