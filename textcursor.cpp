@@ -63,6 +63,7 @@ TextCursor::TextCursor(const TextDocument *document, int pos, int anc)
 #ifndef LAZYTEXTEDIT_AUTOTEST
             qWarning("Invalid cursor data %d %d - %d\n",
                      pos, anc, documentSize);
+            Q_ASSERT(0);
 #endif
             return;
         }
@@ -84,6 +85,7 @@ TextCursor::TextCursor(const TextEdit *edit, int pos, int anc)
 #ifndef LAZYTEXTEDIT_AUTOTEST
             qWarning("Invalid cursor data %d %d - %d\n",
                      pos, anc, documentSize);
+            Q_ASSERT(0);
 #endif
             return;
         }
