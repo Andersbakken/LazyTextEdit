@@ -69,6 +69,7 @@ private slots:
     void sectionTest();
     void deleteTest();
     void emptyDocumentTest();
+    void changeDocumentTest();
 };
 
 tst_TextEdit::tst_TextEdit()
@@ -323,6 +324,26 @@ void tst_TextEdit::emptyDocumentTest()
     edit.setDocument(new TextDocument()); /// This causes the problem
     QTest::qWaitForWindowShown(&edit);
 }
+
+void tst_TextEdit::changeDocumentTest()
+{
+    TextDocument doc1;
+    doc1.setText("abcdefg");
+
+    TextDocument doc2;
+    doc2.setText("hijklmn");
+
+    TextEdit editor1;
+    editor1.setDocument(&doc1);
+    editor1.setDocument(&doc2);
+
+    TextEdit editor2;
+    editor2.setDocument(&doc1);
+
+    TextSection *s = editor2.insertTextSection(0, 1);
+    s->setCursor(Qt::PointingHandCursor);
+}
+
 
 QTEST_MAIN(tst_TextEdit)
 #include "tst_textedit.moc"
