@@ -175,6 +175,7 @@ void TextEdit::setDocument(TextDocument *doc)
     if (d->document) {
         disconnect(d->document, 0, this, 0);
         disconnect(d->document, 0, d, 0);
+        disconnect(d->document->d, 0, d, 0);
         if (d->document->parent() == this)
             delete d->document;
     }
