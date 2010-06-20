@@ -1,0 +1,20 @@
+// "spectre" description for "worklib", "TB1_vco", "Spectre" 
+
+
+simulator lang=spectre
+
+subckt TB1_vco out1 out2 out3 
+//   X1 (ibias out0 out1 out2 out3 out4 out5 out6 out7 vcom vcop gnd! vdd! vdd! gnd!) vco
+   X1 (ibias out0 out1 out2 out3 out4 out5 out6 out7 vcom vcop) vco
+   I5 (setIC0!) ICforce amp=500m
+   I14 (sch_setIC0!) ICforce amp=0
+   V1 (net030 vcop) vsource type=pwl wave=[ 0 0 40n 0 80n 200m 160n -200m ]
+   V2 (vcom net030) vsource type=pwl wave=[ 0 0 40n 0 80n 200m 160n -200m ]
+   R0 (out0 gnd!) res r=1G
+   I2 (Freq out0) F2Vconv
+   VCM (net030 gnd!) vsource dc=vdd/2 type=dc
+   V5 (vdd! gnd!) vsource dc=vdd type=dc
+   I25 (gnd! ibias) isource dc=20u type=dc
+ends TB1_vco
+
+I1 (o1 o2 o3) TB1_vco
