@@ -3,8 +3,7 @@ moc_*
 *.moc
 *.log
 Makefile
-textedit
-textcursor
-textdocument
-syntaxhighlighter
-findnewlines
+tests/textedit/textedit
+tests/textcursor/textcursor
+tests/textdocument/textdocument
+tests/syntaxhighlighter/syntaxhighlighter
