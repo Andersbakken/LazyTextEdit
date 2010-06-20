@@ -70,6 +70,7 @@ private slots:
     void deleteTest();
     void emptyDocumentTest();
     void changeDocumentTest();
+    void clickInBlankAreaTest();
 };
 
 tst_TextEdit::tst_TextEdit()
@@ -343,6 +344,20 @@ void tst_TextEdit::changeDocumentTest()
     TextSection *s = editor2.insertTextSection(0, 1);
     s->setCursor(Qt::PointingHandCursor);
 }
+
+void tst_TextEdit::clickInBlankAreaTest()
+{
+    TextEdit edit;
+    edit.load("spectre.scs");
+    // Make the window big enough to leave blank space below
+    edit.setMinimumSize(QSize(1000, 1200));
+    edit.show();
+    QTest::qWaitForWindowShown(&edit);
+    // Click below the visible text
+    QTest::mouseClick(edit.viewport(), Qt::LeftButton, Qt::NoModifier,
+		      QPoint(50, 1000));
+}
+
 
 
 QTEST_MAIN(tst_TextEdit)
