@@ -173,13 +173,10 @@ int TextLayout::textPositionAt(const QPoint &p) const
                 const QTextLine line = l->lineAt(i);
                 if (line.y() <= pos.y() && pos.y() <= line.height() + line.y()) { // ### < ???
                     return textLayoutOffset + line.xToCursor(qMax<int>(LeftMargin, pos.x()));
-                }
+		}
             }
         }
         textLayoutOffset += l->text().size() + 1; // + 1 for newlines which aren't in the QTextLayout
-    }
-    if (layoutEnd == document->documentSize()) {
-        return document->documentSize();
     }
     return -1;
 }
