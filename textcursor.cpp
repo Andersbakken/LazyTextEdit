@@ -790,6 +790,19 @@ QString TextCursor::cursorLine() const
     // ### viewportWidth even though it is the textEdit's cursor
 }
 
+int TextCursor::lineHeight() const
+{
+    int res = -1;
+    Q_ASSERT(d && d->document);
+    int layoutIndex = -1;
+    TextLayout *textLayout = TextLayoutCacheManager::requestLayout(*this, 2);
+    QTextLine line = textLayout->lineForPosition(position(), 0, &layoutIndex);
+    if (line.isValid())
+        res = line.height();
+    return res;
+}
+
+
 QString TextCursor::wordUnderCursor() const
 {
     Q_ASSERT(!isNull());

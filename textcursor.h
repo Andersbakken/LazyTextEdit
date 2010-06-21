@@ -57,6 +57,7 @@ public:
 
     QChar cursorCharacter() const;
     QString cursorLine() const;
+    int lineHeight() const;
 
     QString wordUnderCursor() const;
     QString paragraphUnderCursor() const;
