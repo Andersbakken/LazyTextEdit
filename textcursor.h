@@ -125,7 +125,6 @@ public:
     int columnNumber() const;
     int lineNumber() const;
 private:
-    TextLayout *textLayout(int margin) const;
     bool cursorMoveKeyEvent(QKeyEvent *e);
     void cursorChanged(bool ensureCursorVisible);
     void detach();
