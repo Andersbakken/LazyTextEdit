@@ -43,6 +43,7 @@ class TextDocument : public QObject
     Q_PROPERTY(bool modified READ isModified WRITE setModified DESIGNABLE false)
     Q_PROPERTY(bool undoAvailable READ isUndoAvailable NOTIFY undoAvailableChanged)
     Q_PROPERTY(bool redoAvailable READ isRedoAvailable NOTIFY redoAvailableChanged)
+    Q_PROPERTY(bool collapseInsertUndo READ collapseInsertUndo WRITE setCollapseInsertUndo)
     Q_ENUMS(DeviceMode)
     Q_FLAGS(Options)
     Q_FLAGS(FindMode)
@@ -147,6 +148,9 @@ public:
 
     bool isUndoAvailable() const;
     bool isRedoAvailable() const;
+
+    bool collapseInsertUndo() const;
+    void setCollapseInsertUndo(bool collapse);
 
     bool isModified() const;
 

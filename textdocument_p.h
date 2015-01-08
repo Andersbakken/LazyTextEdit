@@ -140,17 +140,17 @@ public:
     TextDocumentPrivate(TextDocument *doc)
         : q(doc), first(0), last(0),
 #ifndef NO_TEXTDOCUMENT_CHUNK_CACHE
-        cachedChunk(0), cachedChunkPos(-1),
+          cachedChunk(0), cachedChunkPos(-1),
 #endif
 #ifndef NO_TEXTDOCUMENT_READ_CACHE
-        cachePos(-1),
+          cachePos(-1),
 #endif
-        documentSize(0),
-        saveState(NotSaving), findState(NotFinding), ownDevice(false), modified(false),
-        deviceMode(TextDocument::Sparse), chunkSize(16384),
-        undoRedoStackCurrent(0), modifiedIndex(-1), undoRedoEnabled(true), ignoreUndoRedo(false),
-        hasChunksWithLineNumbers(false), textCodec(0), options(TextDocument::DefaultOptions),
-        readWriteLock(0), cursorCommand(false)
+          documentSize(0),
+          saveState(NotSaving), findState(NotFinding), ownDevice(false), modified(false),
+          deviceMode(TextDocument::Sparse), chunkSize(16384),
+          undoRedoStackCurrent(0), modifiedIndex(-1), undoRedoEnabled(true), ignoreUndoRedo(false),
+          collapseInsertUndo(false), hasChunksWithLineNumbers(false), textCodec(0), options(TextDocument::DefaultOptions),
+          readWriteLock(0), cursorCommand(false)
     {
         first = last = new Chunk;
     }
@@ -180,7 +180,7 @@ public:
 
     QList<DocumentCommand*> undoRedoStack;
     int undoRedoStackCurrent, modifiedIndex;
-    bool undoRedoEnabled, ignoreUndoRedo;
+    bool undoRedoEnabled, ignoreUndoRedo, collapseInsertUndo;
 
     bool hasChunksWithLineNumbers;
     QTextCodec *textCodec;

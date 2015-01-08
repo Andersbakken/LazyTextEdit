@@ -834,7 +834,8 @@ bool TextDocument::insert(int pos, const QString &string)
     DocumentCommand *cmd = 0;
     if (!d->ignoreUndoRedo && d->undoRedoEnabled && d->cursorCommand) { // can only undo commands from
         d->clearRedo();
-        if (!d->undoRedoStack.isEmpty()
+        if (d->collapseInsertUndo
+            && !d->undoRedoStack.isEmpty()
             && d->undoRedoStack.last()->type == DocumentCommand::Inserted
             && d->undoRedoStack.last()->position + d->undoRedoStack.last()->text.size() == pos) {
             d->undoRedoStack.last()->text += string;
@@ -1270,6 +1271,15 @@ bool TextDocument::isUndoAvailable() const
 bool TextDocument::isRedoAvailable() const
 {
     return d->undoRedoStackCurrent < d->undoRedoStack.size();
+}
+
+bool TextDocument::collapseInsertUndo() const
+{
+    return d->collapseInsertUndo;
+}
+void TextDocument::setCollapseInsertUndo(bool collapse)
+{
+    d->collapseInsertUndo = collapse;
 }
 
 bool TextDocument::isModified() const
