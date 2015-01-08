@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <QtWidgets>
 #include <QWidget>
 #include <QString>
 #include <QFont>
@@ -20,6 +21,16 @@
 #include <QVBoxLayout>
 #include <QApplication>
 #include <QEvent>
+#include <QSpinBox>
+#include <QLineEdit>
+#include <QLabel>
+#include <QPlainTextEdit>
+#include <QShortcut>
+#include <QMenu>
+#include <QMenuBar>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QInputDialog>
 #include "textedit.h"
 
 // ### TODO ###
@@ -604,7 +615,7 @@ public slots:
     {
         TextCursor &cursor = textEdit->textCursor();
         bool ok;
-        int pos = QInputDialog::getInteger(this, "Goto pos", "Pos", cursor.position(), 0,
+        int pos = QInputDialog::getInt(this, "Goto pos", "Pos", cursor.position(), 0,
                                            textEdit->document()->documentSize(), 1, &ok);
         if (!ok)
             return;

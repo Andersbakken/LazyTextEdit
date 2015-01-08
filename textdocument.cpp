@@ -3,6 +3,7 @@
 #include "textcursor_p.h"
 #include "textdocument_p.h"
 #include <QBuffer>
+#include <QIODevice>
 #include <QObject>
 #include <QString>
 #include <QString>
@@ -11,6 +12,7 @@
 #include <QList>
 #include <QTextCharFormat>
 #include <QVariant>
+#include <QDesktopServices>
 #include <qalgorithms.h>
 
 // #define DEBUG_CACHE_HITS
@@ -1372,7 +1374,7 @@ bool TextDocument::isWordCharacter(const QChar &ch, int /*index*/) const
 QString TextDocument::swapFileName(Chunk *chunk)
 {
     QReadLocker locker(d->readWriteLock);
-    QString file = QDesktopServices::storageLocation(QDesktopServices::TempLocation);
+    QString file = QStandardPaths::standardLocations(QStandardPaths::TempLocation).first();
     file.reserve(file.size() + 24);
     QTextStream ts(&file);
     ts << QLatin1Char('/') << QLatin1String("lte_") << chunk << QLatin1Char('_')

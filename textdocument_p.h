@@ -26,7 +26,7 @@
 #include <QSet>
 #include <QTemporaryFile>
 #include <QDebug>
-#include "weakpointer.h"
+#include <QPointer>
 
 #ifndef ASSUME
 #ifdef FATAL_ASSUMES
@@ -173,7 +173,7 @@ public:
     enum SaveState { NotSaving, Saving, AbortSave } saveState;
     enum FindState { NotFinding, Finding, AbortFind } mutable findState;
     QList<TextSection*> sections;
-    WeakPointer<QIODevice> device;
+    QPointer<QIODevice> device;
     bool ownDevice, modified;
     TextDocument::DeviceMode deviceMode;
     int chunkSize;

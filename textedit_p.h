@@ -18,6 +18,8 @@
 #include <QBasicTimer>
 #include <QPoint>
 #include <QAction>
+#include <QScrollArea>
+#include <QScrollBar>
 #include "textlayout_p.h"
 #include "textdocument_p.h"
 #include "textcursor.h"

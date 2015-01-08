@@ -21,6 +21,7 @@
 #include <QHash>
 #include <QAtomicInt>
 #include <QCoreApplication>
+#include <QTextCursor>
 #include "textlayout_p.h"
 #include "textedit.h"
 #include "textedit_p.h"

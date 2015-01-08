@@ -16,6 +16,7 @@
 #define TEXTEDIT_H
 
 #include <QtGui>
+#include <QAbstractScrollArea>
 #include "textdocument.h"
 #include "textcursor.h"
 #include "textsection.h"
