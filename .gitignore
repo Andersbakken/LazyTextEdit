@@ -7,3 +7,4 @@ tests/textedit/textedit
 tests/textcursor/textcursor
 tests/textdocument/textdocument
 tests/syntaxhighlighter/syntaxhighlighter
+/textedit
